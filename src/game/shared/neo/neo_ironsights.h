@@ -42,6 +42,9 @@ bool NeoIronsightIsRecoilActivity(int activity);
 #ifdef CLIENT_DLL
 #include "studio.h"
 
+// Model-space transform of a bone in a pose, built by walking its parent chain.
+void NeoIronsightBoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], const Quaternion q[], matrix3x4_t &out);
+
 // A cached viewmodel pose: one sequence at one cycle. Ironsight damping uses the idle's first frame
 // (the pose the sights are tuned in) and the fire animation's settled last frame.
 struct NeoIronsightRestPose

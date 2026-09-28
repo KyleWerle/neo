@@ -221,7 +221,7 @@ bool NeoIronsightIsRecoilActivity(int activity)
 
 #ifdef CLIENT_DLL
 // Model-space transform of a bone, built by walking its parent chain.
-static void BoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], const Quaternion q[], matrix3x4_t &out)
+void NeoIronsightBoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], const Quaternion q[], matrix3x4_t &out)
 {
 	matrix3x4_t local;
 	QuaternionMatrix(q[bone], pos[bone], local);
@@ -232,7 +232,7 @@ static void BoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], const Qua
 		return;
 	}
 	matrix3x4_t parentToModel;
-	BoneToModel(hdr, parent, pos, q, parentToModel);
+	NeoIronsightBoneToModel(hdr, parent, pos, q, parentToModel);
 	ConcatTransforms(parentToModel, local, out);
 }
 
@@ -270,8 +270,8 @@ void NeoIronsightDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	// settled pose itself is left as animated. The Jitte's fire animation sits ~24 units off its idle
 	// and the engine already compensates for that later, so correcting toward idle would double it.
 	matrix3x4_t live, settled, settledInv, kick;
-	BoneToModel(hdr, refBone, pos, q, live);
-	BoneToModel(hdr, refBone, settledPos, settledQ, settled);
+	NeoIronsightBoneToModel(hdr, refBone, pos, q, live);
+	NeoIronsightBoneToModel(hdr, refBone, settledPos, settledQ, settled);
 	MatrixInvert(settled, settledInv);
 	ConcatTransforms(live, settledInv, kick);
 
@@ -346,7 +346,7 @@ static void PrintGunOrigin(CStudioHdr *hdr, IBoneSetup &boneSetup, int refBone, 
 	boneSetup.InitPose(pos, q);
 	boneSetup.AccumulatePose(pos, q, sequence, cycle, 1.0f, 0.0f, nullptr);
 	matrix3x4_t gunToModel;
-	BoneToModel(hdr, refBone, pos, q, gunToModel);
+	NeoIronsightBoneToModel(hdr, refBone, pos, q, gunToModel);
 	Vector origin;
 	MatrixGetColumn(gunToModel, 3, origin);
 	Msg("  %-10s cycle %.3f  gun forward %7.2f  left %7.2f  up %7.2f\n", label, cycle, origin.x, origin.y, origin.z);

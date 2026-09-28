@@ -312,7 +312,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 	if (ret && pWeaponData && pPlayer && (flags & STUDIO_RENDER))
 	{
-		NeoIronsightDrawDots(this, *pWeaponData, m_flIronsightBlend, pPlayer->IsInAim(), pPlayer->IsCloaked());
+		NeoIronsightDrawDots(this, *pWeaponData, pPlayer->IsCloaked());
 	}
 	return ret;
 }

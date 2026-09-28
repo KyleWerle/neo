@@ -8,6 +8,9 @@
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/MaterialSystemUtil.h"
+#include "c_neo_player.h"
+#include "filesystem.h"
+#include "tier1/fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -34,16 +37,14 @@ struct NeoDotLayout
 	float size;
 };
 
-// Pin state: the gun bone's pose relative to the eye when the aim last settled on the sights.
+// Per weapon: the gun bone, the idle rest pose, and the muzzle depth on the sights (for auto placement).
 struct NeoDotPin
 {
 	int viewModel = 0;
 	char weapon[MAX_WEAPON_STRING] = "";
-	bool pinned = false;
-	bool wasSettled = false;
 	int gunBone = -1;
-	matrix3x4_t restGunInEye;
 	float muzzleDepth = 0.0f;
+	NeoIronsightRestPose rest;
 };
 static NeoDotPin s_pin;
 
@@ -111,12 +112,19 @@ static int GunBone(CStudioHdr *hdr)
 	return bone;
 }
 
-static void EyeToWorld(matrix3x4_t &out)
+// Where the viewmodel entity sits relative to the eye when fully on the sights, before bob and lag:
+// the same offset CNEOPredictedViewModel::CalcViewModelView applies (the weapon's aim pose).
+static void SightsEntityToWorld(const CNEOWeaponInfo &data, matrix3x4_t &out)
 {
-	AngleMatrix(CurrentViewAngles(), CurrentViewOrigin(), out);
+	const NeoAimPose aimPose = NeoGetAimPose(data);
+	const QAngle &eyeAngles = CurrentViewAngles();
+	Vector forward, right, up;
+	AngleVectors(eyeAngles, &forward, &right, &up);
+	const Vector origin = CurrentViewOrigin() + forward * aimPose.pos.x + right * aimPose.pos.y + up * aimPose.pos.z;
+	AngleMatrix(eyeAngles + aimPose.ang, origin, out);
 }
 
-void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, float ironsightBlend, bool bAiming, bool bCloaked)
+void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked)
 {
 	if (!pViewModel || !data.m_bHasIronDots || !cl_neo_ironsight_dots.GetBool() || !NeoIronsightsActive(data))
 	{
@@ -130,6 +138,8 @@ void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 	if (s_pin.viewModel != pViewModel->entindex() || V_strcmp(s_pin.weapon, data.szClassName) != 0)
 	{
 		s_pin = NeoDotPin();
+		// Tuning values belong to the previous weapon; the next nudge loads this one's.
+		cl_neo_ironsight_dots_tune.SetValue(0);
 		s_pin.viewModel = pViewModel->entindex();
 		V_strncpy(s_pin.weapon, data.szClassName, sizeof(s_pin.weapon));
 		s_pin.gunBone = GunBone(hdr);
@@ -139,37 +149,47 @@ void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 		return;
 	}
 
-	matrix3x4_t eyeToWorld, worldToEye, gunToWorld, gunInEye;
-	EyeToWorld(eyeToWorld);
-	MatrixInvert(eyeToWorld, worldToEye);
-	pViewModel->GetBoneTransform(s_pin.gunBone, gunToWorld);
-	ConcatTransforms(worldToEye, gunToWorld, gunInEye);
-
-	// Pin on the first settled frame of each aim, so the dots follow tuning and the aim pose.
-	const int activity = pViewModel->GetSequenceActivity(pViewModel->GetSequence());
-	const bool bSettled = bAiming && ironsightBlend >= 0.999f && (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY);
-	if (bSettled && !s_pin.wasSettled)
+	// The gun on the sights, computed rather than measured, so the dots exist from the moment the
+	// weapon is out: the sights entity offset times the idle rest pose (the pose the sights are tuned in).
+	const int idleSequence = pViewModel->SelectWeightedSequence(ACT_VM_IDLE);
+	if (idleSequence < 0)
 	{
-		MatrixCopy(gunInEye, s_pin.restGunInEye);
-		Vector muzzle;
-		QAngle muzzleAngles;
-		// Attachment depth is unaffected by the viewmodel FOV conversion (only x/y are rescaled).
-		if (pViewModel->GetAttachment(1, muzzle, muzzleAngles))
-		{
-			s_pin.muzzleDepth = DotProduct(muzzle - CurrentViewOrigin(), CurrentViewForward());
-		}
-		s_pin.pinned = s_pin.muzzleDepth > 0.0f;
+		return;
 	}
-	s_pin.wasSettled = bSettled;
-	if (!s_pin.pinned || !(bCloaked || cl_neo_ironsight_dots_always.GetBool()))
+	float poseparam[MAXSTUDIOPOSEPARAM];
+	pViewModel->GetPoseParameters(hdr, poseparam);
+	s_pin.rest.Update(hdr, idleSequence, 0.0f, poseparam);
+
+	matrix3x4_t eyeToWorld, worldToEye, sightsEntity, restGunModel, restGunWorld, restGunInEye;
+	AngleMatrix(CurrentViewAngles(), CurrentViewOrigin(), eyeToWorld);
+	MatrixInvert(eyeToWorld, worldToEye);
+	SightsEntityToWorld(data, sightsEntity);
+	NeoIronsightBoneToModel(hdr, s_pin.gunBone, s_pin.rest.pos, s_pin.rest.q, restGunModel);
+	ConcatTransforms(sightsEntity, restGunModel, restGunWorld);
+	ConcatTransforms(worldToEye, restGunWorld, restGunInEye);
+
+	// Muzzle depth on the sights, for automatic placement.
+	if (hdr->GetNumAttachments() > 0)
+	{
+		const mstudioattachment_t &muzzle = hdr->pAttachment(0);
+		matrix3x4_t attachBoneModel, muzzleModel, muzzleWorld;
+		NeoIronsightBoneToModel(hdr, muzzle.localbone, s_pin.rest.pos, s_pin.rest.q, attachBoneModel);
+		ConcatTransforms(attachBoneModel, muzzle.local, muzzleModel);
+		ConcatTransforms(sightsEntity, muzzleModel, muzzleWorld);
+		Vector muzzleOrigin;
+		MatrixGetColumn(muzzleWorld, 3, muzzleOrigin);
+		s_pin.muzzleDepth = DotProduct(muzzleOrigin - CurrentViewOrigin(), CurrentViewForward());
+	}
+	if (s_pin.muzzleDepth <= 0.0f || !(bCloaked || cl_neo_ironsight_dots_always.GetBool()))
 	{
 		return;
 	}
 
-	// Rest eye-space points -> gun space (at the pin) -> world now.
+	// Rest eye-space points -> gun space (on the sights) -> where the gun is now.
+	matrix3x4_t gunToWorld, eyeAtRestInGun, restEyeToWorld;
+	pViewModel->GetBoneTransform(s_pin.gunBone, gunToWorld);
 	const NeoDotLayout layout = DotLayout(data);
-	matrix3x4_t eyeAtRestInGun, restEyeToWorld;
-	MatrixInvert(s_pin.restGunInEye, eyeAtRestInGun);
+	MatrixInvert(restGunInEye, eyeAtRestInGun);
 	ConcatTransforms(gunToWorld, eyeAtRestInGun, restEyeToWorld);
 	const Vector eyePoints[3] = { layout.front, layout.rearLeft, layout.rearRight };
 	const Color colours[3] = { data.m_clrIronDotFront, data.m_clrIronDotRear, data.m_clrIronDotRear };
@@ -202,4 +222,114 @@ void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 	}
 	meshBuilder.End();
 	pMesh->Draw();
+}
+
+//-----------------------------------------------------------------------------
+// Tuning: nudge the dots in game (bound to the numpad by the dev autoexec), save to a file that
+// SourceDev/apply-ironsights.py merges into the weapon scripts.
+//-----------------------------------------------------------------------------
+static const CNEOWeaponInfo *LocalWeaponData(const char **ppszClass = nullptr)
+{
+	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	auto *pWeapon = pPlayer ? dynamic_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
+	if (pWeapon && ppszClass)
+	{
+		*ppszClass = pWeapon->GetClassname();
+	}
+	return pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
+}
+
+static void PrintDots()
+{
+	Msg("dots: front \"%s\"  rear \"%s\"  size %g\n", cl_neo_ironsight_dot_front.GetString(),
+		cl_neo_ironsight_dot_rear.GetString(), cl_neo_ironsight_dot_size.GetFloat());
+}
+
+CON_COMMAND(cl_neo_ironsight_dots_nudge, "Nudge a sight dot value and switch dot tuning on. Usage: cl_neo_ironsight_dots_nudge <front|rear> <depth|drop|gap|size> <delta>")
+{
+	if (args.ArgC() != 4)
+	{
+		Msg("Usage: cl_neo_ironsight_dots_nudge <front|rear> <depth|drop|gap|size> <delta>\n");
+		return;
+	}
+	const CNEOWeaponInfo *pData = LocalWeaponData();
+	if (!pData || !pData->m_bHasIronDots)
+	{
+		Msg("The active weapon has no IronsightDots block.\n");
+		return;
+	}
+	if (!cl_neo_ironsight_dots_tune.GetBool())
+	{
+		// Start from what is on screen now, automatic placements included.
+		const NeoDotLayout layout = DotLayout(*pData);
+		cl_neo_ironsight_dot_front.SetValue(CFmtStr("%g %g", layout.front.x, layout.front.z));
+		cl_neo_ironsight_dot_rear.SetValue(CFmtStr("%g %g %g", layout.rearLeft.x, layout.rearLeft.z, layout.rearLeft.y));
+		cl_neo_ironsight_dot_size.SetValue(layout.size);
+		cl_neo_ironsight_dots_tune.SetValue(1);
+		cl_neo_ironsight_dots_always.SetValue(1);
+	}
+
+	const bool bFront = V_stricmp(args.Arg(1), "front") == 0;
+	const char *pszField = args.Arg(2);
+	const float delta = V_atof(args.Arg(3));
+	if (V_stricmp(pszField, "size") == 0)
+	{
+		cl_neo_ironsight_dot_size.SetValue(Max(0.01f, cl_neo_ironsight_dot_size.GetFloat() + delta));
+		PrintDots();
+		return;
+	}
+	float depth = 0.0f, drop = 0.0f, gap = 0.0f;
+	if (bFront)
+	{
+		sscanf(cl_neo_ironsight_dot_front.GetString(), "%f %f", &depth, &drop);
+	}
+	else
+	{
+		sscanf(cl_neo_ironsight_dot_rear.GetString(), "%f %f %f", &depth, &drop, &gap);
+	}
+	if (V_stricmp(pszField, "depth") == 0)
+	{
+		depth = Max(1.0f, depth + delta);
+	}
+	else if (V_stricmp(pszField, "drop") == 0)
+	{
+		drop += delta;
+	}
+	else if (V_stricmp(pszField, "gap") == 0 && !bFront)
+	{
+		gap = Max(0.0f, gap + delta);
+	}
+	if (bFront)
+	{
+		cl_neo_ironsight_dot_front.SetValue(CFmtStr("%g %g", depth, drop));
+	}
+	else
+	{
+		cl_neo_ironsight_dot_rear.SetValue(CFmtStr("%g %g %g", depth, drop, gap));
+	}
+	PrintDots();
+}
+
+CON_COMMAND(cl_neo_ironsight_dots_save, "Append the tuned dots for the active weapon to ironsight_dots.txt.")
+{
+	const char *pszClass = nullptr;
+	if (!LocalWeaponData(&pszClass) || !pszClass)
+	{
+		Msg("No active NT weapon.\n");
+		return;
+	}
+	float frontDepth = 0, frontDrop = 0, rearDepth = 0, rearDrop = 0, gap = 0;
+	sscanf(cl_neo_ironsight_dot_front.GetString(), "%f %f", &frontDepth, &frontDrop);
+	sscanf(cl_neo_ironsight_dot_rear.GetString(), "%f %f %f", &rearDepth, &rearDrop, &gap);
+	// One line per save: script name, front depth, front drop, rear depth, rear drop, rear half gap, size.
+	const CFmtStr line("%s %g %g %g %g %g %g\n", pszClass, frontDepth, frontDrop, rearDepth, rearDrop, gap, cl_neo_ironsight_dot_size.GetFloat());
+	FileHandle_t file = g_pFullFileSystem->Open("ironsight_dots.txt", "a", "MOD");
+	if (!file)
+	{
+		Warning("Could not open ironsight_dots.txt for writing.\n");
+		return;
+	}
+	g_pFullFileSystem->Write(line.Get(), V_strlen(line.Get()), file);
+	g_pFullFileSystem->Close(file);
+	Msg("Saved: %s", line.Get());
 }
