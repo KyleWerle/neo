@@ -11,6 +11,7 @@
 // Everything here is client-only; weapons without the block, or ironsights off, are untouched.
 
 class CNEOWeaponInfo;
+class IMaterial;
 class IMaterialVar;
 class ITexture;
 
@@ -27,6 +28,8 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode();
 // While the live view is active, puts it on the weapon's lens material for the lifetime of a viewmodel
 // draw: the lens's $basetexture becomes the optic render and its $detail the reticle. The lens material
 // must be UnlitGeneric with a $detail declared (see dev-assets). Restored when it goes out of scope.
+// With "lens_disc" the lens material is left as it is and only hidden for the draw instead; the optic
+// is then drawn over it by NeoIronsightDrawOpticDisc.
 class NeoIronsightOpticLens
 {
 public:
@@ -39,9 +42,12 @@ private:
 	ITexture *m_pOriginalBase = nullptr;
 	ITexture *m_pOriginalDetail = nullptr;
 	float m_flOriginalBlend = 0.0f;
+	IMaterial *m_pHiddenLens = nullptr;
 };
 
 class C_BaseAnimating;
-// While cloaked, redraws the live optic and reticle on the lens surface (the weapon's "lens_map"),
-// fading out towards the rim, since the cloak override replaces the lens material. Call after the gun.
-void NeoIronsightDrawCloakedOptic(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data);
+// Draws the live optic and reticle as a disc on the lens surface (the weapon's "lens_map" and
+// "lens_circle"). Call after the gun. While cloaked it fades out towards the rim, since the cloak
+// override replaces the lens material; with "lens_disc" it is drawn solid the rest of the time too, and
+// glitches off the sights (ironsightBlend below 1).
+void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend);

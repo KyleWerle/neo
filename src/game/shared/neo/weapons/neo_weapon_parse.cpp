@@ -133,6 +133,13 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 		m_bHasIronOpticLensMap = m_szIronOpticLensBone[0] && sscanf(pOptic->GetString("lens_map", ""), "%f %f %f %f %f %f %f %f %f",
 			&o.x, &o.y, &o.z, &u.x, &u.y, &u.z, &v.x, &v.y, &v.z) == 9;
 	}
+	m_vecIronOpticLensCircle.Init(0.5f, 0.5f, 0.5f);
+	if (pOptic)
+	{
+		sscanf(pOptic->GetString("lens_circle", "0.5 0.5 0.5"), "%f %f %f",
+			&m_vecIronOpticLensCircle.x, &m_vecIronOpticLensCircle.y, &m_vecIronOpticLensCircle.z);
+	}
+	m_bIronOpticLensDisc = pOptic && pOptic->GetBool("lens_disc") && m_bHasIronOpticLensMap;
 
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;

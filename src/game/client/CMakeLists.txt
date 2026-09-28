@@ -1659,6 +1659,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_optic.cpp
     neo/neo_ironsight_optic.h
+    neo/neo_ironsight_optic_glitch.cpp
+    neo/neo_ironsight_optic_glitch.h
     neo/ui/neo_hud_damage_indicator.cpp
     neo/ui/neo_hud_deathnotice.cpp
     neo/ui/neo_hud_friendly_marker.cpp

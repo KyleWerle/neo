@@ -73,6 +73,22 @@ WeaponData
 		"up"		"2.53"
 	}
 
+	"IronsightOptic"
+	{
+		"magnification"	"2"		// zoom relative to the lens on screen; 1 = like empty glass
+		"fov"		"30"		// only used if the lens surface is unknown
+		// The Jitte's lens is a square mesh with a round picture, shared with the unscoped model. It stays
+		// untouched: hidden while the live view runs, which is drawn as a disc over it, with the original
+		// lens texture on top as the reticle.
+		"lens"		"models/weapons/jitte_mat3"
+		"lens_disc"	"1"
+		"reticle"	"vgui/hud/optics/jitte_reticle"
+		// The lens surface on Torus01 (from v_*_jitte(s).mdl), and the lens circle within its UVs.
+		"lens_bone"	"Torus01"
+		"lens_map"	"-1.798 1.773 1.506  3.611 0 0  0 0 -3.611"
+		"lens_circle"	"0.494 0.455 0.455"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{
