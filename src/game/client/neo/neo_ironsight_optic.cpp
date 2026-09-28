@@ -333,6 +333,9 @@ private:
 		const float centreX = s_follow.valid ? s_follow.lensScreen.x : wide * 0.5f;
 		const float centreY = s_follow.valid ? s_follow.lensScreen.y : tall * 0.5f;
 		const float radius = data.m_flIronOpticRadius * tall;
+		// The live picture stops short of the lens edge, inside the reticle's opaque rim, so no view
+		// peeks past the rim's soft (filtered, cut-out) outermost pixels as the lens moves.
+		const float liveRadius = radius * 0.96f;
 
 		constexpr int SEGMENTS = 64;
 		vgui::Vertex_t circle[SEGMENTS];
@@ -340,7 +343,8 @@ private:
 		{
 			const float angle = 2.0f * M_PI_F * i / SEGMENTS;
 			const float c = cosf(angle), s = sinf(angle);
-			circle[i].Init(Vector2D(centreX + radius * c, centreY + radius * s), Vector2D(0.5f + 0.5f * c, 0.5f + 0.5f * s));
+			circle[i].Init(Vector2D(centreX + liveRadius * c, centreY + liveRadius * s),
+				Vector2D(0.5f + 0.48f * c, 0.5f + 0.48f * s));
 		}
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
 		vgui::surface()->DrawSetTexture(m_liveTexture);
