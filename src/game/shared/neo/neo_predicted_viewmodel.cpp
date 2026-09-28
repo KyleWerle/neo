@@ -693,6 +693,9 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 
 			}
 			finalGunPush = vForward * ((1 - m_flGunPush) * VIEWMODEL_MOVE_DISTANCE);
+			// On the sights the gun already sits at the eye, so pushing it back drives it into the face.
+			// Fade the bump out with the ironsight blend; the viewmodel can't visibly clip the wall anyway.
+			finalGunPush *= 1.0f - m_flIronsightBlend;
 		}
 
 		newPos += (vForward * vOffset.x) - finalGunPush;
