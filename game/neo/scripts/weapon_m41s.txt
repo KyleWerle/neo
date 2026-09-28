@@ -86,6 +86,15 @@ WeaponData
 		"rear"		"26.605 0 1.331"
 	}
 
+	// Sight ghost (HUD linework over the sights while aiming; see neo_ironsight_sight_ghost.h).
+	"IronsightGhost"
+	{
+		"rear"		"brackets"
+		"front"		"chevron"
+		"scale"		"1"
+		"label"		"M41S"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{

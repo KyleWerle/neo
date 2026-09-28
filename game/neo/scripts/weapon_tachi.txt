@@ -66,6 +66,15 @@ WeaponData
 		"rear"		"34.416 -0.05 0.525"
 	}
 
+	// Sight ghost (HUD linework over the sights while aiming; see neo_ironsight_sight_ghost.h).
+	"IronsightGhost"
+	{
+		"rear"		"gate"
+		"front"		"post"
+		"scale"		"1"
+		"label"		"TACHI"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{
