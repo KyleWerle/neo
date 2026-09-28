@@ -8,6 +8,7 @@
 #include "neo_ironsights.h"
 
 #ifdef CLIENT_DLL
+#include "neo/neo_viewmodel_anim_blend.h"
 //#include "clienteffectprecachesystem.h"
 //#include <engine/IClientLeafSystem.h>
 #endif
@@ -81,6 +82,8 @@ private:
 #ifdef CLIENT_DLL
 	NeoIronsightRestPose m_ironsightRest;		// idle first frame
 	NeoIronsightRestPose m_ironsightSettled;	// current fire animation's last frame
+	NeoViewmodelAnimBlend m_animBlend;			// crossfade between animations
+	void DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask);
 #endif
 	float m_flStartAimingChange;
 	bool m_bViewAim;

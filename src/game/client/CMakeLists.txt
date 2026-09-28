@@ -1668,6 +1668,10 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_optic_disc.h
     neo/neo_spread_pivot.cpp
     neo/neo_spread_pivot.h
+    neo/neo_viewmodel_recoil.cpp
+    neo/neo_viewmodel_recoil.h
+    neo/neo_viewmodel_anim_blend.cpp
+    neo/neo_viewmodel_anim_blend.h
     neo/neo_ironsight_profile.cpp
     neo/neo_ironsight_sight_ghost.cpp
     neo/neo_ironsight_sight_ghost.h

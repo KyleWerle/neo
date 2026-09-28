@@ -7,6 +7,7 @@
 #include "neo/neo_ironsight_optic_disc.h"
 #include "neo/neo_ironsight_dots.h"
 #include "neo/neo_spread_pivot.h"
+#include "neo/neo_viewmodel_recoil.h"
 #endif
 
 #include "in_buttons.h"
@@ -228,6 +229,13 @@ void CNEOPredictedViewModel::PostDataUpdate(DataUpdateType_t updateType)
 }
 
 void CNEOPredictedViewModel::StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask)
+{
+	DampedBlendingRules(hdr, pos, q, currentTime, boneMask);
+	// Blended into each new animation rather than cut to it (cl_neo_viewmodel_anim_blend).
+	m_animBlend.Apply(hdr, GetSequence(), pos, q, boneMask);
+}
+
+void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask)
 {
 	BaseClass::StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
 
@@ -750,8 +758,10 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 		QAngle angles = pOwner->EyeAngles();
 		newAng.z += cl_righthand.GetBool() ? angles.z : -angles.z;
 	}
-	// Turned toward where its bullets go (cl_neo_spread_pivot).
+	// Turned toward where its bullets go (cl_neo_spread_pivot), and knocked by each shot
+	// (cl_neo_viewmodel_recoil).
 	NeoSpreadPivotApply(weapon, pOwner, newAng);
+	NeoViewmodelRecoilApply(pOwner, eyeAngles, m_flIronsightBlend, newPos, newAng);
 #endif
 
 	BaseClass::CalcViewModelView(pOwner, newPos, newAng);

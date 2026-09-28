@@ -243,6 +243,7 @@ public:
 
 	virtual const Vector& GetBulletSpread(void) override;
 	virtual const WeaponSpreadInfo_t& GetSpreadInfo(void);
+	const WeaponHandlingInfo_t &GetWeaponHandling() const { return m_weaponHandling; }
 	virtual void AddViewKick(void) override;
 
 	virtual bool CanBePickedUpByClass(int classId);
