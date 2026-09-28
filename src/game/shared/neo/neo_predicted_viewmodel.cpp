@@ -330,7 +330,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 			}
 		}
 		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
-		NeoIronsightDrawDots(this, *pWeaponData, bCloaked);
+		NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
 		return ret;
 	}
 
@@ -341,7 +341,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	if (ret && bOverlays)
 	{
 		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
-		NeoIronsightDrawDots(this, *pWeaponData, bCloaked);
+		NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
 	}
 	return ret;
 }

@@ -6,6 +6,22 @@
 
 class KeyValues;
 
+// Sight ghost designs ("IronsightGhost" block; see neo_ironsight_sight_ghost.h).
+enum NeoGhostRear
+{
+	NEO_GHOST_REAR_BRACKETS,
+	NEO_GHOST_REAR_TICKS,
+	NEO_GHOST_REAR_GATE,
+	NEO_GHOST_REAR_CORNERS,
+};
+enum NeoGhostFront
+{
+	NEO_GHOST_FRONT_CHEVRON,
+	NEO_GHOST_FRONT_POST,
+	NEO_GHOST_FRONT_DIAMOND,
+	NEO_GHOST_FRONT_SPLIT,
+};
+
 //--------------------------------------------------------------------------------------------------------
 // A weapon's ironsight settings from its script: the "AimOffset" pose and the Ironsight* blocks. See
 // neo_ironsights.h. CNEOWeaponInfo inherits them, so they read as its own members.
@@ -80,4 +96,11 @@ public:
 	float	m_flIronDotSize = 0.0f;	// dot radius in viewmodel units
 	Color	m_clrIronDotFront;
 	Color	m_clrIronDotRear;
+
+	// Sight ghost design ("IronsightGhost" block), drawn over the IronsightDots sight points. See
+	// neo_ironsight_sight_ghost.h.
+	int		m_iIronGhostRear = NEO_GHOST_REAR_BRACKETS;
+	int		m_iIronGhostFront = NEO_GHOST_FRONT_CHEVRON;
+	float	m_flIronGhostScale = 1.0f;
+	char	m_szIronGhostLabel[32] = "";
 };

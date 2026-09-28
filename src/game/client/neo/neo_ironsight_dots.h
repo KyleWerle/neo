@@ -16,5 +16,6 @@ class C_BaseAnimating;
 class CNEOWeaponInfo;
 
 // Draws the dots for this viewmodel draw, if the weapon has them and they are due (cloaked, or the
-// cl_neo_ironsight_dots_always debug switch).
-void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked);
+// cl_neo_ironsight_dots_always debug switch). With the sight ghost on (neo_ironsight_sight_ghost.h), the
+// same sight points go to the ghost instead, which fades in with ironsightBlend.
+void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend);

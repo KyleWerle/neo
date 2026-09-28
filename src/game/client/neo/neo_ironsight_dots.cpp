@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_dots.h"
+#include "neo_ironsight_sight_ghost.h"
 #include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
 #include "view.h"
@@ -126,7 +127,7 @@ static void SightsEntityToWorld(const CNEOWeaponInfo &data, matrix3x4_t &out)
 	AngleMatrix(eyeAngles + aimPose.ang, origin, out);
 }
 
-void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked)
+void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend)
 {
 	if (!pViewModel || !data.m_bHasIronDots || !cl_neo_ironsight_dots.GetBool() || !NeoIronsightsActive(data))
 	{
@@ -182,7 +183,10 @@ void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 		MatrixGetColumn(muzzleWorld, 3, muzzleOrigin);
 		s_pin.muzzleDepth = DotProduct(muzzleOrigin - CurrentViewOrigin(), CurrentViewForward());
 	}
-	if (s_pin.muzzleDepth <= 0.0f || !(bCloaked || cl_neo_ironsight_dots_always.GetBool()))
+	// The sight ghost replaces the dots unless it is switched off; the dots still show for tuning.
+	const bool bGhost = NeoIronsightSightGhostEnabled() && NeoIronsightSightGhostShown(bCloaked);
+	const bool bDots = cl_neo_ironsight_dots_always.GetBool() || (!NeoIronsightSightGhostEnabled() && bCloaked);
+	if (s_pin.muzzleDepth <= 0.0f || !(bGhost || bDots))
 	{
 		return;
 	}
@@ -195,6 +199,19 @@ void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 	ConcatTransforms(gunToWorld, eyeAtRestInGun, restEyeToWorld);
 	const Vector eyePoints[3] = { layout.front, layout.rearLeft, layout.rearRight };
 	const Color colours[3] = { data.m_clrIronDotFront, data.m_clrIronDotRear, data.m_clrIronDotRear };
+	if (bGhost)
+	{
+		Vector points[3];
+		for (int i = 0; i < 3; ++i)
+		{
+			VectorTransform(eyePoints[i], restEyeToWorld, points[i]);
+		}
+		NeoIronsightRecordSightGhost(data, points, ironsightBlend);
+	}
+	if (!bDots)
+	{
+		return;
+	}
 
 	CMatRenderContextPtr pRenderContext(materials);
 	pRenderContext->Bind(DotMaterial());

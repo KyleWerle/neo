@@ -1,6 +1,19 @@
 #include <KeyValues.h>
 #include "neo_weapon_parse.h"
 
+// The index of a name in a list, or the first entry if it isn't there.
+static int NameIndex(const char *pszName, const char *const *ppszNames, int count)
+{
+	for (int i = 0; i < count; ++i)
+	{
+		if (V_stricmp(pszName, ppszNames[i]) == 0)
+		{
+			return i;
+		}
+	}
+	return 0;
+}
+
 void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 {
 	m_bHasIronsight = false;
@@ -81,4 +94,15 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 	}
 	V_strncpy(m_szIronOpticOverlay, pOptic ? pOptic->GetString("overlay", "vgui/hud/scopes/scope03") : "", sizeof(m_szIronOpticOverlay));
 	V_strncpy(m_szIronOpticReticle, pOptic ? pOptic->GetString("reticle", "") : "", sizeof(m_szIronOpticReticle));
+
+	KeyValues* pGhost = pKeyValuesData->FindKey("IronsightGhost");
+	if (pGhost)
+	{
+		static const char *const s_rear[] = { "brackets", "ticks", "gate", "corners" };
+		static const char *const s_front[] = { "chevron", "post", "diamond", "split" };
+		m_iIronGhostRear = NameIndex(pGhost->GetString("rear", ""), s_rear, ARRAYSIZE(s_rear));
+		m_iIronGhostFront = NameIndex(pGhost->GetString("front", ""), s_front, ARRAYSIZE(s_front));
+		m_flIronGhostScale = clamp(pGhost->GetFloat("scale", 1.0f), 0.25f, 4.0f);
+		V_strncpy(m_szIronGhostLabel, pGhost->GetString("label", ""), sizeof(m_szIronGhostLabel));
+	}
 }

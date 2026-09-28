@@ -34,6 +34,7 @@
 #include "neo_gamerules.h"
 #include "neo_ironsights.h"
 #include "neo/neo_ironsight_augment.h"
+#include "neo/neo_ironsight_sight_ghost.h"
 
 #endif
 
@@ -546,6 +547,7 @@ void CHudCrosshair::Paint( void )
 	}
 
 	bool bHideCrosshair = (NEORules() && NEORules()->GetHiddenHudElements() & NEO_HUD_ELEMENT_CROSSHAIR);
+	const bool bCrosshairHiddenByRules = bHideCrosshair;
 
 	ENeoCrosshairWep eNeoXHairWep = CROSSHAIR_WEP_DEFAULT;
 	if (pWeapon)
@@ -579,6 +581,12 @@ void CHudCrosshair::Paint( void )
 		constexpr int IFF_TRACELINE_LENGTH = 8192; // a little over 200m
 		UTIL_TraceLine(pPlayer->Weapon_ShootPosition(), pPlayer->Weapon_ShootPosition() + pPlayer->GetAutoaimVector(0) * IFF_TRACELINE_LENGTH, MASK_SHOT_HULL, &iffTraceFilter, &iffTrace);
 		showFriendlyFireCrosshair = IsPlayerIndex(iffTrace.GetEntityIndex()) && iffTrace.m_pEnt->GetTeamNumber() == pPlayer->GetTeamNumber();
+	}
+
+	// The sight ghost (HUD linework over the sights while aiming) in the crosshair colour.
+	if (!bCrosshairHiddenByRules)
+	{
+		NeoIronsightPaintSightGhost(crh->color);
 	}
 
 	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.
