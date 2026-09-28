@@ -1,11 +1,12 @@
 #pragma once
 
-// Optics for weapons whose script has an "IronsightOptic" block (e.g. the MX), while on the sights.
+// Optics for weapons whose script has an "IronsightOptic" block (e.g. the MX).
 //   Live view (cl_neo_ironsight_optic 1, and the block names a "lens" material): a magnified view,
 //     rendered like a point_camera monitor (CViewRender::DrawNeoIronsightOptic), is drawn on the lens
-//     mesh itself, with the reticle over it; the gun's own geometry frames and occludes it.
-//   Overlay (cl_neo_ironsight_optic 0, or no lens): the gun hides and a full-screen scope texture is
-//     drawn, the way the scoped rifles do it.
+//     mesh itself, with the reticle over it; the gun's own geometry frames and occludes it. It runs
+//     whenever the weapon is out, at the hip too, pointing where the gun points.
+//   Overlay (cl_neo_ironsight_optic 0, or no lens): while aiming, the gun hides and a full-screen scope
+//     texture is drawn, the way the scoped rifles do it.
 // Everything here is client-only; weapons without the block, or ironsights off, are untouched.
 
 class CNEOWeaponInfo;

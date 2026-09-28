@@ -54,7 +54,7 @@ static CNeoIronsightOpticSystem s_opticSystem;
 static const CNEOWeaponInfo *LocalOpticWeaponData()
 {
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
-	if (!pPlayer || !pPlayer->IsAlive() || !pPlayer->IsInAim())
+	if (!pPlayer || !pPlayer->IsAlive())
 	{
 		return nullptr;
 	}
@@ -76,18 +76,19 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 	}
 	if (!cl_neo_ironsight_optic.GetBool() || !pData->m_szIronOpticLens[0])
 	{
-		return NEO_OPTIC_OVERLAY;
+		// The full-screen scope only while aiming.
+		C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+		return (pPlayer && pPlayer->IsInAim()) ? NEO_OPTIC_OVERLAY : NEO_OPTIC_NONE;
 	}
-	// The live view appears once the gun has (nearly) settled onto the sights.
-	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
-	const auto *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
-	return (pViewModel && pViewModel->GetIronsightBlend() >= 0.9f) ? NEO_OPTIC_PIP : NEO_OPTIC_NONE;
+	// The live view on the lens runs whenever the weapon is out, hip or sights, like a real optic.
+	return NEO_OPTIC_PIP;
 }
 
-// The optic camera turns with the gun: the first moment the gun is settled on the sights (idle, fully
-// aimed), the muzzle attachment's pose relative to the eye is recorded. After that, the gun's turn from
-// that pose (mouse sway, bob, idle, recoil) turns the optic camera too, so the reticle keeps marking
-// where the gun points. The picture itself sits on the lens mesh, so it moves with the gun exactly.
+// The optic camera points where the gun points: the first time the gun settles on the sights (idle,
+// fully aimed), the muzzle attachment's pose relative to the eye is recorded as "looking straight
+// ahead". After that, at the hip or on the sights, the gun's turn from that pose (hip angle, mouse sway,
+// bob, idle, recoil) turns the optic camera too. Kept until the weapon changes; until the first aim the
+// camera looks along the eye. The picture itself sits on the lens mesh, so it moves with the gun exactly.
 struct NeoOpticFollow
 {
 	bool calibrated = false;
@@ -122,7 +123,7 @@ static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo
 	if (!s_follow.calibrated)
 	{
 		const int activity = pViewModel->GetSequenceActivity(pViewModel->GetSequence());
-		if (pViewModel->GetIronsightBlend() < 0.999f || (activity != ACT_VM_IDLE && activity != ACT_VM_IDLE_EMPTY))
+		if (!pPlayer->IsInAim() || pViewModel->GetIronsightBlend() < 0.999f || (activity != ACT_VM_IDLE && activity != ACT_VM_IDLE_EMPTY))
 		{
 			return mainView.angles;
 		}
@@ -147,7 +148,6 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
 	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
 	{
-		s_follow.calibrated = false;
 		return;
 	}
 
