@@ -122,7 +122,8 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 // fully aimed), the muzzle attachment's pose relative to the eye is recorded as "looking straight
 // ahead". After that, at the hip or on the sights, the gun's turn from that pose (hip angle, mouse sway,
 // bob, idle, recoil) turns the optic camera too. Kept until the weapon or viewed player changes; until the first aim the
-// camera looks along the eye. The picture itself sits on the lens mesh, so it moves with the gun exactly.
+// camera looks along the eye. It stays level with the eye; the picture is laid out on the lens as seen on
+// screen, so it moves with the gun but never rolls with it.
 struct NeoOpticFollow
 {
 	bool calibrated = false;
@@ -173,8 +174,13 @@ static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo
 	ConcatTransforms(gunInEye, restInv, turn);
 	MatrixSetColumn(vec3_origin, 3, turn);
 	ConcatTransforms(eyeToWorld, turn, cameraToWorld);
+	// Level with the eye: the gun's roll (a cant, or a viewmodel-only lean) turns the lens and its reticle,
+	// not the world seen through it, which the lens drawing lays out level on screen.
+	Vector forward, up;
+	MatrixGetColumn(cameraToWorld, 0, forward);
+	MatrixGetColumn(eyeToWorld, 2, up);
 	QAngle cameraAngles;
-	MatrixAngles(cameraToWorld, cameraAngles);
+	VectorAngles(forward, up, cameraAngles);
 	return cameraAngles;
 }
 

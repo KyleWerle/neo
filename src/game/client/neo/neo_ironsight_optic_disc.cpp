@@ -194,6 +194,18 @@ static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEO
 	const Vector &circle = data.m_vecIronOpticLensCircle;
 	const float shape = data.m_flIronOpticLensShape;
 	const Vector eye = CurrentViewOrigin();
+
+	// The live view of a lens is laid out as the lens is seen on screen, level with the eye: the lens's
+	// apparent radius spans the picture's half-width around where its centre appears. The gun's roll (a cant,
+	// a viewmodel-only lean) then turns the lens and its reticle, but never the world seen through it.
+	const Vector lensCentre = pane.origin + pane.u * circle.x + pane.v * circle.y;
+	Vector lookForward = lensCentre - eye;
+	const float lensDistance = VectorNormalize(lookForward);
+	Vector lookRight = CrossProduct(lookForward, CurrentViewUp());
+	VectorNormalize(lookRight);
+	const Vector lookUp = CrossProduct(lookRight, lookForward);
+	const float lensRadius = pane.u.Length() * circle.z;
+	const float tanRadius = lensRadius / sqrtf(Max(lensDistance * lensDistance - lensRadius * lensRadius, 0.0001f));
 	const auto alphaAt = [&](float fraction) {
 		const float t = clamp((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f), 0.0f, 1.0f);
 		return static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - t * t * (3.0f - 2.0f * t)));
@@ -220,8 +232,10 @@ static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEO
 		}
 		else if (bLiveView)
 		{
-			texU = 0.5f + 0.5f * x;
-			texV = 0.5f + 0.5f * y;
+			const Vector ray = world - eye;
+			const float depth = Max(DotProduct(ray, lookForward), 0.001f);
+			texU = 0.5f + 0.5f * (DotProduct(ray, lookRight) / depth) / tanRadius;
+			texV = 0.5f - 0.5f * (DotProduct(ray, lookUp) / depth) / tanRadius;
 		}
 		// Lifted a hair toward the eye so it sits on the lens rather than in it.
 		Vector lift = eye - world;
