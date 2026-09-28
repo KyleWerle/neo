@@ -86,6 +86,12 @@ public:
 	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
 	// is hidden and its reticle drawn once, on the pane nearer the eye, so the art doesn't show twice.
 	bool	m_bIronOpticOnePane;
+	// "gyro": the lens's own art ("lens", redrawn from "reticle") is kept level with the horizon like a
+	// stabilised display. The lens is hidden and the reticle drawn always; when the gun rolls, the reticle is
+	// dragged along by part of the turn and springs back to level ("gyro_spring": stiffness in rad/s, damping
+	// ratio below 1 for a little bounce, drag 0..1).
+	bool	m_bIronOpticGyro;
+	Vector	m_vecIronOpticGyroSpring;
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 

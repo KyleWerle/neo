@@ -75,11 +75,15 @@ WeaponData
 	{
 		"magnification"	"1"		// zoom relative to the lens on screen; 1 = like empty glass
 		"fov"		"30"		// only used if the lens surface is unknown
-		// The Jitte's lens is a square mesh with a round picture, shared with the unscoped model. It stays
-		// untouched: at the hip it shows as it is; on the sights the live view fades in over it as a disc,
-		// with the original lens texture on top as the reticle.
+		// The Jitte's lens is a square mesh with a round picture, shared with the unscoped model. It is
+		// hidden and its original texture redrawn as the reticle; on the sights the live view fades in
+		// under it as a disc.
 		"lens"		"models/weapons/jitte_mat3"
 		"lens_disc"	"1"
+		// Its art is kept level with the horizon, with a little bounce when the gun rolls:
+		// stiffness (rad/s), damping (below 1 bounces), drag (how much of the roll it follows first).
+		"gyro"		"1"
+		"gyro_spring"	"19 0.5 0.6"
 		"reticle"	"vgui/hud/optics/jitte_reticle"
 		// The lens surface on Torus01 (from v_*_jitte(s).mdl), and the lens circle within its UVs.
 		"lens_bone"	"Torus01"

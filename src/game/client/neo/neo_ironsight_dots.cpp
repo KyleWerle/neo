@@ -95,6 +95,8 @@ static IMaterial *DotMaterial()
 		pVMT->SetInt("$vertexcolor", 1);
 		pVMT->SetInt("$vertexalpha", 1);
 		pVMT->SetInt("$nocull", 1);
+		// Wins against the gun surface it sits on (a depth bias, like bullet decals).
+		pVMT->SetInt("$decal", 1);
 		s_material.Init("__neo_ironsight_dot", TEXTURE_GROUP_OTHER, pVMT);
 	}
 	return s_material;

@@ -53,7 +53,8 @@ bool NeoIronsightInThermals(const C_NEO_Player *pPlayer);
 // override replaces the lens material; in thermals (bThermal) it is drawn whole over the thermal gun, and
 // the thermal filter later colours it like the rest of the screen. With "lens_disc" it is drawn uncloaked
 // too, fading in over the lens as the gun comes onto the sights (ironsightBlend), so the hip shows the
-// lens as it is; cloaked it shows at the hip as well. "one_pane" glass gets its reticle drawn here always.
+// lens as it is; cloaked it shows at the hip as well. "one_pane" and "gyro" glass get
+// their reticle drawn here always.
 enum NeoIronsightLensPart
 {
 	NEO_LENS_ALL,		// the view, then the reticle

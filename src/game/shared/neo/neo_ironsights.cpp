@@ -407,8 +407,8 @@ NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *p
 	{
 		return;
 	}
-	// Glass drawn as one pane by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
-	if (pData->m_bIronOpticOnePane)
+	// Glass drawn as one pane, or levelled by the gyro, by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
+	if (pData->m_bIronOpticOnePane || pData->m_bIronOpticGyro)
 	{
 		Hide(pData->m_szIronOpticLens);
 	}
