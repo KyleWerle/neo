@@ -79,6 +79,7 @@ WeaponData
 	{
 		"fov"		"15"
 		"radius"	"0.1"
+		"reticle"	"vgui/hud/optics/mx_reticle"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
