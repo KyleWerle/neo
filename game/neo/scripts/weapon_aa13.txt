@@ -70,10 +70,12 @@ WeaponData
 	"AimOffset"
 	{
 		"fov"		"20"
-		"forward"	"30"
+		"forward"		"30"
 		"right"		"1.16"
-		"up"		"1.1"
+		"up"		"1.6"
+		"pitch"		"0.25"
 		"yaw"		"-0.1"
+		"roll"		"0"
 	}
 
 	// Glowing sight dots while cloaked; empty values place them from the muzzle depth.

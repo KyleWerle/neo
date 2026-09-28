@@ -81,7 +81,9 @@ WeaponData
 	// Tune in game with the numpad (see SourceDev/TUNING.md).
 	"IronsightDots"
 	{
-		"size"		"0.12"
+		"size"		"0.13"
+		"front"		"73.209 0"
+		"rear"		"26.605 0 1.331"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
