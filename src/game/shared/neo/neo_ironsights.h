@@ -29,6 +29,13 @@ float NeoAimTransitionTime(const CNEOWeaponInfo &data);
 // Shapes the linear transition fraction (0..1) into the motion curve used for the viewmodel.
 float NeoAimTransitionCurve(const CNEOWeaponInfo &data, float fraction);
 
+// The smoothstep ease, 0 to 1 over t in [0, 1] (clamped), flat at both ends.
+inline float NeoSmoothStep(float t)
+{
+	t = clamp(t, 0.0f, 1.0f);
+	return t * t * (3.0f - 2.0f * t);
+}
+
 // Scale for movement bob at the given ironsight blend (0 = hip, 1 = fully on the sights).
 float NeoIronsightBobScale(float ironsightBlend);
 

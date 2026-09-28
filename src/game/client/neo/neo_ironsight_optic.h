@@ -25,6 +25,14 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode();
 
 class C_BaseAnimating;
 class C_NEO_Player;
+class ITexture;
+
+// The player whose view is on screen: the local player, or the one spectated in first person.
+C_NEO_Player *NeoIronsightOpticViewPlayer();
+
+// The optic's render target, or null if it could not be made.
+ITexture *NeoIronsightOpticTexture();
+
 // True while this player sees in thermals (a support in vision mode): their gun is drawn with the opaque
 // thermal material then, which covers the lens just as the cloak does.
 bool NeoIronsightInThermals(const C_NEO_Player *pPlayer);

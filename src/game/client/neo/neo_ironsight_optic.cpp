@@ -1,6 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_optic.h"
-#include "neo_ironsight_optic_disc.h"
+#include "neo_ironsight_lens.h"
 #include "neo_ironsight_augment.h"
 #include "neo_ironsights.h"
 #include "neo_predicted_viewmodel.h"
@@ -189,25 +189,19 @@ static bool LensOnScreen(const CViewSetup &mainView, const CNEOWeaponInfo &data,
 {
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
 	C_BaseAnimating *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
-	const int bone = (pViewModel && data.m_bHasIronOpticLensMap) ? pViewModel->LookupBone(data.m_szIronOpticLensBone) : -1;
-	if (bone < 0)
+	NeoLensPane pane;
+	if (!data.m_bHasIronOpticLensMap || !NeoIronsightLensPane(pViewModel, data, mainView.origin, pane))
 	{
 		return false;
 	}
-	matrix3x4_t lensToWorld;
-	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, and lens bones that are not
-	// (the MX-S's sight_glass) would come back as the viewmodel's origin.
-	MatrixCopy(pViewModel->GetBone(bone), lensToWorld);
-	const Vector &circle = data.m_vecIronOpticLensCircle;
-	Vector centre;
-	VectorTransform(data.m_vecIronOpticLensOrigin + data.m_vecIronOpticLensU * circle.x + data.m_vecIronOpticLensV * circle.y, lensToWorld, centre);
-	const float radius = data.m_vecIronOpticLensU.Length() * circle.z;
+	const Vector centre = pane.Centre(data);
+	const float radius = pane.u.Length() * data.m_vecIronOpticLensCircle.z;
 	const float distance = (centre - mainView.origin).Length();
 	if (distance <= radius)
 	{
 		return false;
 	}
-	const float fovScale = tanf(DEG2RAD(mainView.fov * 0.5f)) / tanf(DEG2RAD(mainView.fovViewmodel * 0.5f));
+	const float fovScale = NeoIronsightFovScale(mainView);
 	matrix3x4_t eyeToWorld, worldToEye;
 	AngleMatrix(mainView.angles, mainView.origin, eyeToWorld);
 	MatrixInvert(eyeToWorld, worldToEye);

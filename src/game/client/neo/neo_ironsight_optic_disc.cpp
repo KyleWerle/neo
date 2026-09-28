@@ -1,12 +1,12 @@
 #include "cbase.h"
 #include "neo_ironsight_optic_disc.h"
+#include "neo_ironsight_lens.h"
 #include "neo_ironsight_optic_gyro.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
 #include "c_neo_player.h"
 #include "weapon_neobasecombatweapon.h"
 #include "view.h"
-#include "view_shared.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/MaterialSystemUtil.h"
@@ -23,142 +23,7 @@ ConVar cl_neo_ironsight_optic_debug("cl_neo_ironsight_optic_debug", "0", 0,
 	"Debug: 1 = print, once a second, how the optic's lens drawing went for the gun in view; 2 = also draw the"
 	" lens shape in magenta over everything.");
 
-// Why the lens drawing stopped this frame, for cl_neo_ironsight_optic_debug.
-static const char *s_pszDebugReason = "";
 static float s_flNextDebugPrint = 0.0f;
-
-// One pane of the lens in world space: point(u, v) = origin + u * uAxis + v * vAxis, in lens UV.
-struct LensPane
-{
-	Vector origin, u, v;
-};
-
-// The lens pane nearer the eye ("lens_map" or "lens_map2"), from the viewmodel's current bones, and the
-// other pane in pFarPane if there are two (else it is left alone).
-static bool GetLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, const Vector &eye, LensPane &pane,
-	LensPane *pFarPane = nullptr)
-{
-	const int bone = pViewModel->LookupBone(data.m_szIronOpticLensBone);
-	if (bone < 0)
-	{
-		return false;
-	}
-	matrix3x4_t lensToWorld;
-	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, and lens bones that are not
-	// (the MX-S's sight_glass) would come back as the viewmodel's origin.
-	MatrixCopy(pViewModel->GetBone(bone), lensToWorld);
-	const auto toWorld = [&](const Vector &origin, const Vector &u, const Vector &v, LensPane &out) {
-		VectorTransform(origin, lensToWorld, out.origin);
-		VectorRotate(u, lensToWorld, out.u);
-		VectorRotate(v, lensToWorld, out.v);
-	};
-	toWorld(data.m_vecIronOpticLensOrigin, data.m_vecIronOpticLensU, data.m_vecIronOpticLensV, pane);
-	if (data.m_bHasIronOpticLensMap2)
-	{
-		LensPane second;
-		toWorld(data.m_vecIronOpticLens2Origin, data.m_vecIronOpticLens2U, data.m_vecIronOpticLens2V, second);
-		const Vector &circle = data.m_vecIronOpticLensCircle;
-		const auto centre = [&](const LensPane &p) { return p.origin + p.u * circle.x + p.v * circle.y; };
-		if (centre(second).DistToSqr(eye) < centre(pane).DistToSqr(eye))
-		{
-			V_swap(pane, second);
-		}
-		if (pFarPane)
-		{
-			*pFarPane = second;
-		}
-	}
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Sight glass ("window"): the optic camera looks from the eye at the glass, and each point of the glass
-// shows the spot of that view lying behind it, so the glass reads as clear however it sits on screen.
-//-----------------------------------------------------------------------------
-static struct
-{
-	bool valid = false;
-	int frame = -1;
-	matrix3x4_t worldToEye;
-	matrix3x4_t eyeToCamera;	// rotation only
-	float fovScale = 1.0f;		// the viewmodel's field of view to the world's
-	float tanHalf = 1.0f;		// the optic camera's half field of view
-} s_window;
-
-// Where the world behind a point of the glass lies in the optic view, in texture coordinates.
-static void WindowTexCoord(const Vector &world, float &u, float &v)
-{
-	Vector eye;
-	VectorTransform(world, s_window.worldToEye, eye);
-	const Vector ray(eye.x, eye.y * s_window.fovScale, eye.z * s_window.fovScale);
-	Vector camera;
-	VectorRotate(ray, s_window.eyeToCamera, camera);
-	const float forward = Max(camera.x, 0.001f);
-	u = 0.5f - 0.5f * (camera.y / forward) / s_window.tanHalf;
-	v = 0.5f - 0.5f * (camera.z / forward) / s_window.tanHalf;
-}
-
-bool NeoIronsightWindowCamera(const CViewSetup &mainView, const CNEOWeaponInfo &data, QAngle &angles, float &fov)
-{
-	s_window.valid = false;
-	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
-	C_BaseAnimating *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
-	LensPane pane;
-	if (!pViewModel || !GetLensPane(pViewModel, data, mainView.origin, pane))
-	{
-		s_pszDebugReason = pViewModel ? "window camera: lens bone not found" : "window camera: no viewmodel";
-		return false;
-	}
-
-	matrix3x4_t eyeToWorld;
-	AngleMatrix(mainView.angles, mainView.origin, eyeToWorld);
-	MatrixInvert(eyeToWorld, s_window.worldToEye);
-	// The viewmodel is drawn with its own field of view: a point of the glass appears on screen where the
-	// world along this scaled ray does.
-	s_window.fovScale = tanf(DEG2RAD(mainView.fov * 0.5f)) / tanf(DEG2RAD(mainView.fovViewmodel * 0.5f));
-
-	// The rays through the corners of the glass's bounding box, in eye space.
-	const Vector &circle = data.m_vecIronOpticLensCircle;
-	Vector rays[4];
-	Vector middle(0.0f, 0.0f, 0.0f);
-	for (int i = 0; i < 4; ++i)
-	{
-		const float u = circle.x + ((i & 1) ? circle.z : -circle.z);
-		const float v = circle.y + ((i & 2) ? data.m_flIronOpticLensRadiusV : -data.m_flIronOpticLensRadiusV);
-		Vector eye;
-		VectorTransform(pane.origin + pane.u * u + pane.v * v, s_window.worldToEye, eye);
-		if (eye.x <= 0.1f)
-		{
-			s_pszDebugReason = "window camera: a glass corner is behind the eye";
-			return false;
-		}
-		rays[i].Init(eye.x, eye.y * s_window.fovScale, eye.z * s_window.fovScale);
-		middle += rays[i] / rays[i].Length();
-	}
-
-	// Look at the middle of the glass, upright like the eye, just wide enough to cover it.
-	QAngle cameraInEye;
-	VectorAngles(middle, Vector(0.0f, 0.0f, 1.0f), cameraInEye);
-	matrix3x4_t cameraToEye, cameraToWorld;
-	AngleMatrix(cameraInEye, cameraToEye);
-	MatrixInvert(cameraToEye, s_window.eyeToCamera);
-	ConcatTransforms(eyeToWorld, cameraToEye, cameraToWorld);
-	MatrixAngles(cameraToWorld, angles);
-
-	float tanHalf = 0.0f;
-	for (const Vector &ray : rays)
-	{
-		Vector camera;
-		VectorRotate(ray, s_window.eyeToCamera, camera);
-		tanHalf = Max(tanHalf, Max(fabsf(camera.y), fabsf(camera.z)) / Max(camera.x, 0.001f));
-	}
-	s_window.tanHalf = tanHalf * 1.05f + 0.001f;
-	fov = RAD2DEG(2.0f * atanf(s_window.tanHalf));
-	s_window.valid = true;
-	s_window.frame = gpGlobals->framecount;
-	s_pszDebugReason = "";
-	return true;
-}
 
 //-----------------------------------------------------------------------------
 // Drawing the lens: the live view, then the reticle, through vertex alpha. While cloaked the gun is drawn
@@ -190,7 +55,7 @@ static IMaterial *LiveViewMaterial()
 
 // The lens shape ("lens_circle", "lens_shape") in rings: centreAlpha inside the fade radius, easing to
 // zero at the rim. The live view fills it (bLiveView); anything else (the reticle) uses the lens's UVs.
-static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEOWeaponInfo &data,
+static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const CNEOWeaponInfo &data,
 	float centreAlpha, float fadeStart, bool bLiveView)
 {
 	constexpr int RINGS = 8;
@@ -202,7 +67,7 @@ static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEO
 	// The live view of a lens is laid out as the lens is seen on screen, level with the eye: the lens's
 	// apparent radius spans the picture's half-width around where its centre appears. The gun's roll (a cant,
 	// a viewmodel-only lean) then turns the lens and its reticle, but never the world seen through it.
-	const Vector lensCentre = pane.origin + pane.u * circle.x + pane.v * circle.y;
+	const Vector lensCentre = pane.Centre(data);
 	Vector lookForward = lensCentre - eye;
 	const float lensDistance = VectorNormalize(lookForward);
 	Vector lookRight = CrossProduct(lookForward, CurrentViewUp());
@@ -220,8 +85,8 @@ static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEO
 		gyroSin = sinf(roll);
 	}
 	const auto alphaAt = [&](float fraction) {
-		const float t = clamp((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f), 0.0f, 1.0f);
-		return static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - t * t * (3.0f - 2.0f * t)));
+		const float fade = NeoSmoothStep((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f));
+		return static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - fade));
 	};
 
 	CMatRenderContextPtr pRenderContext(materials);
@@ -237,11 +102,11 @@ static void DrawLensShape(IMaterial *pMaterial, const LensPane &pane, const CNEO
 		const float x = c * scale, y = s * scale;
 		const float u = circle.x + circle.z * x;
 		const float v = circle.y + data.m_flIronOpticLensRadiusV * y;
-		const Vector world = pane.origin + pane.u * u + pane.v * v;
+		const Vector world = pane.At(u, v);
 		float texU = u, texV = v;
 		if (bLiveView && data.m_bIronOpticWindow)
 		{
-			WindowTexCoord(world, texU, texV);
+			NeoIronsightWindowTexCoord(world, texU, texV);
 		}
 		else if (bLiveView)
 		{
@@ -319,7 +184,7 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 	if (data.m_bIronOpticWindow)
 	{
 		// Only with this frame's view of what lies behind the glass; clear to its edge, softened at the rim.
-		state.bLiveView = state.bLiveView && s_window.valid && s_window.frame == gpGlobals->framecount;
+		state.bLiveView = state.bLiveView && NeoIronsightWindowReady();
 		if (state.bLiveView)
 		{
 			state.fadeStart = 0.85f;
@@ -332,8 +197,7 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 		float visibility = 1.0f;
 		if (data.m_bIronOpticLensDisc && !bOverridden)
 		{
-			const float t = clamp((ironsightBlend - 0.5f) / 0.5f, 0.0f, 1.0f);
-			visibility = t * t * (3.0f - 2.0f * t);
+			visibility = NeoSmoothStep((ironsightBlend - 0.5f) / 0.5f);
 		}
 		state.centreAlpha = visibility * (bCloaked ? cl_neo_ironsight_optic_cloak_alpha.GetFloat() : 1.0f);
 		state.fadeStart = bCloaked ? cl_neo_ironsight_optic_cloak_fade.GetFloat() : 1.0f;
@@ -346,15 +210,16 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 	if (cl_neo_ironsight_optic_debug.GetBool() && gpGlobals->realtime >= s_flNextDebugPrint)
 	{
 		s_flNextDebugPrint = gpGlobals->realtime + 1.0f;
-		Msg("[optic] %s: cloaked %d thermal %d mode %d window %d (valid %d, frame %d/%d) live %d reticle %d%s%s %s\n",
-			data.szClassName, bCloaked, bThermal, NeoGetIronsightOpticMode(), data.m_bIronOpticWindow, s_window.valid,
-			s_window.frame, gpGlobals->framecount, state.bLiveView, state.bReticle,
-			state.pReticle ? "" : " (no reticle material)", s_pszDebugReason[0] ? " -" : "", s_pszDebugReason);
+		const char *pszReason = NeoIronsightWindowDebugReason();
+		Msg("[optic] %s: cloaked %d thermal %d mode %d window %d (ready %d) live %d reticle %d%s%s %s\n",
+			data.szClassName, bCloaked, bThermal, NeoGetIronsightOpticMode(), data.m_bIronOpticWindow,
+			NeoIronsightWindowReady(), state.bLiveView, state.bReticle,
+			state.pReticle ? "" : " (no reticle material)", pszReason[0] ? " -" : "", pszReason);
 	}
 	return state;
 }
 
-static void DrawDebugLensShape(const LensPane &pane, const CNEOWeaponInfo &data)
+static void DrawDebugLensShape(const NeoLensPane &pane, const CNEOWeaponInfo &data)
 {
 	static CMaterialReference s_debug;
 	if (!s_debug.IsValid())
@@ -381,8 +246,8 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	const LensState state = GetLensState(data, bCloaked, bThermal, ironsightBlend);
 	const bool bView = state.bLiveView && part != NEO_LENS_RETICLE;
 	const bool bReticle = state.bReticle && part != NEO_LENS_VIEW;
-	LensPane pane;
-	if ((!bView && !bReticle) || !GetLensPane(pViewModel, data, CurrentViewOrigin(), pane))
+	NeoLensPane pane;
+	if ((!bView && !bReticle) || !NeoIronsightLensPane(pViewModel, data, CurrentViewOrigin(), pane))
 	{
 		return;
 	}
@@ -429,8 +294,8 @@ bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponIn
 	// This frame's pose, before the gun sets it up itself, so the view sits where the gun is drawn.
 	pViewModel->SetupBones(nullptr, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime);
 	const LensState state = GetLensState(data, bCloaked, bThermal, 1.0f);
-	LensPane pane, farPane;
-	if (!state.bLiveView || !GetLensPane(pViewModel, data, CurrentViewOrigin(), pane, &farPane))
+	NeoLensPane pane, farPane;
+	if (!state.bLiveView || !NeoIronsightLensPane(pViewModel, data, CurrentViewOrigin(), pane, &farPane))
 	{
 		return false;
 	}

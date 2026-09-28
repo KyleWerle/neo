@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_augment.h"
 #include "neo_ironsight_optic.h"
-#include "neo_ironsight_optic_disc.h"
+#include "neo_ironsights.h"
 #include "neo_crosshair.h"
 #include "c_neo_player.h"
 #include "neo_player_shared.h"
@@ -85,12 +85,6 @@ static IMaterial *WindowMaterial()
 	return s_material;
 }
 
-static float SmoothStep(float t)
-{
-	t = clamp(t, 0.0f, 1.0f);
-	return t * t * (3.0f - 2.0f * t);
-}
-
 void NeoIronsightDrawAugmentWindow(const CViewSetup &mainView)
 {
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
@@ -99,7 +93,7 @@ void NeoIronsightDrawAugmentWindow(const CViewSetup &mainView)
 	{
 		return;
 	}
-	const float alpha = pData->m_flIronAugmentAlpha * SmoothStep(s_flFade);
+	const float alpha = pData->m_flIronAugmentAlpha * NeoSmoothStep(s_flFade);
 	// The window's half-extent on a plane in front of the eye, from the main view's field of view.
 	constexpr float DISTANCE = 16.0f;
 	const float aspect = mainView.height > 0 ? static_cast<float>(mainView.width) / mainView.height : 1.0f;
@@ -131,7 +125,7 @@ void NeoIronsightDrawAugmentWindow(const CViewSetup &mainView)
 		for (int ring = first; ring < last; ++ring)
 		{
 			const float t0 = float(ring) / RINGS, t1 = float(ring + 1) / RINGS;
-			const float a0 = alpha * SmoothStep(t0), a1 = alpha * SmoothStep(t1);
+			const float a0 = alpha * NeoSmoothStep(t0), a1 = alpha * NeoSmoothStep(t1);
 			const float ox = 1.0f - edgeW * t0, oy = 1.0f - edgeH * t0;	// outer rectangle's corner
 			const float ix = 1.0f - edgeW * t1, iy = 1.0f - edgeH * t1;	// inner rectangle's corner
 			vertex(-ox, oy, a0); vertex(ox, oy, a0); vertex(ix, iy, a1); vertex(-ix, iy, a1);		// top
@@ -219,7 +213,7 @@ bool NeoIronsightPaintAugment(C_NEOBaseCombatWeapon *pWeapon, const Color &color
 	{
 		return true;
 	}
-	const float fade = SmoothStep(s_flFade);
+	const float fade = NeoSmoothStep(s_flFade);
 
 	int screenWide, screenTall;
 	vgui::surface()->GetScreenSize(screenWide, screenTall);
@@ -234,7 +228,7 @@ bool NeoIronsightPaintAugment(C_NEOBaseCombatWeapon *pWeapon, const Color &color
 	{
 		const float t = fmodf(gpGlobals->realtime / SQUARE_PERIOD + float(i) / SQUARES, 1.0f);
 		const float scale = Lerp(t, 0.3f, 1.0f);
-		const float strength = SmoothStep(t / 0.25f) * SmoothStep((1.0f - t) / 0.35f);
+		const float strength = NeoSmoothStep(t / 0.25f) * NeoSmoothStep((1.0f - t) / 0.35f);
 		const int hw = RoundFloatToInt(w * 0.5f * scale), hh = RoundFloatToInt(h * 0.5f * scale);
 		vgui::surface()->DrawSetColor(color.r(), color.g(), color.b(), RoundFloatToInt(110.0f * strength * fade));
 		DrawDottedRect(x - hw, y - hh, x + hw, y + hh, 8, 2);

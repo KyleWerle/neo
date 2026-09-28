@@ -1659,6 +1659,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_augment.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
+    neo/neo_ironsight_lens.cpp
+    neo/neo_ironsight_lens.h
     neo/neo_ironsight_optic.cpp
     neo/neo_ironsight_optic.h
     neo/neo_ironsight_optic_disc.cpp
