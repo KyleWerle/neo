@@ -57,6 +57,7 @@ public:
 	// Optic on the sights ("IronsightOptic" block); m_flIronOpticFov <= 0 means none. See neo_ironsight_optic.h.
 	float	m_flIronOpticFov;		// field of view of the magnified live view
 	float	m_flIronOpticRadius;	// lens radius on screen, as a fraction of screen height
+	float	m_flIronOpticLensDepth;	// where the lens sits between eye (0) and muzzle (1), for following the gun
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 };

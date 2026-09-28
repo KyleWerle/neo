@@ -83,16 +83,105 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 	return (pViewModel && pViewModel->GetIronsightBlend() >= 0.9f) ? NEO_OPTIC_PIP : NEO_OPTIC_NONE;
 }
 
+// The optic follows the gun: the first moment the gun is settled on the sights (idle, fully aimed), the
+// muzzle attachment's pose relative to the eye is recorded, with the lens at screen centre. After that,
+// each frame's gun movement (mouse sway, bob, idle, recoil) moves the lens picture on screen and turns
+// the optic camera, so the reticle keeps marking where the gun points. Resets when leaving the sights.
+struct NeoOpticFollow
+{
+	bool calibrated = false;
+	char weapon[MAX_WEAPON_STRING] = "";
+	matrix3x4_t restGunInEye;	// muzzle attachment in eye space (x forward, y left, z up) at calibration
+	Vector lensInGun;			// lens centre in muzzle space
+	// This frame's result, used by the render and the HUD.
+	bool valid = false;
+	Vector2D lensScreen;		// lens centre in screen pixels
+	QAngle cameraAngles;		// optic camera direction
+};
+static NeoOpticFollow s_follow;
+
+static void UpdateOpticFollow(const CViewSetup &mainView, const CNEOWeaponInfo &data)
+{
+	s_follow.valid = false;
+	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	C_NEOPredictedViewModel *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
+	Vector gunOrigin;
+	QAngle gunAngles;
+	// Attachment positions come back converted from the viewmodel's FOV into the main view's.
+	if (!pViewModel || !pViewModel->GetAttachment(1, gunOrigin, gunAngles))
+	{
+		s_follow.calibrated = false;
+		return;
+	}
+	if (V_strcmp(s_follow.weapon, data.szClassName) != 0)
+	{
+		s_follow.calibrated = false;
+		V_strncpy(s_follow.weapon, data.szClassName, sizeof(s_follow.weapon));
+	}
+
+	matrix3x4_t eyeToWorld, worldToEye, gunToWorld, gunInEye;
+	AngleMatrix(mainView.angles, mainView.origin, eyeToWorld);
+	MatrixInvert(eyeToWorld, worldToEye);
+	AngleMatrix(gunAngles, gunOrigin, gunToWorld);
+	ConcatTransforms(worldToEye, gunToWorld, gunInEye);
+
+	if (!s_follow.calibrated)
+	{
+		const int activity = pViewModel->GetSequenceActivity(pViewModel->GetSequence());
+		const bool bSettled = pViewModel->GetIronsightBlend() >= 0.999f && (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY);
+		if (!bSettled)
+		{
+			return;
+		}
+		// The lens sits on the view axis, part way between the eye and the muzzle.
+		Vector gunInEyeOrigin;
+		MatrixGetColumn(gunInEye, 3, gunInEyeOrigin);
+		const Vector lensInEye(gunInEyeOrigin.x * data.m_flIronOpticLensDepth, 0.0f, 0.0f);
+		matrix3x4_t eyeInGun;
+		MatrixInvert(gunInEye, eyeInGun);
+		VectorTransform(lensInEye, eyeInGun, s_follow.lensInGun);
+		MatrixCopy(gunInEye, s_follow.restGunInEye);
+		s_follow.calibrated = true;
+	}
+
+	// Where the lens is now, projected with the main view (eye space: x forward, y left, z up).
+	Vector lensInEye;
+	VectorTransform(s_follow.lensInGun, gunInEye, lensInEye);
+	if (lensInEye.x <= 1.0f)
+	{
+		return;
+	}
+	const float focal = (mainView.width * 0.5f) / tanf(DEG2RAD(mainView.fov * 0.5f));
+	s_follow.lensScreen.Init(mainView.x + mainView.width * 0.5f - focal * lensInEye.y / lensInEye.x,
+		mainView.y + mainView.height * 0.5f - focal * lensInEye.z / lensInEye.x);
+
+	// The gun's turn since calibration, applied to the eye, aims the optic camera.
+	matrix3x4_t restInv, turn, cameraToWorld;
+	MatrixInvert(s_follow.restGunInEye, restInv);
+	ConcatTransforms(gunInEye, restInv, turn);
+	MatrixSetColumn(vec3_origin, 3, turn);
+	ConcatTransforms(eyeToWorld, turn, cameraToWorld);
+	MatrixAngles(cameraToWorld, s_follow.cameraAngles);
+	s_follow.valid = true;
+}
+
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
 void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 {
 	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
 	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
 	{
+		s_follow.calibrated = false;
+		s_follow.valid = false;
 		return;
 	}
+	UpdateOpticFollow(mainView, *pData);
 
 	CViewSetup opticView = mainView;
+	if (s_follow.valid)
+	{
+		opticView.angles = s_follow.cameraAngles;
+	}
 	opticView.x = 0;
 	opticView.y = 0;
 	opticView.width = OPTIC_RT_SIZE;
@@ -240,8 +329,9 @@ private:
 
 		int wide, tall;
 		GetSize(wide, tall);
-		const float centreX = wide * 0.5f;
-		const float centreY = tall * 0.5f;
+		// Centred on the lens as it moves with the gun, or the screen centre until the optic has calibrated.
+		const float centreX = s_follow.valid ? s_follow.lensScreen.x : wide * 0.5f;
+		const float centreY = s_follow.valid ? s_follow.lensScreen.y : tall * 0.5f;
 		const float radius = data.m_flIronOpticRadius * tall;
 
 		constexpr int SEGMENTS = 64;
