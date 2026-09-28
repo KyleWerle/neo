@@ -71,14 +71,12 @@ WeaponData
 		"up"		"2.65"
 	}
 
-	// The optic's lens is opaque up close; hide it while looking down the sights.
-	"IronsightHideMaterials"	"models/weapons/lenseCompleteMap"
 
-	// Optic: a live magnified view in the lens (cl_neo_ironsight_optic 1), or the full-screen scope (0).
+	// Optic: a live magnified view on the lens (cl_neo_ironsight_optic 1), or the full-screen scope (0).
 	"IronsightOptic"
 	{
 		"fov"		"25"
-		"radius"	"0.14"
+		"lens"		"models/weapons/lenseCompleteMap"
 		"reticle"	"vgui/hud/optics/mx_reticle"
 	}
 

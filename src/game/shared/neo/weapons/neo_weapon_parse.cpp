@@ -31,8 +31,7 @@ CNEOWeaponInfo::CNEOWeaponInfo()
 	m_flIronRecoilMaxDist = m_flIronRecoilMaxAngle = 0.f;
 	m_szIronHideMaterials[0] = 0;
 	m_flIronOpticFov = 0.f;
-	m_flIronOpticRadius = 0.f;
-	m_flIronOpticLensDepth = 0.f;
+	m_szIronOpticLens[0] = 0;
 	m_szIronOpticOverlay[0] = 0;
 	m_szIronOpticReticle[0] = 0;
 	m_vecVMPosOffset = m_vecVMAimPosOffset = m_vecVMIronPosOffset = vec3_origin;
@@ -118,8 +117,7 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 
 	KeyValues* pOptic = pKeyValuesData->FindKey("IronsightOptic");
 	m_flIronOpticFov = pOptic ? pOptic->GetFloat("fov", 15) : 0.f;
-	m_flIronOpticRadius = pOptic ? pOptic->GetFloat("radius", 0.1f) : 0.f;
-	m_flIronOpticLensDepth = pOptic ? pOptic->GetFloat("lens_depth", 0.5f) : 0.f;
+	V_strncpy(m_szIronOpticLens, pOptic ? pOptic->GetString("lens", "") : "", sizeof(m_szIronOpticLens));
 	V_strncpy(m_szIronOpticOverlay, pOptic ? pOptic->GetString("overlay", "vgui/hud/scopes/scope03") : "", sizeof(m_szIronOpticOverlay));
 	V_strncpy(m_szIronOpticReticle, pOptic ? pOptic->GetString("reticle", "") : "", sizeof(m_szIronOpticReticle));
 }

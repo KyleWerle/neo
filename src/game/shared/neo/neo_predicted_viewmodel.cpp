@@ -2,6 +2,9 @@
 #include "neo_predicted_viewmodel.h"
 #include "neo_ironsights.h"
 #include "bone_setup.h"
+#ifdef CLIENT_DLL
+#include "neo/neo_ironsight_optic.h"
+#endif
 
 #include "in_buttons.h"
 #include "neo_gamerules.h"
@@ -299,6 +302,8 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const auto *pWeapon = static_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
 	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
 	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
+	// With a live optic, its view is drawn on the lens (e.g. the MX's).
+	const NeoIronsightOpticLens opticLens(pWeaponData);
 
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 

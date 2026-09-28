@@ -9,10 +9,10 @@
 #include "igamesystem.h"
 #include "hudelement.h"
 #include "iclientmode.h"
-#include "KeyValues.h"
 #include "materialsystem/imaterialsystem.h"
+#include "materialsystem/imaterialvar.h"
+#include "materialsystem/itexture.h"
 #include "materialsystem/MaterialSystemUtil.h"
-#include "VGuiMatSurface/IMatSystemSurface.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Panel.h>
 
@@ -20,7 +20,7 @@
 #include "tier0/memdbgon.h"
 
 ConVar cl_neo_ironsight_optic("cl_neo_ironsight_optic", "1", FCVAR_ARCHIVE,
-	"Optics on the sights: 1 = live magnified view in the lens, 0 = full-screen scope overlay.", true, 0, true, 1);
+	"Optics on the sights: 1 = live magnified view on the lens, 0 = full-screen scope overlay.", true, 0, true, 1);
 
 static constexpr int OPTIC_RT_SIZE = 512;
 static constexpr const char *OPTIC_RT_NAME = "_rt_NeoIronsightOptic";
@@ -69,11 +69,12 @@ static const CNEOWeaponInfo *LocalOpticWeaponData()
 
 NeoIronsightOpticMode NeoGetIronsightOpticMode()
 {
-	if (!LocalOpticWeaponData())
+	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
+	if (!pData)
 	{
 		return NEO_OPTIC_NONE;
 	}
-	if (!cl_neo_ironsight_optic.GetBool())
+	if (!cl_neo_ironsight_optic.GetBool() || !pData->m_szIronOpticLens[0])
 	{
 		return NEO_OPTIC_OVERLAY;
 	}
@@ -83,35 +84,28 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 	return (pViewModel && pViewModel->GetIronsightBlend() >= 0.9f) ? NEO_OPTIC_PIP : NEO_OPTIC_NONE;
 }
 
-// The optic follows the gun: the first moment the gun is settled on the sights (idle, fully aimed), the
-// muzzle attachment's pose relative to the eye is recorded, with the lens at screen centre. After that,
-// each frame's gun movement (mouse sway, bob, idle, recoil) moves the lens picture on screen and turns
-// the optic camera, so the reticle keeps marking where the gun points. Resets when leaving the sights.
+// The optic camera turns with the gun: the first moment the gun is settled on the sights (idle, fully
+// aimed), the muzzle attachment's pose relative to the eye is recorded. After that, the gun's turn from
+// that pose (mouse sway, bob, idle, recoil) turns the optic camera too, so the reticle keeps marking
+// where the gun points. The picture itself sits on the lens mesh, so it moves with the gun exactly.
 struct NeoOpticFollow
 {
 	bool calibrated = false;
 	char weapon[MAX_WEAPON_STRING] = "";
-	matrix3x4_t restGunInEye;	// muzzle attachment in eye space (x forward, y left, z up) at calibration
-	Vector lensInGun;			// lens centre in muzzle space
-	// This frame's result, used by the render and the HUD.
-	bool valid = false;
-	Vector2D lensScreen;		// lens centre in screen pixels
-	QAngle cameraAngles;		// optic camera direction
+	matrix3x4_t restGunInEye;	// muzzle attachment in eye space at calibration
 };
 static NeoOpticFollow s_follow;
 
-static void UpdateOpticFollow(const CViewSetup &mainView, const CNEOWeaponInfo &data)
+static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo &data)
 {
-	s_follow.valid = false;
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
 	C_NEOPredictedViewModel *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
 	Vector gunOrigin;
 	QAngle gunAngles;
-	// Attachment positions come back converted from the viewmodel's FOV into the main view's.
 	if (!pViewModel || !pViewModel->GetAttachment(1, gunOrigin, gunAngles))
 	{
 		s_follow.calibrated = false;
-		return;
+		return mainView.angles;
 	}
 	if (V_strcmp(s_follow.weapon, data.szClassName) != 0)
 	{
@@ -128,41 +122,23 @@ static void UpdateOpticFollow(const CViewSetup &mainView, const CNEOWeaponInfo &
 	if (!s_follow.calibrated)
 	{
 		const int activity = pViewModel->GetSequenceActivity(pViewModel->GetSequence());
-		const bool bSettled = pViewModel->GetIronsightBlend() >= 0.999f && (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY);
-		if (!bSettled)
+		if (pViewModel->GetIronsightBlend() < 0.999f || (activity != ACT_VM_IDLE && activity != ACT_VM_IDLE_EMPTY))
 		{
-			return;
+			return mainView.angles;
 		}
-		// The lens sits on the view axis, part way between the eye and the muzzle.
-		Vector gunInEyeOrigin;
-		MatrixGetColumn(gunInEye, 3, gunInEyeOrigin);
-		const Vector lensInEye(gunInEyeOrigin.x * data.m_flIronOpticLensDepth, 0.0f, 0.0f);
-		matrix3x4_t eyeInGun;
-		MatrixInvert(gunInEye, eyeInGun);
-		VectorTransform(lensInEye, eyeInGun, s_follow.lensInGun);
 		MatrixCopy(gunInEye, s_follow.restGunInEye);
 		s_follow.calibrated = true;
 	}
 
-	// Where the lens is now, projected with the main view (eye space: x forward, y left, z up).
-	Vector lensInEye;
-	VectorTransform(s_follow.lensInGun, gunInEye, lensInEye);
-	if (lensInEye.x <= 1.0f)
-	{
-		return;
-	}
-	const float focal = (mainView.width * 0.5f) / tanf(DEG2RAD(mainView.fov * 0.5f));
-	s_follow.lensScreen.Init(mainView.x + mainView.width * 0.5f - focal * lensInEye.y / lensInEye.x,
-		mainView.y + mainView.height * 0.5f - focal * lensInEye.z / lensInEye.x);
-
-	// The gun's turn since calibration, applied to the eye, aims the optic camera.
+	// The gun's turn since calibration, applied to the eye.
 	matrix3x4_t restInv, turn, cameraToWorld;
 	MatrixInvert(s_follow.restGunInEye, restInv);
 	ConcatTransforms(gunInEye, restInv, turn);
 	MatrixSetColumn(vec3_origin, 3, turn);
 	ConcatTransforms(eyeToWorld, turn, cameraToWorld);
-	MatrixAngles(cameraToWorld, s_follow.cameraAngles);
-	s_follow.valid = true;
+	QAngle cameraAngles;
+	MatrixAngles(cameraToWorld, cameraAngles);
+	return cameraAngles;
 }
 
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
@@ -172,16 +148,11 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
 	{
 		s_follow.calibrated = false;
-		s_follow.valid = false;
 		return;
 	}
-	UpdateOpticFollow(mainView, *pData);
 
 	CViewSetup opticView = mainView;
-	if (s_follow.valid)
-	{
-		opticView.angles = s_follow.cameraAngles;
-	}
+	opticView.angles = OpticCameraAngles(mainView, *pData);
 	opticView.x = 0;
 	opticView.y = 0;
 	opticView.width = OPTIC_RT_SIZE;
@@ -198,7 +169,62 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 }
 
 //-----------------------------------------------------------------------------
-// Draws the optic: the live view as a round picture over the lens with a reticle, or the full-screen overlay.
+// The live view on the lens: for one viewmodel draw, the lens material's base texture becomes the optic
+// render and its detail layer the weapon's reticle.
+//-----------------------------------------------------------------------------
+NeoIronsightOpticLens::NeoIronsightOpticLens(const CNEOWeaponInfo *pData)
+{
+	if (!pData || !pData->m_szIronOpticLens[0] || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
+	{
+		return;
+	}
+	IMaterial *pLens = materials->FindMaterial(pData->m_szIronOpticLens, TEXTURE_GROUP_MODEL, false);
+	if (!pLens || pLens->IsErrorMaterial())
+	{
+		return;
+	}
+	bool bFound = false;
+	m_pBase = pLens->FindVar("$basetexture", &bFound, false);
+	if (!bFound || !m_pBase)
+	{
+		m_pBase = nullptr;
+		return;
+	}
+	m_pOriginalBase = m_pBase->GetTextureValue();
+	m_pBase->SetTextureValue(s_opticSystem.m_texture);
+
+	// The reticle rides on the material's $detail layer (the lens VMT must declare one).
+	m_pDetail = pLens->FindVar("$detail", &bFound, false);
+	IMaterialVar *pBlend = pLens->FindVar("$detailblendfactor", &bFound, false);
+	if (m_pDetail && bFound && pBlend && pData->m_szIronOpticReticle[0])
+	{
+		ITexture *pReticle = materials->FindTexture(pData->m_szIronOpticReticle, TEXTURE_GROUP_VGUI, false);
+		if (pReticle && !pReticle->IsError())
+		{
+			m_pOriginalDetail = m_pDetail->GetTextureValue();
+			m_pDetail->SetTextureValue(pReticle);
+			m_pBlend = pBlend;
+			m_flOriginalBlend = m_pBlend->GetFloatValue();
+			m_pBlend->SetFloatValue(1.0f);
+		}
+	}
+}
+
+NeoIronsightOpticLens::~NeoIronsightOpticLens()
+{
+	if (m_pBlend)
+	{
+		m_pBlend->SetFloatValue(m_flOriginalBlend);
+		m_pDetail->SetTextureValue(m_pOriginalDetail);
+	}
+	if (m_pBase)
+	{
+		m_pBase->SetTextureValue(m_pOriginalBase);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// The full-screen scope overlay (cl_neo_ironsight_optic 0), with the gun hidden.
 //-----------------------------------------------------------------------------
 class CNeoHudIronsightOptic : public CHudElement, public vgui::Panel
 {
@@ -214,7 +240,7 @@ public:
 
 	bool ShouldDraw() override
 	{
-		return NeoGetIronsightOpticMode() != NEO_OPTIC_NONE && CHudElement::ShouldDraw();
+		return NeoGetIronsightOpticMode() == NEO_OPTIC_OVERLAY && CHudElement::ShouldDraw();
 	}
 
 protected:
@@ -231,6 +257,8 @@ protected:
 		FillScreen();
 	}
 
+	// Sized exactly as the scoped rifles size their scope in hud_crosshair.cpp, so the lens stays
+	// round: scope03's lens area is 960x720 texels, stretched back to a circle.
 	void Paint() override
 	{
 		const CNEOWeaponInfo *pData = LocalOpticWeaponData();
@@ -238,47 +266,17 @@ protected:
 		{
 			return;
 		}
-		if (NeoGetIronsightOpticMode() == NEO_OPTIC_OVERLAY)
+		if (m_texture < 0)
 		{
-			PaintOverlay(*pData);
+			m_texture = vgui::surface()->CreateNewTextureID();
 		}
-		else
+		if (V_strcmp(m_szTextureFile, pData->m_szIronOpticOverlay) != 0)
 		{
-			PaintPictureInPicture(*pData);
+			vgui::surface()->DrawSetTextureFile(m_texture, pData->m_szIronOpticOverlay, true, false);
+			V_strncpy(m_szTextureFile, pData->m_szIronOpticOverlay, sizeof(m_szTextureFile));
 		}
-	}
-
-private:
-	void FillScreen()
-	{
-		int wide, tall;
-		vgui::surface()->GetScreenSize(wide, tall);
-		SetBounds(0, 0, wide, tall);
-	}
-
-	// A texture id for a file, reusing one id and re-pointing it when the file changes.
-	static int FileTexture(int &id, char (&current)[MAX_WEAPON_STRING], const char *pszFile)
-	{
-		if (id < 0)
-		{
-			id = vgui::surface()->CreateNewTextureID();
-			current[0] = 0;
-		}
-		if (V_strcmp(current, pszFile) != 0)
-		{
-			vgui::surface()->DrawSetTextureFile(id, pszFile, true, false);
-			V_strncpy(current, pszFile, sizeof(current));
-		}
-		return id;
-	}
-
-	// Full-screen scope, sized exactly as the scoped rifles size theirs in hud_crosshair.cpp, so the
-	// lens stays round: scope03's lens area is 960x720 texels, stretched back to a circle.
-	void PaintOverlay(const CNEOWeaponInfo &data)
-	{
-		const int texture = FileTexture(m_overlayTexture, m_szOverlayFile, data.m_szIronOpticOverlay);
 		int texWide = 0, texTall = 0;
-		vgui::surface()->DrawGetTextureSize(texture, texWide, texTall);
+		vgui::surface()->DrawGetTextureSize(m_texture, texWide, texTall);
 		int wide, tall;
 		GetSize(wide, tall);
 		if (texWide <= 0 || texTall <= 0)
@@ -310,70 +308,20 @@ private:
 		vgui::surface()->DrawFilledRect(x0, y0 + scopeTall, x0 + scopeWide, tall);
 
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
-		vgui::surface()->DrawSetTexture(texture);
+		vgui::surface()->DrawSetTexture(m_texture);
 		vgui::surface()->DrawTexturedRect(x0, y0, x0 + scopeWide, y0 + scopeTall);
 	}
 
-	// The live view as a circle at screen centre (where the lens sits on the sights), then the reticle.
-	void PaintPictureInPicture(const CNEOWeaponInfo &data)
+private:
+	void FillScreen()
 	{
-		if (m_liveTexture < 0)
-		{
-			KeyValues *pVMT = new KeyValues("UnlitGeneric");
-			pVMT->SetString("$basetexture", OPTIC_RT_NAME);
-			pVMT->SetInt("$vertexcolor", 1);
-			m_liveMaterial.Init("__neo_ironsight_optic", TEXTURE_GROUP_OTHER, pVMT);
-			m_liveTexture = vgui::surface()->CreateNewTextureID(true);
-			g_pMatSystemSurface->DrawSetTextureMaterial(m_liveTexture, m_liveMaterial);
-		}
-
 		int wide, tall;
-		GetSize(wide, tall);
-		// Centred on the lens as it moves with the gun, or the screen centre until the optic has calibrated.
-		const float centreX = s_follow.valid ? s_follow.lensScreen.x : wide * 0.5f;
-		const float centreY = s_follow.valid ? s_follow.lensScreen.y : tall * 0.5f;
-		const float radius = data.m_flIronOpticRadius * tall;
-		// The live picture stops short of the lens edge, inside the reticle's opaque rim, so no view
-		// peeks past the rim's soft (filtered, cut-out) outermost pixels as the lens moves.
-		const float liveRadius = radius * 0.96f;
-
-		constexpr int SEGMENTS = 64;
-		vgui::Vertex_t circle[SEGMENTS];
-		for (int i = 0; i < SEGMENTS; ++i)
-		{
-			const float angle = 2.0f * M_PI_F * i / SEGMENTS;
-			const float c = cosf(angle), s = sinf(angle);
-			circle[i].Init(Vector2D(centreX + liveRadius * c, centreY + liveRadius * s),
-				Vector2D(0.5f + 0.48f * c, 0.5f + 0.48f * s));
-		}
-		vgui::surface()->DrawSetColor(255, 255, 255, 255);
-		vgui::surface()->DrawSetTexture(m_liveTexture);
-		vgui::surface()->DrawTexturedPolygon(SEGMENTS, circle);
-
-		const int x0 = RoundFloatToInt(centreX - radius), y0 = RoundFloatToInt(centreY - radius);
-		const int x1 = RoundFloatToInt(centreX + radius), y1 = RoundFloatToInt(centreY + radius);
-		if (data.m_szIronOpticReticle[0])
-		{
-			vgui::surface()->DrawSetTexture(FileTexture(m_reticleTexture, m_szReticleFile, data.m_szIronOpticReticle));
-			vgui::surface()->DrawTexturedRect(x0, y0, x1, y1);
-		}
-		else
-		{
-			// Default reticle: a lens rim and a small red dot.
-			vgui::surface()->DrawSetColor(0, 0, 0, 255);
-			vgui::surface()->DrawOutlinedCircle(RoundFloatToInt(centreX), RoundFloatToInt(centreY), RoundFloatToInt(radius), SEGMENTS);
-			vgui::surface()->DrawSetColor(255, 40, 40, 255);
-			vgui::surface()->DrawFilledRect(RoundFloatToInt(centreX) - 1, RoundFloatToInt(centreY) - 1,
-				RoundFloatToInt(centreX) + 2, RoundFloatToInt(centreY) + 2);
-		}
+		vgui::surface()->GetScreenSize(wide, tall);
+		SetBounds(0, 0, wide, tall);
 	}
 
-	int m_overlayTexture = -1;
-	char m_szOverlayFile[MAX_WEAPON_STRING] = "";
-	int m_reticleTexture = -1;
-	char m_szReticleFile[MAX_WEAPON_STRING] = "";
-	int m_liveTexture = -1;
-	CMaterialReference m_liveMaterial;
+	int m_texture = -1;
+	char m_szTextureFile[MAX_WEAPON_STRING] = "";
 };
 
 DECLARE_HUDELEMENT(CNeoHudIronsightOptic);
