@@ -1666,6 +1666,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_optic.h
     neo/neo_ironsight_optic_disc.cpp
     neo/neo_ironsight_optic_disc.h
+    neo/neo_spread_pivot.cpp
+    neo/neo_spread_pivot.h
     neo/neo_ironsight_profile.cpp
     neo/neo_ironsight_sight_ghost.cpp
     neo/neo_ironsight_sight_ghost.h

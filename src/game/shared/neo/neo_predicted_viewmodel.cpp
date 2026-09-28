@@ -6,6 +6,7 @@
 #include "neo/neo_ironsight_optic.h"
 #include "neo/neo_ironsight_optic_disc.h"
 #include "neo/neo_ironsight_dots.h"
+#include "neo/neo_spread_pivot.h"
 #endif
 
 #include "in_buttons.h"
@@ -749,6 +750,8 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 		QAngle angles = pOwner->EyeAngles();
 		newAng.z += cl_righthand.GetBool() ? angles.z : -angles.z;
 	}
+	// Turned toward where its bullets go (cl_neo_spread_pivot).
+	NeoSpreadPivotApply(weapon, pOwner, newAng);
 #endif
 
 	BaseClass::CalcViewModelView(pOwner, newPos, newAng);
