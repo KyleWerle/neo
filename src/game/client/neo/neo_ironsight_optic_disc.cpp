@@ -1,7 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_optic_disc.h"
 #include "neo_ironsight_lens.h"
-#include "neo_ironsight_optic_gyro.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
 #include "c_neo_player.h"
@@ -31,9 +30,9 @@ static float s_flNextDebugPrint = 0.0f;
 // fading out towards the rim to blend into the cloaked gun; the thermal override does the same, and there
 // the optic is drawn whole. Disc lenses ("lens_disc") are drawn this way cloaked or not, fading in over
 // their own lens on the sights; sight glass ("window") only while cloaked or in thermals. "one_pane" glass,
-// hidden on the gun, always gets its reticle drawn here, on the pane nearer the eye; so does "gyro" glass,
-// its reticle kept level with the horizon (neo_ironsight_optic_gyro.cpp).
-// (A glitchy pixelated view off the sights was tried and parked: branch optic-glitch.)
+// hidden on the gun, always gets its reticle drawn here, on the pane nearer the eye.
+// (Parked experiments: a glitchy pixelated view off the sights, branch optic-glitch; a gyro-levelled
+// reticle, branch optic-gyro.)
 //-----------------------------------------------------------------------------
 static IMaterial *LiveViewMaterial()
 {
@@ -75,15 +74,6 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 	const Vector lookUp = CrossProduct(lookRight, lookForward);
 	const float lensRadius = pane.u.Length() * circle.z;
 	const float tanRadius = lensRadius / sqrtf(Max(lensDistance * lensDistance - lensRadius * lensRadius, 0.0001f));
-	// A gyro reticle is laid out the same way, turned by the gyro's roll instead of the lens's.
-	const bool bGyro = !bLiveView && data.m_bIronOpticGyro;
-	float gyroCos = 1.0f, gyroSin = 0.0f;
-	if (bGyro)
-	{
-		const float roll = NeoIronsightGyroRoll(data, atan2f(DotProduct(pane.u, lookUp), DotProduct(pane.u, lookRight)));
-		gyroCos = cosf(roll);
-		gyroSin = sinf(roll);
-	}
 	const auto alphaAt = [&](float fraction) {
 		const float fade = NeoSmoothStep((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f));
 		return static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - fade));
@@ -114,17 +104,6 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 			const float depth = Max(DotProduct(ray, lookForward), 0.001f);
 			texU = 0.5f + 0.5f * (DotProduct(ray, lookRight) / depth) / tanRadius;
 			texV = 0.5f - 0.5f * (DotProduct(ray, lookUp) / depth) / tanRadius;
-		}
-		else if (bGyro)
-		{
-			// Where this point sits on screen around the lens centre, turned back by the reticle's roll: the
-			// point of the lens art shown here.
-			const Vector ray = world - eye;
-			const float depth = Max(DotProduct(ray, lookForward), 0.001f);
-			const float screenX = (DotProduct(ray, lookRight) / depth) / tanRadius;
-			const float screenY = (DotProduct(ray, lookUp) / depth) / tanRadius;
-			texU = circle.x + circle.z * (gyroCos * screenX + gyroSin * screenY);
-			texV = circle.y - data.m_flIronOpticLensRadiusV * (gyroCos * screenY - gyroSin * screenX);
 		}
 		// Lifted a hair toward the eye so it sits on the lens rather than in it.
 		Vector lift = eye - world;
@@ -217,7 +196,7 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 	// One-pane glass (hidden on the gun while ironsights apply) shows its reticle whatever happens to the
 	// view behind it.
 	state.bReticle = state.pReticle && (state.bLiveView
-		|| ((data.m_bIronOpticOnePane || data.m_bIronOpticGyro) && NeoIronsightsActive(data)));
+		|| (data.m_bIronOpticOnePane && NeoIronsightsActive(data)));
 	if (cl_neo_ironsight_optic_debug.GetBool() && gpGlobals->realtime >= s_flNextDebugPrint)
 	{
 		s_flNextDebugPrint = gpGlobals->realtime + 1.0f;

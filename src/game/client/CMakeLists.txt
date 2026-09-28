@@ -1665,8 +1665,6 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_optic.h
     neo/neo_ironsight_optic_disc.cpp
     neo/neo_ironsight_optic_disc.h
-    neo/neo_ironsight_optic_gyro.cpp
-    neo/neo_ironsight_optic_gyro.h
     neo/ui/neo_hud_damage_indicator.cpp
     neo/ui/neo_hud_deathnotice.cpp
     neo/ui/neo_hud_friendly_marker.cpp

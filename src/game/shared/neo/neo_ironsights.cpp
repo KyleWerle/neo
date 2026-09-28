@@ -401,8 +401,8 @@ bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool b
 	return NeoIronsightsActive(data) && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
 }
 
-// The weapon's materials to hide, found by name only when the weapon changes: its lens (for one-pane and
-// gyro glass) and its "IronsightHideMaterials".
+// The weapon's materials to hide, found by name only when the weapon changes: its lens (for one-pane
+// glass) and its "IronsightHideMaterials".
 static constexpr int MAX_HIDDEN_ON_SIGHTS = 8;
 static struct
 {
@@ -445,8 +445,8 @@ NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *p
 		return;
 	}
 	FindHiddenMaterials(*pData);
-	// Glass drawn as one pane, or levelled by the gyro, by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
-	if (pData->m_bIronOpticOnePane || pData->m_bIronOpticGyro)
+	// Glass drawn as one pane by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
+	if (pData->m_bIronOpticOnePane)
 	{
 		Hide(s_hidden.pLens);
 	}
