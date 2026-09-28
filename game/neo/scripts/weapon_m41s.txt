@@ -81,8 +81,8 @@ WeaponData
 	// Tune in game with the numpad (see SourceDev/TUNING.md).
 	"IronsightDots"
 	{
-		"size"		"0.13"
-		"front"		"73.209 0"
+		"size"		"0.17"
+		"front"		"63.709 0"
 		"rear"		"26.605 0 1.331"
 	}
 
