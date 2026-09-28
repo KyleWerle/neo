@@ -66,12 +66,17 @@ C_NEO_Player *NeoIronsightOpticViewPlayer()
 	return pLocal;
 }
 
-// The viewed player's active weapon data, if it has an optic and ironsights apply to it.
+bool NeoIronsightInThermals(const C_NEO_Player *pPlayer)
+{
+	return pPlayer && pPlayer->GetClass() == NEO_CLASS_SUPPORT && pPlayer->IsInVision();
+}
+
 ITexture *NeoIronsightOpticTexture()
 {
 	return s_opticSystem.m_texture.IsValid() ? static_cast<ITexture *>(s_opticSystem.m_texture) : nullptr;
 }
 
+// The viewed player's active weapon data, if it has an optic and ironsights apply to it.
 static const CNEOWeaponInfo *LocalOpticWeaponData()
 {
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
@@ -97,9 +102,10 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 	}
 	if (pData->m_bIronOpticWindow)
 	{
-		// Sight glass needs the view only while cloaked; it never becomes a full-screen scope.
+		// Sight glass needs the view only while the gun is drawn over (cloak or thermals); it never becomes
+		// a full-screen scope.
 		C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
-		return (pPlayer && pPlayer->IsCloaked()) ? NEO_OPTIC_PIP : NEO_OPTIC_NONE;
+		return (pPlayer && (pPlayer->IsCloaked() || NeoIronsightInThermals(pPlayer))) ? NEO_OPTIC_PIP : NEO_OPTIC_NONE;
 	}
 	if (!cl_neo_ironsight_optic.GetBool() || !pData->m_szIronOpticLens[0])
 	{
@@ -171,21 +177,21 @@ static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo
 	return cameraAngles;
 }
 
-// The optic's field of view. With a "magnification" and the lens surface known, it comes from how big
-// the lens looks on screen right now: at 1x the picture matches the world around the lens exactly (like
-// empty glass), at 3x everything in it is three times larger, whatever the lens size, sight tuning or
-// viewmodel FOV. Otherwise the script's fixed "fov".
-static float OpticFov(const CViewSetup &mainView, const CNEOWeaponInfo &data)
+// Where the lens appears from the eye: the direction to its centre in eye space and the tangent of its
+// half-angle, both as seen on screen in the main view's terms (the viewmodel is drawn with its own FOV).
+static bool LensOnScreen(const CViewSetup &mainView, const CNEOWeaponInfo &data, Vector &dirInEye, float &tanHalf)
 {
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
 	C_BaseAnimating *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
 	const int bone = (pViewModel && data.m_bHasIronOpticLensMap) ? pViewModel->LookupBone(data.m_szIronOpticLensBone) : -1;
-	if (data.m_flIronOpticMagnification <= 0.0f || bone < 0)
+	if (bone < 0)
 	{
-		return data.m_flIronOpticFov;
+		return false;
 	}
 	matrix3x4_t lensToWorld;
-	pViewModel->GetBoneTransform(bone, lensToWorld);
+	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, and lens bones that are not
+	// (the MX-S's sight_glass) would come back as the viewmodel's origin.
+	MatrixCopy(pViewModel->GetBone(bone), lensToWorld);
 	const Vector &circle = data.m_vecIronOpticLensCircle;
 	Vector centre;
 	VectorTransform(data.m_vecIronOpticLensOrigin + data.m_vecIronOpticLensU * circle.x + data.m_vecIronOpticLensV * circle.y, lensToWorld, centre);
@@ -193,12 +199,60 @@ static float OpticFov(const CViewSetup &mainView, const CNEOWeaponInfo &data)
 	const float distance = (centre - mainView.origin).Length();
 	if (distance <= radius)
 	{
-		return data.m_flIronOpticFov;
+		return false;
 	}
-	// The lens's half-angle as drawn with the viewmodel FOV, converted to the main view's.
-	const float tanViewmodel = radius / sqrtf(distance * distance - radius * radius);
-	const float tanMain = tanViewmodel * tanf(DEG2RAD(mainView.fov * 0.5f)) / tanf(DEG2RAD(mainView.fovViewmodel * 0.5f));
-	return RAD2DEG(2.0f * atanf(tanMain / data.m_flIronOpticMagnification));
+	const float fovScale = tanf(DEG2RAD(mainView.fov * 0.5f)) / tanf(DEG2RAD(mainView.fovViewmodel * 0.5f));
+	matrix3x4_t eyeToWorld, worldToEye;
+	AngleMatrix(mainView.angles, mainView.origin, eyeToWorld);
+	MatrixInvert(eyeToWorld, worldToEye);
+	Vector eye;
+	VectorTransform(centre, worldToEye, eye);
+	dirInEye.Init(eye.x, eye.y * fovScale, eye.z * fovScale);
+	tanHalf = fovScale * radius / sqrtf(distance * distance - radius * radius);
+	return true;
+}
+
+// The optic's view. With a "magnification" and the lens surface known, its field of view comes from how
+// big the lens looks on screen right now: at 1x the picture matches the world around the lens exactly
+// (like empty glass), at 3x everything in it is three times larger, whatever the lens size, sight tuning
+// or viewmodel FOV. Otherwise the script's fixed "fov". Disc lenses (the Jitte's) are plain glass at the
+// hip: 1x, looking from the eye through the lens, so cloaking there doesn't change what it shows; coming
+// onto the sights they turn into the gun-following magnified view.
+static void OpticView(const CViewSetup &mainView, const CNEOWeaponInfo &data, QAngle &angles, float &fov)
+{
+	angles = OpticCameraAngles(mainView, data);
+	fov = data.m_flIronOpticFov;
+	Vector dirInEye;
+	float tanHalf;
+	if (data.m_flIronOpticMagnification <= 0.0f || !LensOnScreen(mainView, data, dirInEye, tanHalf))
+	{
+		return;
+	}
+	float aim = 1.0f;
+	if (data.m_bIronOpticLensDisc)
+	{
+		C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
+		C_NEOPredictedViewModel *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
+		aim = pViewModel ? pViewModel->GetIronsightBlend() : 1.0f;
+	}
+	fov = RAD2DEG(2.0f * atanf(tanHalf / Lerp(aim, 1.0f, data.m_flIronOpticMagnification)));
+	if (aim >= 1.0f)
+	{
+		return;
+	}
+	// At the hip, along the eye's line through the lens, upright like the eye.
+	QAngle throughInEye, through;
+	VectorAngles(dirInEye, Vector(0.0f, 0.0f, 1.0f), throughInEye);
+	matrix3x4_t eyeToWorld, throughToEye, throughToWorld;
+	AngleMatrix(mainView.angles, eyeToWorld);
+	AngleMatrix(throughInEye, throughToEye);
+	ConcatTransforms(eyeToWorld, throughToEye, throughToWorld);
+	MatrixAngles(throughToWorld, through);
+	Quaternion hip, sights, blended;
+	AngleQuaternion(through, hip);
+	AngleQuaternion(angles, sights);
+	QuaternionSlerp(hip, sights, aim, blended);
+	QuaternionAngles(blended, angles);
 }
 
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
@@ -220,8 +274,7 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	}
 	else
 	{
-		opticView.angles = OpticCameraAngles(mainView, *pData);
-		opticView.fov = OpticFov(mainView, *pData);
+		OpticView(mainView, *pData, opticView.angles, opticView.fov);
 	}
 	opticView.x = 0;
 	opticView.y = 0;
@@ -231,6 +284,13 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	opticView.m_bOrtho = false;
 	opticView.m_bViewToProjectionOverride = false;
 
+	// The main view's exposure: the end of the last frame reset the HDR tone mapping scale to 1, and without
+	// it the optic's picture is brighter or darker than the world around the glass (in thermals, where
+	// brightness becomes colour, a solid patch).
+	{
+		CMatRenderContextPtr pRenderContext(materials);
+		pRenderContext->TurnOnToneMapping();
+	}
 	Frustum frustum;
 	render->Push3DView(opticView, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, s_opticSystem.m_texture, (VPlane *)frustum);
 	ViewDrawScene(false, SKYBOX_2DSKYBOX_VISIBLE, opticView, 0, VIEW_MONITOR);

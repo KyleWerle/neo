@@ -395,28 +395,43 @@ CON_COMMAND(cl_neo_ironsight_restinfo, "Print the gun's position across the acti
 #endif // CLIENT_DLL
 
 #ifdef CLIENT_DLL
-bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked, bool bHasCloakedAimAid)
+bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked)
 {
-	return cl_neo_ironsights.GetBool() && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
+	const bool bHasCloakedAimAid = data.m_bHasIronDots || data.m_flIronOpticFov > 0.0f;
+	return NeoIronsightsActive(data) && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
 }
 
 NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *pData, float ironsightBlend)
 {
-	// Hide once the gun is most of the way onto the sights.
-	if (!pData || ironsightBlend < 0.5f || !NeoIronsightsActive(*pData) || !pData->m_szIronHideMaterials[0])
+	if (!pData || !NeoIronsightsActive(*pData))
+	{
+		return;
+	}
+	// Glass drawn as one pane by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
+	if (pData->m_bIronOpticOnePane)
+	{
+		Hide(pData->m_szIronOpticLens);
+	}
+	// The listed materials once the gun is most of the way onto the sights.
+	if (ironsightBlend < 0.5f || !pData->m_szIronHideMaterials[0])
 	{
 		return;
 	}
 	CUtlStringList names;
 	V_SplitString(pData->m_szIronHideMaterials, ";", names);
-	for (int i = 0; i < names.Count() && m_count < MAX_MATERIALS; ++i)
+	for (int i = 0; i < names.Count(); ++i)
 	{
-		IMaterial *pMaterial = materials->FindMaterial(names[i], TEXTURE_GROUP_MODEL, false);
-		if (pMaterial && !pMaterial->IsErrorMaterial() && !pMaterial->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW))
-		{
-			pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
-			m_materials[m_count++] = pMaterial;
-		}
+		Hide(names[i]);
+	}
+}
+
+void NeoIronsightHiddenMaterials::Hide(const char *pName)
+{
+	IMaterial *pMaterial = m_count < MAX_MATERIALS ? materials->FindMaterial(pName, TEXTURE_GROUP_MODEL, false) : nullptr;
+	if (pMaterial && !pMaterial->IsErrorMaterial() && !pMaterial->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW))
+	{
+		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
+		m_materials[m_count++] = pMaterial;
 	}
 }
 

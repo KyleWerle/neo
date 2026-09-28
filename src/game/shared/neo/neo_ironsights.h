@@ -71,19 +71,21 @@ void NeoIronsightDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 #ifdef CLIENT_DLL
 class IMaterial;
 
-// True when crosshairs should be hidden: ironsights are on and the debug crosshair is off. Aiming
-// while cloaked keeps it, since the cloaked viewmodel's sights are hard to see, unless the weapon has its
-// own aiming aid that stays visible while cloaked (glowing sight dots or an optic).
-bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked, bool bHasCloakedAimAid);
+// True when crosshairs should be hidden: ironsights are on for this weapon and the debug crosshair is off.
+// Aiming while cloaked keeps it, since the cloaked viewmodel's sights are hard to see, unless the weapon
+// has its own aiming aid that stays visible while cloaked (glowing sight dots or an optic).
+bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked);
 
 // Hides the weapon's "IronsightHideMaterials" (e.g. an optic's lens) for its lifetime while the gun
-// is on the sights. Wrap the viewmodel draw in one; the materials are restored when it goes out of scope.
+// is on the sights, and "one_pane" glass always. Wrap the viewmodel draw in one; the materials are
+// restored when it goes out of scope.
 class NeoIronsightHiddenMaterials
 {
 public:
 	NeoIronsightHiddenMaterials(const CNEOWeaponInfo *pData, float ironsightBlend);
 	~NeoIronsightHiddenMaterials();
 private:
+	void Hide(const char *pName);
 	static constexpr int MAX_MATERIALS = 8;
 	IMaterial *m_materials[MAX_MATERIALS];
 	int m_count = 0;

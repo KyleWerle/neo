@@ -22,3 +22,18 @@ ITexture *NeoIronsightOpticTexture();
 // cover the glass, remembering the projection so the glass can look up exactly what lies behind each
 // of its points. False if the glass is not in front of the eye.
 bool NeoIronsightWindowCamera(const CViewSetup &mainView, const CNEOWeaponInfo &data, QAngle &angles, float &fov);
+
+class C_BaseAnimating;
+
+// Sight glass ("window") while the gun is drawn over (cloak, thermals): the clear view is drawn now, and
+// the gun must then be drawn once per slice, with that slice's clip planes pushed (PushCustomClipPlane), so
+// the gun behind the glass shows through it and the panes themselves are left out. Then draw the reticle
+// (NeoIronsightDrawOpticDisc with NEO_LENS_RETICLE). False when this doesn't apply: draw as usual.
+struct NeoIronsightGlassSplit
+{
+	int slices = 0;
+	int planeCount[3] = {};
+	float planes[3][2][4] = {};
+};
+bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
+	NeoIronsightGlassSplit &split);

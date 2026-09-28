@@ -99,7 +99,9 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	}
 
 	m_bHasIronsight = false;
-	if (KeyValues* pIronOffset = pKeyValuesData->FindKey("AimOffset"))
+	// "IronsightDisabled" keeps a weapon on the classic zoom pose (and its crosshair) with ironsights on.
+	KeyValues* pIronOffset = pKeyValuesData->GetBool("IronsightDisabled") ? nullptr : pKeyValuesData->FindKey("AimOffset");
+	if (pIronOffset)
 	{
 		m_bHasIronsight = true;
 		m_flVMIronFov = pIronOffset->GetFloat("fov", 55);
@@ -153,6 +155,7 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	}
 	m_bIronOpticWindow = pOptic && pOptic->GetBool("window") && m_bHasIronOpticLensMap;
 	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
+	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;

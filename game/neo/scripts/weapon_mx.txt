@@ -80,9 +80,12 @@ WeaponData
 	{
 		"magnification"	"2"		// zoom relative to the lens on screen; 1 = like empty glass
 		"fov"		"25"		// only used if the lens surface is unknown
+		// The lens material is shared with the ZR68L, so it stays untouched: the live view is drawn over it
+		// as a disc, plain glass at the hip and magnified on the sights, with the reticle on top.
 		"lens"		"models/weapons/lenseCompleteMap"
+		"lens_disc"	"1"
 		"reticle"	"vgui/hud/optics/mx_reticle"
-		// The lens surface on Box01 (from v_*_mx.mdl), used to draw the optic while cloaked.
+		// The lens surface on Box01 (from v_*_mx.mdl).
 		"lens_bone"	"Box01"
 		"lens_map"	"0.846 0.1934 12.63  -1.6943 0 0  0 0 -1.6943"
 	}

@@ -73,7 +73,7 @@ WeaponData
 
 	"IronsightOptic"
 	{
-		"magnification"	"1.5"		// zoom relative to the lens on screen; 1 = like empty glass
+		"magnification"	"1"		// zoom relative to the lens on screen; 1 = like empty glass
 		"fov"		"30"		// only used if the lens surface is unknown
 		// The Jitte's lens is a square mesh with a round picture, shared with the unscoped model. It stays
 		// untouched: at the hip it shows as it is; on the sights the live view fades in over it as a disc,

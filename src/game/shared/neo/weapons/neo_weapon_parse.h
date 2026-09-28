@@ -83,6 +83,9 @@ public:
 	// "window": clear sight glass (red dots, holo sights). Only while cloaked, the glass shows the world
 	// behind it exactly (no zoom), so the cloak doesn't smear the view, with the glass's own texture on top.
 	bool	m_bIronOpticWindow;
+	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
+	// is hidden and its reticle drawn once, on the pane nearer the eye, so the art doesn't show twice.
+	bool	m_bIronOpticOnePane;
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 

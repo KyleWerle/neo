@@ -72,6 +72,20 @@ WeaponData
 		"up"		"2.59"
 	}
 
+	"IronsightOptic"
+	{
+		// Clear sight glass: only in thermals (or cloaked), it shows exactly the world behind it (no zoom)
+		// instead of the thermal gun's opaque glass, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/pz_reticle"
+		// The glass on PZ (from v_*_pz.mdl, material pz_sight2), and the clear part of it in its UVs
+		// (a rectangle with its top corners rounded).
+		"lens_bone"	"PZ"
+		"lens_map"	"5.195 -1.034 12.81  -10.93 0 0  0 0 -10.96"
+		"lens_circle"	"0.603 0.181 0.17 0.1"
+		"lens_shape"	"8"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{

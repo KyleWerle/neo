@@ -77,6 +77,24 @@ WeaponData
 		"roll"		"0"
 	}
 
+	"IronsightOptic"
+	{
+		// Clear red dot glass: only while cloaked or in thermals, it shows exactly the world behind it (no
+		// zoom), with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/m41_reticle"
+		// The glass has two panes that both carry the chevron: hide it and draw the chevron once.
+		"lens"		"models/weapons/mosok41_mat3"
+		"one_pane"	"1"
+		// The glass on Mosok41 (from v_*_mosok41.mdl) and its second pane, and the clear part of it in its
+		// UVs (a rectangle with its top corners cut).
+		"lens_bone"	"Mosok41"
+		"lens_map"	"0.756 -15.976 10.134  -3.266 0 0  0 0 -3.266"
+		"lens_map2"	"0.756 -16.245 10.139  -3.266 0 0  0 0 -3.266"
+		"lens_circle"	"0.5125 0.501 0.42 0.46"
+		"lens_shape"	"3"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{

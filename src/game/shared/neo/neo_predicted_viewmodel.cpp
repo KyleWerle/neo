@@ -4,6 +4,7 @@
 #include "bone_setup.h"
 #ifdef CLIENT_DLL
 #include "neo/neo_ironsight_optic.h"
+#include "neo/neo_ironsight_optic_disc.h"
 #include "neo/neo_ironsight_dots.h"
 #endif
 
@@ -306,15 +307,43 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	// With a live optic, its view is drawn on the lens (e.g. the MX's).
 	const NeoIronsightOpticLens opticLens(pWeaponData);
 
+	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
+	const bool bOverlays = pWeaponData && pPlayer && (flags & STUDIO_RENDER);
+	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
+	const bool bThermal = NeoIronsightInThermals(pPlayer);
+
+	// Clear sight glass over the cloaked or thermal gun: the view first, then the gun in slices around the
+	// glass, so the gun behind the glass shows through it.
+	NeoIronsightGlassSplit split;
+	if (bOverlays && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
+	{
+		int ret = 0;
+		CMatRenderContextPtr pRenderContext(materials);
+		for (int slice = 0; slice < split.slices; ++slice)
+		{
+			for (int i = 0; i < split.planeCount[slice]; ++i)
+			{
+				pRenderContext->PushCustomClipPlane(split.planes[slice][i]);
+			}
+			ret = Max(ret, DrawGun(flags));
+			for (int i = 0; i < split.planeCount[slice]; ++i)
+			{
+				pRenderContext->PopCustomClipPlane();
+			}
+		}
+		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
+		NeoIronsightDrawDots(this, *pWeaponData, bCloaked);
+		return ret;
+	}
+
 	const int ret = DrawGun(flags);
 
-	// On top of the gun, both pinned to it: the optic as a disc when cloaked (the cloak override took the
-	// lens with it) or for disc lenses and sight glass; and the glowing sight dots.
-	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
-	if (ret && pWeaponData && pPlayer && (flags & STUDIO_RENDER))
+	// On top of the gun, both pinned to it: the optic as a disc when cloaked or in thermals (the override
+	// took the lens with it) or for disc lenses and sight glass; and the glowing sight dots.
+	if (ret && bOverlays)
 	{
-		NeoIronsightDrawOpticDisc(this, *pWeaponData, pPlayer->IsCloaked(), m_flIronsightBlend);
-		NeoIronsightDrawDots(this, *pWeaponData, pPlayer->IsCloaked());
+		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
+		NeoIronsightDrawDots(this, *pWeaponData, bCloaked);
 	}
 	return ret;
 }

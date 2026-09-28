@@ -43,8 +43,22 @@ private:
 };
 
 class C_BaseAnimating;
+class C_NEO_Player;
+// True while this player sees in thermals (a support in vision mode): their gun is drawn with the opaque
+// thermal material then, which covers the lens just as the cloak does.
+bool NeoIronsightInThermals(const C_NEO_Player *pPlayer);
+
 // Draws the live optic and reticle as a disc on the lens surface (the weapon's "lens_map" and
 // "lens_circle"). Call after the gun. While cloaked it fades out towards the rim, since the cloak
-// override replaces the lens material. With "lens_disc" it is drawn uncloaked too, fading in over the
-// lens as the gun comes onto the sights (ironsightBlend), so the hip shows the lens as it is.
-void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend);
+// override replaces the lens material; in thermals (bThermal) it is drawn whole over the thermal gun, and
+// the thermal filter later colours it like the rest of the screen. With "lens_disc" it is drawn uncloaked
+// too, fading in over the lens as the gun comes onto the sights (ironsightBlend), so the hip shows the
+// lens as it is; cloaked it shows at the hip as well. "one_pane" glass gets its reticle drawn here always.
+enum NeoIronsightLensPart
+{
+	NEO_LENS_ALL,		// the view, then the reticle
+	NEO_LENS_VIEW,
+	NEO_LENS_RETICLE,
+};
+void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
+	float ironsightBlend, NeoIronsightLensPart part = NEO_LENS_ALL);
