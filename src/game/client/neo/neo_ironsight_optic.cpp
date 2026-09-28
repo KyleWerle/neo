@@ -183,18 +183,46 @@ private:
 		return id;
 	}
 
-	// Full-screen scope: a square texture at full height, black bars at the sides.
+	// Full-screen scope, sized exactly as the scoped rifles size theirs in hud_crosshair.cpp, so the
+	// lens stays round: scope03's lens area is 960x720 texels, stretched back to a circle.
 	void PaintOverlay(const CNEOWeaponInfo &data)
 	{
+		const int texture = FileTexture(m_overlayTexture, m_szOverlayFile, data.m_szIronOpticOverlay);
+		int texWide = 0, texTall = 0;
+		vgui::surface()->DrawGetTextureSize(texture, texWide, texTall);
 		int wide, tall;
 		GetSize(wide, tall);
-		const int left = (wide - tall) / 2;
-		vgui::surface()->DrawSetColor(0, 0, 0, 255);
-		vgui::surface()->DrawFilledRect(0, 0, left, tall);
-		vgui::surface()->DrawFilledRect(left + tall, 0, wide, tall);
+		if (texWide <= 0 || texTall <= 0)
+		{
+			return;
+		}
+
+		float scaleX = static_cast<float>(wide) / texWide;
+		float scaleY = static_cast<float>(tall) / texTall;
+		static ConVarRef cl_neo_scope_restrict_to_rectangle("cl_neo_scope_restrict_to_rectangle");
+		if (cl_neo_scope_restrict_to_rectangle.GetBool())
+		{
+			constexpr float VISIBLE_AREA_SCALING = 720.0f / 960.0f;
+			scaleX = Min(scaleX, scaleY);
+			scaleY = scaleX * VISIBLE_AREA_SCALING;
+			scaleX *= 1.0f + (1.0f - VISIBLE_AREA_SCALING);
+			scaleY *= 1.0f + (1.0f - VISIBLE_AREA_SCALING);
+		}
+		const int scopeWide = RoundFloatToInt(texWide * scaleX);
+		const int scopeTall = RoundFloatToInt(texTall * scaleY);
+		const int x0 = (wide - scopeWide) / 2;
+		const int y0 = (tall - scopeTall) / 2;
+
+		// The scoped rifles' fill colour around the scope, not pure black.
+		vgui::surface()->DrawSetColor(16, 17, 16, 255);
+		vgui::surface()->DrawFilledRect(0, 0, x0, tall);
+		vgui::surface()->DrawFilledRect(x0 + scopeWide, 0, wide, tall);
+		vgui::surface()->DrawFilledRect(x0, 0, x0 + scopeWide, y0);
+		vgui::surface()->DrawFilledRect(x0, y0 + scopeTall, x0 + scopeWide, tall);
+
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
-		vgui::surface()->DrawSetTexture(FileTexture(m_overlayTexture, m_szOverlayFile, data.m_szIronOpticOverlay));
-		vgui::surface()->DrawTexturedRect(left, 0, left + tall, tall);
+		vgui::surface()->DrawSetTexture(texture);
+		vgui::surface()->DrawTexturedRect(x0, y0, x0 + scopeWide, y0 + scopeTall);
 	}
 
 	// The live view as a circle at screen centre (where the lens sits on the sights), then the reticle.
