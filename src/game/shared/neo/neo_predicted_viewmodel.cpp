@@ -304,8 +304,6 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
 	// On the sights, hide what the weapon lists as blocking the view (e.g. the MX optic's lens).
 	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
-	// With a live optic, its view is drawn on the lens (e.g. the MX's).
-	const NeoIronsightOpticLens opticLens(pWeaponData);
 
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 	const bool bOverlays = pWeaponData && pPlayer && (flags & STUDIO_RENDER);

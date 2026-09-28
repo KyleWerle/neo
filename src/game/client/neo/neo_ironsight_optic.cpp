@@ -12,7 +12,6 @@
 #include "hudelement.h"
 #include "iclientmode.h"
 #include "materialsystem/imaterialsystem.h"
-#include "materialsystem/imaterialvar.h"
 #include "materialsystem/itexture.h"
 #include "view.h"
 #include "materialsystem/MaterialSystemUtil.h"
@@ -340,63 +339,6 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	render->Push3DView(opticView, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, s_opticSystem.m_texture, (VPlane *)frustum);
 	ViewDrawScene(false, SKYBOX_2DSKYBOX_VISIBLE, opticView, 0, VIEW_MONITOR);
 	render->PopView(frustum);
-}
-
-//-----------------------------------------------------------------------------
-// The live view on the lens: for one viewmodel draw, the lens material's base texture becomes the optic
-// render and its detail layer the weapon's reticle.
-//-----------------------------------------------------------------------------
-NeoIronsightOpticLens::NeoIronsightOpticLens(const CNEOWeaponInfo *pData)
-{
-	// Disc lenses keep their own material; NeoIronsightDrawOpticDisc draws over them.
-	if (!pData || !pData->m_szIronOpticLens[0] || pData->m_bIronOpticLensDisc || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP
-		|| !s_opticSystem.m_texture.IsValid())
-	{
-		return;
-	}
-	IMaterial *pLens = materials->FindMaterial(pData->m_szIronOpticLens, TEXTURE_GROUP_MODEL, false);
-	if (!pLens || pLens->IsErrorMaterial())
-	{
-		return;
-	}
-	bool bFound = false;
-	m_pBase = pLens->FindVar("$basetexture", &bFound, false);
-	if (!bFound || !m_pBase)
-	{
-		m_pBase = nullptr;
-		return;
-	}
-	m_pOriginalBase = m_pBase->GetTextureValue();
-	m_pBase->SetTextureValue(s_opticSystem.m_texture);
-
-	// The reticle rides on the material's $detail layer (the lens VMT must declare one).
-	m_pDetail = pLens->FindVar("$detail", &bFound, false);
-	IMaterialVar *pBlend = pLens->FindVar("$detailblendfactor", &bFound, false);
-	if (m_pDetail && bFound && pBlend && pData->m_szIronOpticReticle[0])
-	{
-		ITexture *pReticle = materials->FindTexture(pData->m_szIronOpticReticle, TEXTURE_GROUP_VGUI, false);
-		if (pReticle && !pReticle->IsError())
-		{
-			m_pOriginalDetail = m_pDetail->GetTextureValue();
-			m_pDetail->SetTextureValue(pReticle);
-			m_pBlend = pBlend;
-			m_flOriginalBlend = m_pBlend->GetFloatValue();
-			m_pBlend->SetFloatValue(1.0f);
-		}
-	}
-}
-
-NeoIronsightOpticLens::~NeoIronsightOpticLens()
-{
-	if (m_pBlend)
-	{
-		m_pBlend->SetFloatValue(m_flOriginalBlend);
-		m_pDetail->SetTextureValue(m_pOriginalDetail);
-	}
-	if (m_pBase)
-	{
-		m_pBase->SetTextureValue(m_pOriginalBase);
-	}
 }
 
 //-----------------------------------------------------------------------------
