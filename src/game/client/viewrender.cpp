@@ -2184,6 +2184,9 @@ void CViewRender::RenderView( const CViewSetup &viewRender, int nClearFlags, int
 			DrawMonitors( viewMiddle );	
 		}
 	#endif
+#ifdef NEO
+		DrawNeoIronsightOptic( viewRender );
+#endif
 
 		g_bRenderingView = true;
 
