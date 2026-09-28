@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsight_optic_disc.h"
+#include "neo_ironsight_augment.h"
 #include "neo_ironsights.h"
 #include "neo_predicted_viewmodel.h"
 #include "c_neo_player.h"
@@ -258,6 +259,21 @@ static void OpticView(const CViewSetup &mainView, const CNEOWeaponInfo &data, QA
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
 void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 {
+	// The augmented aim (e.g. the MPN45's) shares the render target; its weapons have no optic.
+	CViewSetup augmentView;
+	if (NeoIronsightAugmentView(mainView, augmentView))
+	{
+		{
+			CMatRenderContextPtr pRenderContext(materials);
+			pRenderContext->TurnOnToneMapping();
+		}
+		Frustum frustum;
+		render->Push3DView(augmentView, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, s_opticSystem.m_texture, (VPlane *)frustum);
+		ViewDrawScene(false, SKYBOX_2DSKYBOX_VISIBLE, augmentView, 0, VIEW_MONITOR);
+		render->PopView(frustum);
+		return;
+	}
+
 	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
 	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
 	{

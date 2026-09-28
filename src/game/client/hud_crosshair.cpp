@@ -33,6 +33,7 @@
 #include "weapon_srs.h"
 #include "neo_gamerules.h"
 #include "neo_ironsights.h"
+#include "neo/neo_ironsight_augment.h"
 
 #endif
 
@@ -578,6 +579,12 @@ void CHudCrosshair::Paint( void )
 		constexpr int IFF_TRACELINE_LENGTH = 8192; // a little over 200m
 		UTIL_TraceLine(pPlayer->Weapon_ShootPosition(), pPlayer->Weapon_ShootPosition() + pPlayer->GetAutoaimVector(0) * IFF_TRACELINE_LENGTH, MASK_SHOT_HULL, &iffTraceFilter, &iffTrace);
 		showFriendlyFireCrosshair = IsPlayerIndex(iffTrace.GetEntityIndex()) && iffTrace.m_pEnt->GetTeamNumber() == pPlayer->GetTeamNumber();
+	}
+
+	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.
+	if (!bHideCrosshair && NeoIronsightPaintAugment(pWeapon, crh->color, iX, iY))
+	{
+		return;
 	}
 
 	if (bIsScopedWep && pPlayer->m_bInAim)

@@ -86,6 +86,10 @@
 #include "C_Env_Projected_Texture.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
+#ifdef NEO
+#include "neo/neo_ironsight_augment.h"
+#endif
+
 #include "tier0/memdbgon.h"
 
 
@@ -2278,6 +2282,11 @@ void CViewRender::RenderView( const CViewSetup &viewRender, int nClearFlags, int
 		GetClientModeNormal()->DoPostScreenSpaceEffects( &viewRender );
 #endif // NEO
 
+#ifdef NEO
+		// The augmented aim's window: under the gun, so it and its muzzle flash show over it, and before
+		// post-processing, so vision modes apply to it too.
+		NeoIronsightDrawAugmentWindow( viewRender );
+#endif
 		// Now actually draw the viewmodel
 		DrawViewModels( viewRender, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
 

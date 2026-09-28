@@ -157,6 +157,12 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 
+	KeyValues* pAugment = pKeyValuesData->FindKey("IronsightAugment");
+	m_flIronAugmentMagnification = pAugment ? pAugment->GetFloat("magnification", 1.5f) : 0.f;
+	m_flIronAugmentSize = pAugment ? clamp(pAugment->GetFloat("size", 0.4f), 0.05f, 1.0f) : 0.f;
+	m_flIronAugmentEdge = pAugment ? clamp(pAugment->GetFloat("edge", 0.35f), 0.01f, 1.0f) : 0.f;
+	m_flIronAugmentAlpha = pAugment ? clamp(pAugment->GetFloat("alpha", 0.85f), 0.0f, 1.0f) : 0.f;
+
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;
 	if (pDots)

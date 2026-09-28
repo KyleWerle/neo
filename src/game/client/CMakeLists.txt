@@ -1655,6 +1655,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_ammo.cpp
     neo/ui/neo_hud_childelement.cpp
     neo/ui/neo_hud_compass.cpp
+    neo/neo_ironsight_augment.cpp
+    neo/neo_ironsight_augment.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_optic.cpp

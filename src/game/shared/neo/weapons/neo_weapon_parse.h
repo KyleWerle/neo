@@ -89,6 +89,13 @@ public:
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 
+	// Augmented aim ("IronsightAugment" block), for weapons kept on the classic zoom: while aiming, a
+	// magnified window around the crosshair. See neo_ironsight_augment.h.
+	float	m_flIronAugmentMagnification;	// <= 0: none; zoom on top of the aim's own
+	float	m_flIronAugmentSize;		// window width and height, as a fraction of the screen's
+	float	m_flIronAugmentEdge;		// how far in from the rim it fades to translucent, fraction of its half-size
+	float	m_flIronAugmentAlpha;		// opacity inside the fade
+
 	// Glowing sight dots while cloaked ("IronsightDots" block). See neo_ironsight_dots.h.
 	bool	m_bHasIronDots;
 	Vector	m_vecIronDotFront;	// x = depth along the sight line, z = drop (0 depth = auto)
