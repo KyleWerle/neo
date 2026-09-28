@@ -401,34 +401,68 @@ bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool b
 	return NeoIronsightsActive(data) && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
 }
 
+// The weapon's materials to hide, found by name only when the weapon changes: its lens (for one-pane and
+// gyro glass) and its "IronsightHideMaterials".
+static constexpr int MAX_HIDDEN_ON_SIGHTS = 8;
+static struct
+{
+	const CNEOWeaponInfo *pData = nullptr;
+	IMaterial *pLens = nullptr;
+	IMaterial *onSights[MAX_HIDDEN_ON_SIGHTS] = {};
+	int onSightsCount = 0;
+} s_hidden;
+
+static IMaterial *FindModelMaterial(const char *pName)
+{
+	IMaterial *pMaterial = pName[0] ? materials->FindMaterial(pName, TEXTURE_GROUP_MODEL, false) : nullptr;
+	return (pMaterial && !pMaterial->IsErrorMaterial()) ? pMaterial : nullptr;
+}
+
+static void FindHiddenMaterials(const CNEOWeaponInfo &data)
+{
+	if (s_hidden.pData == &data)
+	{
+		return;
+	}
+	s_hidden.pData = &data;
+	s_hidden.pLens = FindModelMaterial(data.m_szIronOpticLens);
+	s_hidden.onSightsCount = 0;
+	CUtlStringList names;
+	V_SplitString(data.m_szIronHideMaterials, ";", names);
+	for (int i = 0; i < names.Count() && s_hidden.onSightsCount < MAX_HIDDEN_ON_SIGHTS; ++i)
+	{
+		if (IMaterial *pMaterial = FindModelMaterial(names[i]))
+		{
+			s_hidden.onSights[s_hidden.onSightsCount++] = pMaterial;
+		}
+	}
+}
+
 NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *pData, float ironsightBlend)
 {
 	if (!pData || !NeoIronsightsActive(*pData))
 	{
 		return;
 	}
+	FindHiddenMaterials(*pData);
 	// Glass drawn as one pane, or levelled by the gyro, by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
 	if (pData->m_bIronOpticOnePane || pData->m_bIronOpticGyro)
 	{
-		Hide(pData->m_szIronOpticLens);
+		Hide(s_hidden.pLens);
 	}
 	// The listed materials once the gun is most of the way onto the sights.
-	if (ironsightBlend < 0.5f || !pData->m_szIronHideMaterials[0])
+	if (ironsightBlend >= 0.5f)
 	{
-		return;
-	}
-	CUtlStringList names;
-	V_SplitString(pData->m_szIronHideMaterials, ";", names);
-	for (int i = 0; i < names.Count(); ++i)
-	{
-		Hide(names[i]);
+		for (int i = 0; i < s_hidden.onSightsCount; ++i)
+		{
+			Hide(s_hidden.onSights[i]);
+		}
 	}
 }
 
-void NeoIronsightHiddenMaterials::Hide(const char *pName)
+void NeoIronsightHiddenMaterials::Hide(IMaterial *pMaterial)
 {
-	IMaterial *pMaterial = m_count < MAX_MATERIALS ? materials->FindMaterial(pName, TEXTURE_GROUP_MODEL, false) : nullptr;
-	if (pMaterial && !pMaterial->IsErrorMaterial() && !pMaterial->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW))
+	if (pMaterial && m_count < MAX_MATERIALS && !pMaterial->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW))
 	{
 		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
 		m_materials[m_count++] = pMaterial;

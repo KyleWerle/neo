@@ -166,17 +166,28 @@ struct LensState
 	float fadeStart = 1.0f;
 };
 
+// The weapon's reticle material, or null; found by name only when the weapon changes.
+static IMaterial *ReticleMaterial(const CNEOWeaponInfo &data)
+{
+	static const CNEOWeaponInfo *s_pData = nullptr;
+	static IMaterial *s_pReticle = nullptr;
+	if (&data != s_pData)
+	{
+		s_pData = &data;
+		s_pReticle = data.m_szIronOpticReticle[0]
+			? materials->FindMaterial(data.m_szIronOpticReticle, TEXTURE_GROUP_VGUI, false) : nullptr;
+		if (s_pReticle && s_pReticle->IsErrorMaterial())
+		{
+			s_pReticle = nullptr;
+		}
+	}
+	return s_pReticle;
+}
+
 static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bThermal, float ironsightBlend)
 {
 	LensState state;
-	if (data.m_szIronOpticReticle[0])
-	{
-		state.pReticle = materials->FindMaterial(data.m_szIronOpticReticle, TEXTURE_GROUP_VGUI, false);
-		if (state.pReticle && state.pReticle->IsErrorMaterial())
-		{
-			state.pReticle = nullptr;
-		}
-	}
+	state.pReticle = ReticleMaterial(data);
 	// Whether the gun is drawn with an override material (cloak, thermals) that covers its own lens.
 	const bool bOverridden = bCloaked || bThermal;
 	state.bLiveView = (bOverridden || data.m_bIronOpticLensDisc) && NeoGetIronsightOpticMode() == NEO_OPTIC_PIP

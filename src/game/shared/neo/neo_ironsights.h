@@ -92,7 +92,7 @@ public:
 	NeoIronsightHiddenMaterials(const CNEOWeaponInfo *pData, float ironsightBlend);
 	~NeoIronsightHiddenMaterials();
 private:
-	void Hide(const char *pName);
+	void Hide(IMaterial *pMaterial);
 	static constexpr int MAX_MATERIALS = 8;
 	IMaterial *m_materials[MAX_MATERIALS];
 	int m_count = 0;

@@ -14,10 +14,31 @@ Vector NeoLensPane::Centre(const CNEOWeaponInfo &data) const
 	return At(data.m_vecIronOpticLensCircle.x, data.m_vecIronOpticLensCircle.y);
 }
 
+// The lens bone's index on the viewmodel, looked up by name only when the model or the weapon changes.
+static int LensBone(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data)
+{
+	static const studiohdr_t *s_pModel = nullptr;
+	static const CNEOWeaponInfo *s_pData = nullptr;
+	static int s_bone = -1;
+	const CStudioHdr *pHdr = pViewModel ? pViewModel->GetModelPtr() : nullptr;
+	const studiohdr_t *pModel = pHdr ? pHdr->GetRenderHdr() : nullptr;
+	if (!pModel)
+	{
+		return -1;
+	}
+	if (pModel != s_pModel || &data != s_pData)
+	{
+		s_pModel = pModel;
+		s_pData = &data;
+		s_bone = pViewModel->LookupBone(data.m_szIronOpticLensBone);
+	}
+	return s_bone;
+}
+
 bool NeoIronsightLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, const Vector &eye, NeoLensPane &pane,
 	NeoLensPane *pFarPane)
 {
-	const int bone = pViewModel ? pViewModel->LookupBone(data.m_szIronOpticLensBone) : -1;
+	const int bone = LensBone(pViewModel, data);
 	if (bone < 0)
 	{
 		return false;
