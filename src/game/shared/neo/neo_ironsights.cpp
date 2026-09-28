@@ -395,9 +395,9 @@ CON_COMMAND(cl_neo_ironsight_restinfo, "Print the gun's position across the acti
 #endif // CLIENT_DLL
 
 #ifdef CLIENT_DLL
-bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked, bool bHasSightDots)
+bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked, bool bHasCloakedAimAid)
 {
-	return cl_neo_ironsights.GetBool() && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasSightDots);
+	return cl_neo_ironsights.GetBool() && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
 }
 
 NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *pData, float ironsightBlend)

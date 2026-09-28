@@ -78,7 +78,7 @@ WeaponData
 	// Optic: a live magnified view on the lens (cl_neo_ironsight_optic 1), or the full-screen scope (0).
 	"IronsightOptic"
 	{
-		"magnification"	"3"		// zoom relative to the lens on screen; 1 = like empty glass
+		"magnification"	"2"		// zoom relative to the lens on screen; 1 = like empty glass
 		"fov"		"25"		// only used if the lens surface is unknown
 		"lens"		"models/weapons/lenseCompleteMap"
 		"reticle"	"vgui/hud/optics/mx_reticle"
