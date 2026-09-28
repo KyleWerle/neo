@@ -306,10 +306,10 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	// With a live optic, its view is drawn on the lens (e.g. the MX's).
 	const NeoIronsightOpticLens opticLens(pWeaponData);
 
-	const int ret = DrawGun(flags, pWeaponData);
+	const int ret = DrawGun(flags);
 
-	// On top of the gun: the optic as a disc when cloaked (the cloak override took the lens with it) or
-	// for disc lenses, and the glowing sight dots, both pinned to the gun.
+	// On top of the gun, both pinned to it: the optic as a disc when cloaked (the cloak override took the
+	// lens with it) or for disc lenses and sight glass; and the glowing sight dots.
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 	if (ret && pWeaponData && pPlayer && (flags & STUDIO_RENDER))
 	{
@@ -319,7 +319,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	return ret;
 }
 
-int CNEOPredictedViewModel::DrawGun(int flags, const CNEOWeaponInfo *pWeaponData)
+int CNEOPredictedViewModel::DrawGun(int flags)
 {
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 
@@ -327,16 +327,7 @@ int CNEOPredictedViewModel::DrawGun(int flags, const CNEOWeaponInfo *pWeaponData
 	{
 		if (pPlayer->IsCloaked())
 		{
-			// On the sights, a lighter cloak keeps the target sharp through the gun.
-			IMaterial *pass = nullptr;
-			if (pWeaponData && m_flIronsightBlend >= 0.5f && NeoIronsightsActive(*pWeaponData))
-			{
-				pass = materials->FindMaterial("models/player/toc_ironsight", TEXTURE_GROUP_VIEW_MODEL, false);
-			}
-			if (!pass || pass->IsErrorMaterial())
-			{
-				pass = materials->FindMaterial("models/player/toc", TEXTURE_GROUP_VIEW_MODEL);
-			}
+			IMaterial *pass = materials->FindMaterial("models/player/toc", TEXTURE_GROUP_VIEW_MODEL);
 			Assert(pass && !pass->IsErrorMaterial());
 
 			if (pass && !pass->IsErrorMaterial())

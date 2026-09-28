@@ -44,7 +44,7 @@ public:
 
 	virtual int DrawModel(int flags);
 	// The gun itself (cloak and thermal passes included), without the ironsight overlays DrawModel adds.
-	int DrawGun(int flags, const CNEOWeaponInfo *pWeaponData);
+	int DrawGun(int flags);
 	virtual void ProcessMuzzleFlashEvent() final override;
 
 	virtual RenderGroup_t GetRenderGroup() override;
