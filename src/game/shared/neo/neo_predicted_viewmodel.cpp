@@ -308,10 +308,15 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 
 	const int ret = DrawGun(flags, pWeaponData);
 
-	// Glowing sight dots on top, pinned to the gun, while cloaked.
+	// On top of the gun while cloaked: the optic (the cloak override took the lens with it) and the
+	// glowing sight dots, both pinned to the gun.
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 	if (ret && pWeaponData && pPlayer && (flags & STUDIO_RENDER))
 	{
+		if (pPlayer->IsCloaked())
+		{
+			NeoIronsightDrawCloakedOptic(this, *pWeaponData);
+		}
 		NeoIronsightDrawDots(this, *pWeaponData, pPlayer->IsCloaked());
 	}
 	return ret;

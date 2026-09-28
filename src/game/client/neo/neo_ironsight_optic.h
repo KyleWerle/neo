@@ -40,3 +40,8 @@ private:
 	ITexture *m_pOriginalDetail = nullptr;
 	float m_flOriginalBlend = 0.0f;
 };
+
+class C_BaseAnimating;
+// While cloaked, redraws the live optic and reticle on the lens surface (the weapon's "lens_map"),
+// fading out towards the rim, since the cloak override replaces the lens material. Call after the gun.
+void NeoIronsightDrawCloakedOptic(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data);

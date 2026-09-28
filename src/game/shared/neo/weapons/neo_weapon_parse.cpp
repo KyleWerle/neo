@@ -32,6 +32,8 @@ CNEOWeaponInfo::CNEOWeaponInfo()
 	m_szIronHideMaterials[0] = 0;
 	m_flIronOpticFov = 0.f;
 	m_szIronOpticLens[0] = 0;
+	m_bHasIronOpticLensMap = false;
+	m_szIronOpticLensBone[0] = 0;
 	m_bHasIronDots = false;
 	m_vecIronDotFront.Init();
 	m_vecIronDotRear.Init();
@@ -122,6 +124,13 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	KeyValues* pOptic = pKeyValuesData->FindKey("IronsightOptic");
 	m_flIronOpticFov = pOptic ? pOptic->GetFloat("fov", 15) : 0.f;
 	V_strncpy(m_szIronOpticLens, pOptic ? pOptic->GetString("lens", "") : "", sizeof(m_szIronOpticLens));
+	if (pOptic)
+	{
+		V_strncpy(m_szIronOpticLensBone, pOptic->GetString("lens_bone", ""), sizeof(m_szIronOpticLensBone));
+		Vector &o = m_vecIronOpticLensOrigin, &u = m_vecIronOpticLensU, &v = m_vecIronOpticLensV;
+		m_bHasIronOpticLensMap = m_szIronOpticLensBone[0] && sscanf(pOptic->GetString("lens_map", ""), "%f %f %f %f %f %f %f %f %f",
+			&o.x, &o.y, &o.z, &u.x, &u.y, &u.z, &v.x, &v.y, &v.z) == 9;
+	}
 
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;
