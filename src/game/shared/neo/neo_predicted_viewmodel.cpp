@@ -306,14 +306,17 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
 
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
-	const bool bOverlays = pWeaponData && pPlayer && (flags & STUDIO_RENDER);
+	const bool bDrawn = pWeaponData && pPlayer && (flags & STUDIO_RENDER);
+	// A model with translucent materials (any sight glass) is drawn twice a frame, its opaque parts and then
+	// its translucent ones; the overlays go on once, with the last.
+	const bool bOverlays = bDrawn && (!IsTwoPass() || (flags & STUDIO_TRANSPARENCY));
 	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
 	const bool bThermal = NeoIronsightInThermals(pPlayer);
 
 	// Clear sight glass over the cloaked or thermal gun: the view first, then the gun in slices around the
 	// glass, so the gun behind the glass shows through it.
 	NeoIronsightGlassSplit split;
-	if (bOverlays && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
+	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
 	{
 		int ret = 0;
 		CMatRenderContextPtr pRenderContext(materials);
@@ -329,8 +332,11 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 				pRenderContext->PopCustomClipPlane();
 			}
 		}
-		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
-		NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
+		if (bOverlays)
+		{
+			NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
+			NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
+		}
 		return ret;
 	}
 

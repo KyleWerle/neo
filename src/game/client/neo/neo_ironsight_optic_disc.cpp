@@ -53,15 +53,36 @@ static IMaterial *LiveViewMaterial()
 	return s_material;
 }
 
-// The lens shape ("lens_circle", "lens_shape") in rings: centreAlpha inside the fade radius, easing to
-// zero at the rim. The live view fills it (bLiveView); anything else (the reticle) uses the lens's UVs.
+// The lens outline around its centre, for a superellipse of this exponent: LENS_SEGMENTS points at radius
+// 1 (round at 2, squarer above). Worked out once per exponent.
+static constexpr int LENS_SEGMENTS = 32;
+static constexpr int LENS_RINGS = 6;	// enough for the rim fade, and for the sight-glass mapping at an angle
+static const Vector2D *LensOutline(float shape)
+{
+	static float s_shape = -1.0f;
+	static Vector2D s_outline[LENS_SEGMENTS];
+	if (shape != s_shape)
+	{
+		s_shape = shape;
+		for (int i = 0; i < LENS_SEGMENTS; ++i)
+		{
+			const float angle = 2.0f * M_PI_F * i / LENS_SEGMENTS;
+			const float c = cosf(angle), s = sinf(angle);
+			const float scale = powf(powf(fabsf(c), shape) + powf(fabsf(s), shape), -1.0f / shape);
+			s_outline[i].Init(c * scale, s * scale);
+		}
+	}
+	return s_outline;
+}
+
+// The lens shape ("lens_circle", "lens_shape") in rings of shared vertices: centreAlpha inside the fade
+// radius, easing to zero at the rim. The live view fills it (bLiveView); anything else (the reticle) uses
+// the lens's UVs.
 static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const CNEOWeaponInfo &data,
 	float centreAlpha, float fadeStart, bool bLiveView)
 {
-	constexpr int RINGS = 8;
-	constexpr int SEGMENTS = 32;
 	const Vector &circle = data.m_vecIronOpticLensCircle;
-	const float shape = data.m_flIronOpticLensShape;
+	const Vector2D *pOutline = LensOutline(data.m_flIronOpticLensShape);
 	const Vector eye = CurrentViewOrigin();
 
 	// The live view of a lens is laid out as the lens is seen on screen, level with the eye: the lens's
@@ -75,22 +96,16 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 	const Vector lookUp = CrossProduct(lookRight, lookForward);
 	const float lensRadius = pane.u.Length() * circle.z;
 	const float tanRadius = lensRadius / sqrtf(Max(lensDistance * lensDistance - lensRadius * lensRadius, 0.0001f));
-	const auto alphaAt = [&](float fraction) {
-		const float fade = NeoSmoothStep((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f));
-		return static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - fade));
-	};
 
 	CMatRenderContextPtr pRenderContext(materials);
 	pRenderContext->Bind(pMaterial);
 	IMesh *pMesh = pRenderContext->GetDynamicMesh();
 	CMeshBuilder meshBuilder;
-	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, SEGMENTS * (2 * RINGS - 1));
-	const auto vertex = [&](float fraction, int segment) {
-		// A superellipse: round at shape 2, squarer above.
-		const float angle = 2.0f * M_PI_F * segment / SEGMENTS;
-		const float c = cosf(angle), s = sinf(angle);
-		const float scale = fraction * powf(powf(fabsf(c), shape) + powf(fabsf(s), shape), -1.0f / shape);
-		const float x = c * scale, y = s * scale;
+	// The centre, then LENS_RINGS rings of LENS_SEGMENTS vertices; a fan to the first ring, quads between rings.
+	const int vertices = 1 + LENS_RINGS * LENS_SEGMENTS;
+	const int indices = LENS_SEGMENTS * 3 + (LENS_RINGS - 1) * LENS_SEGMENTS * 6;
+	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, vertices, indices);
+	const auto vertex = [&](float x, float y, float fraction) {
 		const float u = circle.x + circle.z * x;
 		const float v = circle.y + data.m_flIronOpticLensRadiusV * y;
 		const Vector world = pane.At(u, v);
@@ -110,26 +125,36 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 		Vector lift = eye - world;
 		VectorNormalize(lift);
 		const Vector position = world + lift * 0.01f;
-		meshBuilder.Color4ub(255, 255, 255, alphaAt(fraction));
+		const float fade = NeoSmoothStep((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f));
+		meshBuilder.Color4ub(255, 255, 255, static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - fade)));
 		meshBuilder.TexCoord2f(0, texU, texV);
 		meshBuilder.Position3fv(position.Base());
 		meshBuilder.AdvanceVertex();
 	};
-	for (int seg = 0; seg < SEGMENTS; ++seg)
+	vertex(0.0f, 0.0f, 0.0f);
+	for (int ring = 1; ring <= LENS_RINGS; ++ring)
 	{
-		// Centre fan, then a quad (two triangles) per segment between each pair of rings.
-		vertex(0.0f, seg);
-		vertex(1.0f / RINGS, seg);
-		vertex(1.0f / RINGS, seg + 1);
-		for (int ring = 1; ring < RINGS; ++ring)
+		const float fraction = static_cast<float>(ring) / LENS_RINGS;
+		for (int seg = 0; seg < LENS_SEGMENTS; ++seg)
 		{
-			const float inner = static_cast<float>(ring) / RINGS, outer = static_cast<float>(ring + 1) / RINGS;
-			vertex(inner, seg);
-			vertex(outer, seg);
-			vertex(outer, seg + 1);
-			vertex(inner, seg);
-			vertex(outer, seg + 1);
-			vertex(inner, seg + 1);
+			vertex(pOutline[seg].x * fraction, pOutline[seg].y * fraction, fraction);
+		}
+	}
+	// Vertex index of ring r (1-based), segment s (wrapping).
+	const auto at = [](int ring, int seg) { return 1 + (ring - 1) * LENS_SEGMENTS + (seg % LENS_SEGMENTS); };
+	for (int seg = 0; seg < LENS_SEGMENTS; ++seg)
+	{
+		meshBuilder.FastIndex(0);
+		meshBuilder.FastIndex(at(1, seg));
+		meshBuilder.FastIndex(at(1, seg + 1));
+		for (int ring = 1; ring < LENS_RINGS; ++ring)
+		{
+			meshBuilder.FastIndex(at(ring, seg));
+			meshBuilder.FastIndex(at(ring + 1, seg));
+			meshBuilder.FastIndex(at(ring + 1, seg + 1));
+			meshBuilder.FastIndex(at(ring, seg));
+			meshBuilder.FastIndex(at(ring + 1, seg + 1));
+			meshBuilder.FastIndex(at(ring, seg + 1));
 		}
 	}
 	meshBuilder.End();
@@ -275,7 +300,7 @@ static void SetPlane(float plane[4], const Vector &normal, float dist)
 	plane[3] = dist;
 }
 
-bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
+static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
 	NeoIronsightGlassSplit &split)
 {
 	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_LENS, "NeoIronsightBeginGlassSplit");
@@ -321,12 +346,28 @@ bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponIn
 		split.slices = 3;
 	}
 
-	// The view once a frame: a second (translucent) pass of the gun must not cover what the first drew on it.
-	static int s_viewFrame = -1;
-	if (s_viewFrame != gpGlobals->framecount)
-	{
-		s_viewFrame = gpGlobals->framecount;
-		DrawLensShape(LiveViewMaterial(), pane, data, state.centreAlpha, state.fadeStart, true);
-	}
+	// The view: once a frame, as the split is worked out once a frame (see below).
+	DrawLensShape(LiveViewMaterial(), pane, data, state.centreAlpha, state.fadeStart, true);
 	return true;
+}
+
+bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
+	NeoIronsightGlassSplit &split)
+{
+	// Worked out once a frame: a two-pass model asks again for its translucent pass.
+	static struct
+	{
+		int frame = -1;
+		const CNEOWeaponInfo *pData = nullptr;
+		bool bSplit = false;
+		NeoIronsightGlassSplit split;
+	} s_cache;
+	if (s_cache.frame != gpGlobals->framecount || s_cache.pData != &data)
+	{
+		s_cache.frame = gpGlobals->framecount;
+		s_cache.pData = &data;
+		s_cache.bSplit = ComputeGlassSplit(pViewModel, data, bCloaked, bThermal, s_cache.split);
+	}
+	split = s_cache.split;
+	return s_cache.bSplit;
 }
