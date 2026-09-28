@@ -50,10 +50,22 @@ public:
 };
 static CNeoIronsightOpticSystem s_opticSystem;
 
-// The local player's active weapon data, if it has an optic and ironsights apply to it.
+// Whose view this is: the local player, or the player they spectate in first person (whose gun, aim
+// and viewmodel are on screen then).
+static C_NEO_Player *OpticViewPlayer()
+{
+	C_NEO_Player *pLocal = C_NEO_Player::GetLocalNEOPlayer();
+	if (pLocal && pLocal->IsObserver() && pLocal->GetObserverMode() == OBS_MODE_IN_EYE)
+	{
+		return dynamic_cast<C_NEO_Player *>(pLocal->GetObserverTarget());
+	}
+	return pLocal;
+}
+
+// The viewed player's active weapon data, if it has an optic and ironsights apply to it.
 static const CNEOWeaponInfo *LocalOpticWeaponData()
 {
-	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	C_NEO_Player *pPlayer = OpticViewPlayer();
 	if (!pPlayer || !pPlayer->IsAlive())
 	{
 		return nullptr;
@@ -77,7 +89,7 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 	if (!cl_neo_ironsight_optic.GetBool() || !pData->m_szIronOpticLens[0])
 	{
 		// The full-screen scope only while aiming.
-		C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+		C_NEO_Player *pPlayer = OpticViewPlayer();
 		return (pPlayer && pPlayer->IsInAim()) ? NEO_OPTIC_OVERLAY : NEO_OPTIC_NONE;
 	}
 	// The live view on the lens runs whenever the weapon is out, hip or sights, like a real optic.
@@ -87,11 +99,12 @@ NeoIronsightOpticMode NeoGetIronsightOpticMode()
 // The optic camera points where the gun points: the first time the gun settles on the sights (idle,
 // fully aimed), the muzzle attachment's pose relative to the eye is recorded as "looking straight
 // ahead". After that, at the hip or on the sights, the gun's turn from that pose (hip angle, mouse sway,
-// bob, idle, recoil) turns the optic camera too. Kept until the weapon changes; until the first aim the
+// bob, idle, recoil) turns the optic camera too. Kept until the weapon or viewed player changes; until the first aim the
 // camera looks along the eye. The picture itself sits on the lens mesh, so it moves with the gun exactly.
 struct NeoOpticFollow
 {
 	bool calibrated = false;
+	int player = 0;			// entity index of the viewed player (changes when spectating someone else)
 	char weapon[MAX_WEAPON_STRING] = "";
 	matrix3x4_t restGunInEye;	// muzzle attachment in eye space at calibration
 };
@@ -99,7 +112,7 @@ static NeoOpticFollow s_follow;
 
 static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo &data)
 {
-	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	C_NEO_Player *pPlayer = OpticViewPlayer();
 	C_NEOPredictedViewModel *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
 	Vector gunOrigin;
 	QAngle gunAngles;
@@ -108,9 +121,10 @@ static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo
 		s_follow.calibrated = false;
 		return mainView.angles;
 	}
-	if (V_strcmp(s_follow.weapon, data.szClassName) != 0)
+	if (s_follow.player != pPlayer->entindex() || V_strcmp(s_follow.weapon, data.szClassName) != 0)
 	{
 		s_follow.calibrated = false;
+		s_follow.player = pPlayer->entindex();
 		V_strncpy(s_follow.weapon, data.szClassName, sizeof(s_follow.weapon));
 	}
 

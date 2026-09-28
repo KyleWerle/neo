@@ -7,6 +7,7 @@
 //     whenever the weapon is out, at the hip too, pointing where the gun points.
 //   Overlay (cl_neo_ironsight_optic 0, or no lens): while aiming, the gun hides and a full-screen scope
 //     texture is drawn, the way the scoped rifles do it.
+// It follows whoever is on screen: the local player, or the player spectated in first person.
 // Everything here is client-only; weapons without the block, or ironsights off, are untouched.
 
 class CNEOWeaponInfo;
@@ -20,7 +21,7 @@ enum NeoIronsightOpticMode
 	NEO_OPTIC_OVERLAY,
 };
 
-// The optic mode the local player's view is in right now.
+// The optic mode the current view (local player or first-person spectate target) is in right now.
 NeoIronsightOpticMode NeoGetIronsightOpticMode();
 
 // While the live view is active, puts it on the weapon's lens material for the lifetime of a viewmodel
