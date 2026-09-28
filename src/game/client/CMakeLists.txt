@@ -1832,6 +1832,7 @@ target_sources_grouped(
     TARGET client
     NAME "Source Files\\Shared\\Weapons"
     FILES
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/neo_ironsight_weapon_info.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/neo_weapon_parse.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/weapon_aa13.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/weapon_balc.h
@@ -1867,6 +1868,7 @@ target_sources_grouped(
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/weapon_zr68s.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/neo_weapon_types.h
     ${UNITY_SOURCE_NEO_WEAPONS}
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/neo_ironsight_weapon_info.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/neo_weapon_parse.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/weapon_neobasecombatweapon.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/weapons/weapon_neobaseprojectile.cpp
