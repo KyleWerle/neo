@@ -123,6 +123,13 @@ CON_COMMAND(cl_neo_ironsight_save, "Append the tuned pose for the active weapon 
 		Msg("No active NT weapon.\n");
 		return;
 	}
+	if (!cl_neo_ironsight_tune.GetBool())
+	{
+		// The tuning cvars only hold this weapon's pose once a nudge has loaded it; saving now would
+		// write whatever they happen to contain (zeros on a fresh start).
+		Msg("Nothing to save: nudge the sights first (tuning is not active for this weapon).\n");
+		return;
+	}
 	// One line per save: script name, fov, forward, right, up, pitch, yaw, roll. The last line per weapon wins.
 	char line[256];
 	V_snprintf(line, sizeof(line), "%s %g %g %g %g %g %g %g\n", pWeapon->GetClassname(),

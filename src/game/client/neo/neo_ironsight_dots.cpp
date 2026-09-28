@@ -318,6 +318,12 @@ CON_COMMAND(cl_neo_ironsight_dots_save, "Append the tuned dots for the active we
 		Msg("No active NT weapon.\n");
 		return;
 	}
+	if (!cl_neo_ironsight_dots_tune.GetBool())
+	{
+		// As with the sights: the tuning cvars only hold this weapon's dots once a nudge has loaded them.
+		Msg("Nothing to save: nudge the dots first (dot tuning is not active for this weapon).\n");
+		return;
+	}
 	float frontDepth = 0, frontDrop = 0, rearDepth = 0, rearDrop = 0, gap = 0;
 	sscanf(cl_neo_ironsight_dot_front.GetString(), "%f %f", &frontDepth, &frontDrop);
 	sscanf(cl_neo_ironsight_dot_rear.GetString(), "%f %f %f", &rearDepth, &rearDrop, &gap);
