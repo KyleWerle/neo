@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_sight_ghost.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_optic.h"
 #include "c_neo_player.h"
@@ -221,6 +222,7 @@ static void WatchShots()
 
 void NeoIronsightPaintSightGhost(const Color &color)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SIGHTS, "NeoIronsightPaintSightGhost");
 	const CNEOWeaponInfo *pData = s_ghost.pData;
 	const CViewSetup *pView = view ? view->GetViewSetup() : nullptr;
 	if (s_ghost.frame != gpGlobals->framecount || !pData || !pView)

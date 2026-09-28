@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_dots.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_sight_ghost.h"
 #include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
@@ -129,6 +130,7 @@ static void SightsEntityToWorld(const CNEOWeaponInfo &data, matrix3x4_t &out)
 
 void NeoIronsightDrawDots(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SIGHTS, "NeoIronsightDrawDots");
 	if (!pViewModel || !data.m_bHasIronDots || !cl_neo_ironsight_dots.GetBool() || !NeoIronsightsActive(data))
 	{
 		return;

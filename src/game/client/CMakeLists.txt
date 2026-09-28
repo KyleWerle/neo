@@ -1655,6 +1655,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_ammo.cpp
     neo/ui/neo_hud_childelement.cpp
     neo/ui/neo_hud_compass.cpp
+    neo/neo_ironsight_bench.cpp
     neo/neo_ironsight_augment.cpp
     neo/neo_ironsight_augment.h
     neo/neo_ironsight_dots.cpp
@@ -1665,6 +1666,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_optic.h
     neo/neo_ironsight_optic_disc.cpp
     neo/neo_ironsight_optic_disc.h
+    neo/neo_ironsight_profile.cpp
     neo/neo_ironsight_sight_ghost.cpp
     neo/neo_ironsight_sight_ghost.h
     neo/ui/neo_hud_damage_indicator.cpp
@@ -1777,6 +1779,7 @@ target_sources_grouped(
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_shared.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_spawnpoint.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsights.h
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsight_profile.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel_muzzleflash.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_shot_manipulator.h

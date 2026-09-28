@@ -1449,6 +1449,7 @@ set(UNITY_SOURCE_NEO_SRC_SERVER
     neo/neo_npc_dummy.cpp
     neo/neo_npc_targetsystem.cpp
     neo/neo_player.cpp
+    neo/neo_ironsight_bench_server.cpp
     neo/neo_smokelineofsightblocker.cpp
     neo/neo_spawn_manager.cpp
     neo/neo_smokegrenade.cpp
@@ -1482,6 +1483,7 @@ target_sources_grouped(
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_shared.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_spawnpoint.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsights.h
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsight_profile.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel_muzzleflash.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_shot_manipulator.h

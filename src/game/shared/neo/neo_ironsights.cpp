@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 #include "neo_player_shared.h"
 #include "neo_weapon_parse.h"
 
@@ -245,6 +246,7 @@ void NeoIronsightBoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], cons
 
 void NeoIronsightRestPose::Update(CStudioHdr *hdr, int poseSequence, float poseCycle, const float poseparam[])
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_DAMPING, "NeoIronsightRestPose::Update");
 	if (!hdr || (hdr->GetRenderHdr() == pModel && poseSequence == sequence && poseCycle == cycle))
 	{
 		return;
@@ -260,6 +262,7 @@ void NeoIronsightRestPose::Update(CStudioHdr *hdr, int poseSequence, float poseC
 void NeoIronsightDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	const Vector settledPos[], const Quaternion settledQ[], int refBone, const CNEOWeaponInfo &data, float ironsightBlend)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_DAMPING, "NeoIronsightDampRecoil");
 	const float blend = clamp(ironsightBlend, 0.0f, 1.0f);
 	if (!hdr || refBone < 0 || refBone >= hdr->numbones() || blend <= 0.0f)
 	{

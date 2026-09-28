@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_augment.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
 #include "neo_crosshair.h"
@@ -87,6 +88,7 @@ static IMaterial *WindowMaterial()
 
 void NeoIronsightDrawAugmentWindow(const CViewSetup &mainView)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_AUGMENT, "NeoIronsightDrawAugmentWindow");
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
 	const CNEOWeaponInfo *pData = (pPlayer && pPlayer->IsAlive()) ? AugmentData(pPlayer->GetActiveWeapon()) : nullptr;
 	if (!pData || s_flFade <= 0.0f || !NeoIronsightOpticTexture())
@@ -200,6 +202,7 @@ static float RangeMetres(C_NEO_Player *pPlayer)
 
 bool NeoIronsightPaintAugment(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_AUGMENT, "NeoIronsightPaintAugment");
 	C_NEO_Player *pPlayer = pWeapon ? dynamic_cast<C_NEO_Player *>(pWeapon->GetOwner()) : nullptr;
 	const CNEOWeaponInfo *pData = pPlayer ? AugmentData(pWeapon) : nullptr;
 	const bool bAiming = pData && pPlayer->IsAlive() && pPlayer->IsInAim();

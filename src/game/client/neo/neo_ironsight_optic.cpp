@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsight_lens.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_augment.h"
 #include "neo_ironsights.h"
 #include "neo_predicted_viewmodel.h"
@@ -285,6 +286,7 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	CViewSetup augmentView;
 	if (NeoIronsightAugmentView(mainView, augmentView))
 	{
+		NEO_IRONSIGHT_PROFILE(NEO_PROFILE_AUGMENT, "NeoIronsightAugmentRender");
 		{
 			CMatRenderContextPtr pRenderContext(materials);
 			pRenderContext->TurnOnToneMapping();
@@ -296,6 +298,7 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 		return;
 	}
 
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_OPTIC_RENDER, "DrawNeoIronsightOptic");
 	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
 	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid() || !OpticViewShown(*pData))
 	{

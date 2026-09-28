@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_optic_disc.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_lens.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
@@ -229,6 +230,7 @@ static void DrawDebugLensShape(const NeoLensPane &pane, const CNEOWeaponInfo &da
 void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
 	float ironsightBlend, NeoIronsightLensPart part)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_LENS, "NeoIronsightDrawOpticDisc");
 	if (!pViewModel || !data.m_bHasIronOpticLensMap)
 	{
 		return;
@@ -276,6 +278,7 @@ static void SetPlane(float plane[4], const Vector &normal, float dist)
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
 	NeoIronsightGlassSplit &split)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_LENS, "NeoIronsightBeginGlassSplit");
 	// Custom clip planes can't change mid-scene under fast clipping (depth problems), so not then.
 	if (!pViewModel || !data.m_bIronOpticWindow || !(bCloaked || bThermal) || materials->UsingFastClipping())
 	{
