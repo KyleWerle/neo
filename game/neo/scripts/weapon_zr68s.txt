@@ -75,6 +75,20 @@ WeaponData
 		"right"		"1.04"
 		"up"		"3.45"
 	}
+
+	"IronsightOptic"
+	{
+		// Clear red dot glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
+		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/zr68_reticle"
+		// The glass on zr68c (from v_*_zr68c/s.mdl), and the clear part of it in its UVs.
+		"lens_bone"	"zr68c"
+		"lens_map"	"-2.382 -1.857 12.78  0 2.472 0  0 0 -2.472"
+		"lens_circle"	"0.51 0.51 0.33 0.31"
+		"lens_shape"	"4"
+	}
+
 	
 	ModelBounds
 	{

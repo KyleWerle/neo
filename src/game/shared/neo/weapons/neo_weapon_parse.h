@@ -65,11 +65,24 @@ public:
 	Vector	m_vecIronOpticLensOrigin;
 	Vector	m_vecIronOpticLensU;
 	Vector	m_vecIronOpticLensV;
-	// The round lens within that surface in UV: centre (x, y) and radius (z) ("lens_circle", default the
-	// whole square). With "lens_disc", the lens keeps its own material and the optic is drawn as this
-	// disc over it, fading in on the sights, with the reticle on top (for square lens meshes, e.g. the Jitte's).
+	// A second pane of the same glass ("lens_map2", e.g. a holo sight's front and rear windows); the optic
+	// is drawn on whichever is nearer the eye.
+	bool	m_bHasIronOpticLensMap2;
+	Vector	m_vecIronOpticLens2Origin;
+	Vector	m_vecIronOpticLens2U;
+	Vector	m_vecIronOpticLens2V;
+	// The lens within that surface in UV ("lens_circle" "u v radius [vradius]", default the whole square):
+	// centre (x, y), radius across (z) and down (m_flIronOpticLensRadiusV). Its shape is a superellipse
+	// ("lens_shape": 2 = round, higher = squarer). With "lens_disc", the lens keeps its own material and the
+	// optic is drawn as this shape over it, fading in on the sights, with the reticle on top (for square lens
+	// meshes, e.g. the Jitte's).
 	Vector	m_vecIronOpticLensCircle;
+	float	m_flIronOpticLensRadiusV;
+	float	m_flIronOpticLensShape;
 	bool	m_bIronOpticLensDisc;
+	// "window": clear sight glass (red dots, holo sights). Only while cloaked, the glass shows the world
+	// behind it exactly (no zoom), so the cloak doesn't smear the view, with the glass's own texture on top.
+	bool	m_bIronOpticWindow;
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 

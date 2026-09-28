@@ -69,6 +69,20 @@ WeaponData
 		"up"		"0.5"
 	}
 
+	"IronsightOptic"
+	{
+		// Clear holo sight glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
+		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/srm_reticle"
+		// The glass on body (from v_*_srm(_s).mdl) and its second pane, and the clear part of it in its UVs.
+		"lens_bone"	"body"
+		"lens_map"	"1.149 -1.191 12.36  -2.292 0 0  0.001166 0 1.745"
+		"lens_map2"	"-1.149 -0.32 12.36  2.292 0 0.000887  -0.001165 0 1.744"
+		"lens_circle"	"0.5 0.5 0.46 0.46"
+		"lens_shape"	"4"
+	}
+
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
 	SoundData
 	{

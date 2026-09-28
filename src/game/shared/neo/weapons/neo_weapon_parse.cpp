@@ -133,13 +133,26 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 		m_bHasIronOpticLensMap = m_szIronOpticLensBone[0] && sscanf(pOptic->GetString("lens_map", ""), "%f %f %f %f %f %f %f %f %f",
 			&o.x, &o.y, &o.z, &u.x, &u.y, &u.z, &v.x, &v.y, &v.z) == 9;
 	}
+	m_bHasIronOpticLensMap2 = false;
 	m_vecIronOpticLensCircle.Init(0.5f, 0.5f, 0.5f);
+	m_flIronOpticLensRadiusV = 0.5f;
+	m_flIronOpticLensShape = 2.0f;
 	if (pOptic)
 	{
-		sscanf(pOptic->GetString("lens_circle", "0.5 0.5 0.5"), "%f %f %f",
-			&m_vecIronOpticLensCircle.x, &m_vecIronOpticLensCircle.y, &m_vecIronOpticLensCircle.z);
+		Vector &o = m_vecIronOpticLens2Origin, &u = m_vecIronOpticLens2U, &v = m_vecIronOpticLens2V;
+		m_bHasIronOpticLensMap2 = m_bHasIronOpticLensMap && sscanf(pOptic->GetString("lens_map2", ""), "%f %f %f %f %f %f %f %f %f",
+			&o.x, &o.y, &o.z, &u.x, &u.y, &u.z, &v.x, &v.y, &v.z) == 9;
+		Vector &circle = m_vecIronOpticLensCircle;
+		const int count = sscanf(pOptic->GetString("lens_circle", "0.5 0.5 0.5"), "%f %f %f %f",
+			&circle.x, &circle.y, &circle.z, &m_flIronOpticLensRadiusV);
+		if (count < 4)
+		{
+			m_flIronOpticLensRadiusV = circle.z;
+		}
+		m_flIronOpticLensShape = Max(1.0f, pOptic->GetFloat("lens_shape", 2.0f));
 	}
-	m_bIronOpticLensDisc = pOptic && pOptic->GetBool("lens_disc") && m_bHasIronOpticLensMap;
+	m_bIronOpticWindow = pOptic && pOptic->GetBool("window") && m_bHasIronOpticLensMap;
+	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
 
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;

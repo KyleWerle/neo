@@ -74,6 +74,21 @@ WeaponData
 		"up"		"4.75"
 	}
 
+	"IronsightOptic"
+	{
+		// Clear holo sight glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
+		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/supa7_reticle"
+		// The glass on Base (from v_*_shotgun.mdl) and its second pane, and the clear part of it in its UVs.
+		"lens_bone"	"Base"
+		"lens_map"	"-1.468 -4.191 8.404  3.004 0 0  0 0 -3.112"
+		"lens_map2"	"-1.468 -3.846 8.404  3.004 0 0  0 0 -3.112"
+		"lens_circle"	"0.5 0.5 0.46 0.46"
+		"lens_shape"	"4"
+	}
+
+
 	// Ironsight fire animation: the pump's pullback is large, keep it in frame.
 	"IronsightRecoil"
 	{
