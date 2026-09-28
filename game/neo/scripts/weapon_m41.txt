@@ -92,6 +92,8 @@ WeaponData
 		"lens_map"	"0.756 -15.976 10.134  -3.266 0 0  0 0 -3.266"
 		"lens_map2"	"0.756 -16.245 10.139  -3.266 0 0  0 0 -3.266"
 		"lens_circle"	"0.5125 0.501 0.42 0.46"
+		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
+		"window_glass"	"0.078 0.229  0.078 0.972  0.249 0.030  0.775 0.030  0.947 0.229  0.947 0.972"
 		"lens_shape"	"3"
 	}
 

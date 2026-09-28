@@ -75,14 +75,35 @@ static const Vector2D *LensOutline(float shape)
 	return s_outline;
 }
 
-// The lens shape ("lens_circle", "lens_shape") in rings of shared vertices: centreAlpha inside the fade
-// radius, easing to zero at the rim. The live view fills it (bLiveView); anything else (the reticle) uses
-// the lens's UVs.
+// An area of the lens surface in UV to draw over, as an outline around a centre, scaled: the lens itself
+// ("lens_circle", "lens_shape") or the whole glass ("window_glass", else the lens), grown by grow.
+struct LensArea
+{
+	float centreU, centreV, scaleU, scaleV;
+	const Vector2D *pOutline;
+	int points;
+};
+
+static LensArea LensAreaOf(const CNEOWeaponInfo &data, bool bWholeGlass, float grow = 1.0f)
+{
+	if (bWholeGlass && data.m_iIronOpticWindowGlassPoints >= 3)
+	{
+		const Vector &centre = data.m_vecIronOpticWindowCircle;
+		return { centre.x, centre.y, grow, grow, data.m_vecIronOpticWindowGlass, data.m_iIronOpticWindowGlassPoints };
+	}
+	const Vector &circle = data.m_vecIronOpticLensCircle;
+	return { circle.x, circle.y, circle.z * grow, data.m_flIronOpticLensRadiusV * grow,
+		LensOutline(data.m_flIronOpticLensShape), LENS_SEGMENTS };
+}
+
+// An area of the lens (LensAreaOf) in rings of shared vertices: centreAlpha inside the fade radius, easing to
+// zero at the rim. The live view fills it (bLiveView); anything else (the reticle) uses the lens's UVs.
 static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const CNEOWeaponInfo &data,
-	float centreAlpha, float fadeStart, bool bLiveView)
+	const LensArea &area, float centreAlpha, float fadeStart, bool bLiveView)
 {
 	const Vector &circle = data.m_vecIronOpticLensCircle;
-	const Vector2D *pOutline = LensOutline(data.m_flIronOpticLensShape);
+	const Vector2D *pOutline = area.pOutline;
+	const int segments = area.points;
 	const Vector eye = CurrentViewOrigin();
 
 	// The live view of a lens is laid out as the lens is seen on screen, level with the eye: the lens's
@@ -101,13 +122,13 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 	pRenderContext->Bind(pMaterial);
 	IMesh *pMesh = pRenderContext->GetDynamicMesh();
 	CMeshBuilder meshBuilder;
-	// The centre, then LENS_RINGS rings of LENS_SEGMENTS vertices; a fan to the first ring, quads between rings.
-	const int vertices = 1 + LENS_RINGS * LENS_SEGMENTS;
-	const int indices = LENS_SEGMENTS * 3 + (LENS_RINGS - 1) * LENS_SEGMENTS * 6;
+	// The centre, then LENS_RINGS rings of the outline's points; a fan to the first ring, quads between rings.
+	const int vertices = 1 + LENS_RINGS * segments;
+	const int indices = segments * 3 + (LENS_RINGS - 1) * segments * 6;
 	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, vertices, indices);
 	const auto vertex = [&](float x, float y, float fraction) {
-		const float u = circle.x + circle.z * x;
-		const float v = circle.y + data.m_flIronOpticLensRadiusV * y;
+		const float u = area.centreU + area.scaleU * x;
+		const float v = area.centreV + area.scaleV * y;
 		const Vector world = pane.At(u, v);
 		float texU = u, texV = v;
 		if (bLiveView && data.m_bIronOpticWindow)
@@ -135,14 +156,14 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 	for (int ring = 1; ring <= LENS_RINGS; ++ring)
 	{
 		const float fraction = static_cast<float>(ring) / LENS_RINGS;
-		for (int seg = 0; seg < LENS_SEGMENTS; ++seg)
+		for (int seg = 0; seg < segments; ++seg)
 		{
 			vertex(pOutline[seg].x * fraction, pOutline[seg].y * fraction, fraction);
 		}
 	}
 	// Vertex index of ring r (1-based), segment s (wrapping).
-	const auto at = [](int ring, int seg) { return 1 + (ring - 1) * LENS_SEGMENTS + (seg % LENS_SEGMENTS); };
-	for (int seg = 0; seg < LENS_SEGMENTS; ++seg)
+	const auto at = [segments](int ring, int seg) { return 1 + (ring - 1) * segments + (seg % segments); };
+	for (int seg = 0; seg < segments; ++seg)
 	{
 		meshBuilder.FastIndex(0);
 		meshBuilder.FastIndex(at(1, seg));
@@ -199,11 +220,12 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 		&& NeoIronsightOpticTexture();
 	if (data.m_bIronOpticWindow)
 	{
-		// Only with this frame's view of what lies behind the glass; clear to its edge, softened at the rim.
+		// Only with this frame's view of what lies behind the glass; clear to its edge, softened past it (the
+		// view reaches NEO_IRONSIGHT_WINDOW_GROW past the outline).
 		state.bLiveView = state.bLiveView && NeoIronsightWindowReady();
 		if (state.bLiveView)
 		{
-			state.fadeStart = 0.85f;
+			state.fadeStart = 1.0f / NEO_IRONSIGHT_WINDOW_GROW;
 		}
 	}
 	else if (state.bLiveView)
@@ -249,7 +271,7 @@ static void DrawDebugLensShape(const NeoLensPane &pane, const CNEOWeaponInfo &da
 		pVMT->SetInt("$nocull", 1);
 		s_debug.Init("__neo_ironsight_optic_debug", TEXTURE_GROUP_OTHER, pVMT);
 	}
-	DrawLensShape(s_debug, pane, data, 0.4f, 1.0f, false);
+	DrawLensShape(s_debug, pane, data, LensAreaOf(data, data.m_bIronOpticWindow), 0.4f, 1.0f, false);
 }
 
 void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
@@ -270,12 +292,15 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	}
 	if (bView)
 	{
-		DrawLensShape(LiveViewMaterial(), pane, data, state.centreAlpha, state.fadeStart, true);
+		DrawLensShape(LiveViewMaterial(), pane, data, LensAreaOf(data, data.m_bIronOpticWindow), state.centreAlpha,
+			state.fadeStart, true);
 	}
 	if (bReticle)
 	{
-		DrawLensShape(state.pReticle, pane, data, state.bLiveView ? state.centreAlpha : 1.0f,
-			state.bLiveView ? state.fadeStart : 1.0f, false);
+		// Sight glass: its own art over the whole glass, as it is on the gun.
+		const bool bFaded = state.bLiveView && !data.m_bIronOpticWindow;
+		DrawLensShape(state.pReticle, pane, data, LensAreaOf(data, data.m_bIronOpticWindow),
+			bFaded ? state.centreAlpha : 1.0f, bFaded ? state.fadeStart : 1.0f, false);
 	}
 	if (cl_neo_ironsight_optic_debug.GetInt() >= 2 && part != NEO_LENS_VIEW)
 	{
@@ -284,28 +309,50 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 }
 
 //-----------------------------------------------------------------------------
-// Seeing the gun through its glass: while cloaked or in thermals the whole gun, glass included, is drawn
-// with one override material, so the glass can't be left out by material. Instead the clear view goes down
-// first and the gun is drawn in slices, clipped just short of each pane: the gun behind the glass lands on
-// the view, and the panes themselves (in the thin gaps) never draw. One pane: in front of it and behind it.
-// Two panes: in front of the near one, the housing between them, and behind the far one.
+// Seeing through the gun's glass: while cloaked or in thermals the whole gun, glass included, is drawn with
+// one override material, so the glass can't be left out by material. Instead the clear view goes down first,
+// on the pane nearer the eye, and the gun is drawn in slices, clipped just short of each pane, so the panes
+// themselves (in the thin gaps) never draw. The gun far behind the glass ("window_skip") goes down next,
+// over the view (the front of the gun, seen through the sight at the hip); then the view's outline goes into
+// depth, so nothing nearer behind the glass shows inside it: under the override, sight parts see-through in
+// their own material (plates, the housing's inside, the tube between two panes) would be solid there. One
+// pane: behind it and in front of it. Two panes: behind the far one, the housing between them, and in front
+// of the near one.
 //-----------------------------------------------------------------------------
-static constexpr float GLASS_SPLIT_GAP = 0.02f;	// half the gap around each pane's plane, in viewmodel units
+// Half the gap around each pane's plane, in viewmodel units. Every window sight's glass is flat to within
+// 0.0005 of its lens map (art/optics/glass-flatness.py); anything else crossing the plane (the housing) loses
+// a sliver this thin, which shimmers if it is wide enough to see.
+static constexpr float GLASS_SPLIT_GAP = 0.002f;
 
-ConVar cl_neo_ironsight_window_skip("cl_neo_ironsight_window_skip", "-1", FCVAR_NONE,
-	"Tuning: how deep behind sight glass the clear view covers the gun (the weapon's \"window_skip\"), in"
-	" viewmodel units; -1 = the weapon's own.");
+ConVar cl_neo_ironsight_window_skip("cl_neo_ironsight_window_skip", "", FCVAR_NONE,
+	"Tuning: how deep behind sight glass the gun is hidden while cloaked or in thermals (the weapon's"
+	" \"window_skip\"), in viewmodel units; negative = all of it; empty = the weapon's own.");
 
 // This frame's split, for drawing its view.
 static struct
 {
 	int frame = -1;
 	int drawnFrame = -1;
+	int depthFrame = -1;
 	const CNEOWeaponInfo *pData = nullptr;
 	NeoLensPane pane;
 	float centreAlpha = 1.0f;
 	float fadeStart = 1.0f;
 } s_glassView;
+
+// Draws nothing itself: only its depth is written (see NeoIronsightDrawGlassDepth).
+static IMaterial *GlassDepthMaterial()
+{
+	static CMaterialReference s_material;
+	if (!s_material.IsValid())
+	{
+		KeyValues *pVMT = new KeyValues("UnlitGeneric");
+		pVMT->SetString("$basetexture", "white");
+		pVMT->SetInt("$nocull", 1);
+		s_material.Init("__neo_ironsight_glass_depth", TEXTURE_GROUP_OTHER, pVMT);
+	}
+	return s_material;
+}
 
 static void SetPlane(float plane[4], const Vector &normal, float dist)
 {
@@ -346,23 +393,27 @@ static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 	// The panes are parallel; a second one closer than two gaps behind the first counts as the same plane.
 	const float farDist = data.m_bHasIronOpticLensMap2 ? Max(DotProduct(normal, farPane.origin), nearDist) : nearDist;
 	const bool bTwoPanes = farDist - nearDist > 4.0f * GLASS_SPLIT_GAP;
-	const float tunedSkip = cl_neo_ironsight_window_skip.GetFloat();
-	const float skip = (tunedSkip >= 0.0f) ? tunedSkip : data.m_flIronOpticWindowSkip;
+	const char *pszTunedSkip = cl_neo_ironsight_window_skip.GetString();
+	const float skip = pszTunedSkip[0] ? cl_neo_ironsight_window_skip.GetFloat() : data.m_flIronOpticWindowSkip;
 	split = NeoIronsightGlassSplit();
 	const auto addSlice = [&split](int planeCount) { split.planeCount[split.slices] = planeCount; return split.slices++; };
-	if (skip > 0.0f)
+	if (skip >= 0.0f)
 	{
-		// Just behind the (far) pane, under the view.
-		const int slice = addSlice(2);
-		SetPlane(split.planes[slice][0], normal, farDist + GLASS_SPLIT_GAP);
-		SetPlane(split.planes[slice][1], -normal, -(farDist + GLASS_SPLIT_GAP + skip));
+		// Far behind the (far) pane, over the view.
+		SetPlane(split.planes[addSlice(1)][0], normal, farDist + GLASS_SPLIT_GAP + skip);
 	}
-	split.viewBefore = split.slices;
-	// Further behind the (far) pane, over the view.
-	SetPlane(split.planes[addSlice(1)][0], normal, farDist + GLASS_SPLIT_GAP + skip);
+	split.depthBefore = split.slices;
+	// Behind the (far) pane, as far as that.
+	const int behind = addSlice((skip >= 0.0f) ? 2 : 1);
+	SetPlane(split.planes[behind][0], normal, farDist + GLASS_SPLIT_GAP);
+	if (skip >= 0.0f)
+	{
+		SetPlane(split.planes[behind][1], -normal, -(farDist + GLASS_SPLIT_GAP + skip));
+	}
 	if (bTwoPanes)
 	{
-		// Between the panes: the sight housing, which frames the view through the near pane.
+		// Between the panes: the sight's tube (hidden inside the glass's outline: drawn over the view, its walls
+		// flicker at the glass's edge).
 		const int slice = addSlice(2);
 		SetPlane(split.planes[slice][0], normal, nearDist + GLASS_SPLIT_GAP);
 		SetPlane(split.planes[slice][1], -normal, -farDist + GLASS_SPLIT_GAP);
@@ -380,13 +431,33 @@ static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 
 void NeoIronsightDrawGlassView(const CNEOWeaponInfo &data)
 {
-	// Once a frame: a second (translucent) pass of the gun must not cover what the first drew on it.
+	// Once a frame: a later draw of the gun must not cover what an earlier one put in front of the glass.
 	if (s_glassView.frame != gpGlobals->framecount || s_glassView.pData != &data || s_glassView.drawnFrame == gpGlobals->framecount)
 	{
 		return;
 	}
 	s_glassView.drawnFrame = gpGlobals->framecount;
-	DrawLensShape(LiveViewMaterial(), s_glassView.pane, data, s_glassView.centreAlpha, s_glassView.fadeStart, true);
+	DrawLensShape(LiveViewMaterial(), s_glassView.pane, data, LensAreaOf(data, true, NEO_IRONSIGHT_WINDOW_GROW),
+		s_glassView.centreAlpha, s_glassView.fadeStart, true);
+}
+
+void NeoIronsightDrawGlassDepth(const CNEOWeaponInfo &data)
+{
+	// Its outline into depth only, so the gun behind the glass fails the depth test there in every later draw.
+	if (s_glassView.frame != gpGlobals->framecount || s_glassView.pData != &data || s_glassView.depthFrame == gpGlobals->framecount)
+	{
+		return;
+	}
+	s_glassView.depthFrame = gpGlobals->framecount;
+	const LensArea area = LensAreaOf(data, true, NEO_IRONSIGHT_WINDOW_GROW);
+	CMatRenderContextPtr pRenderContext(materials);
+	pRenderContext->OverrideColorWriteEnable(true, false);
+	pRenderContext->OverrideAlphaWriteEnable(true, false);
+	pRenderContext->OverrideDepthEnable(true, true);
+	DrawLensShape(GlassDepthMaterial(), s_glassView.pane, data, area, 1.0f, 1.0f, false);
+	pRenderContext->OverrideDepthEnable(false, true);
+	pRenderContext->OverrideAlphaWriteEnable(false, true);
+	pRenderContext->OverrideColorWriteEnable(false, true);
 }
 
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,

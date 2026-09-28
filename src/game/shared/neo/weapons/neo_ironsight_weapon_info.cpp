@@ -72,7 +72,8 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 		m_flIronOpticLensShape = Max(1.0f, pOptic->GetFloat("lens_shape", 2.0f));
 	}
 	m_bIronOpticWindow = pOptic && pOptic->GetBool("window") && m_bHasIronOpticLensMap;
-	m_flIronOpticWindowSkip = pOptic ? Max(0.0f, pOptic->GetFloat("window_skip", 0.0f)) : 0.0f;
+	m_flIronOpticWindowSkip = pOptic ? pOptic->GetFloat("window_skip", -1.0f) : -1.0f;
+	ParseWindowGlass(pOptic ? pOptic->GetString("window_glass", "") : "");
 	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 
@@ -106,4 +107,85 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 		m_flIronGhostScale = clamp(pGhost->GetFloat("scale", 1.0f), 0.25f, 4.0f);
 		V_strncpy(m_szIronGhostLabel, pGhost->GetString("label", ""), sizeof(m_szIronGhostLabel));
 	}
+}
+
+void CNEOIronsightWeaponInfo::ParseWindowGlass(const char *pszPoints)
+{
+	m_vecIronOpticWindowCircle = m_vecIronOpticLensCircle;
+	m_flIronOpticWindowRadiusV = m_flIronOpticLensRadiusV;
+	m_iIronOpticWindowGlassPoints = 0;
+
+	// The points, sorted by u then v, for the hull (Andrew's monotone chain).
+	Vector2D points[2 * IRON_WINDOW_GLASS_MAX];
+	int count = 0;
+	for (char *pszEnd = nullptr; count < ARRAYSIZE(points); pszPoints = pszEnd)
+	{
+		const float u = strtof(pszPoints, &pszEnd);
+		if (pszEnd == pszPoints)
+		{
+			break;
+		}
+		pszPoints = pszEnd;
+		const float v = strtof(pszPoints, &pszEnd);
+		if (pszEnd == pszPoints)
+		{
+			break;
+		}
+		points[count++].Init(u, v);
+	}
+	if (count < 3)
+	{
+		return;
+	}
+	for (int i = 1; i < count; ++i)
+	{
+		const Vector2D point = points[i];
+		int j = i;
+		for (; j > 0 && (points[j - 1].x > point.x || (points[j - 1].x == point.x && points[j - 1].y > point.y)); --j)
+		{
+			points[j] = points[j - 1];
+		}
+		points[j] = point;
+	}
+	const auto cross = [](const Vector2D &o, const Vector2D &a, const Vector2D &b) {
+		return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+	};
+	Vector2D hull[2 * ARRAYSIZE(points)];
+	int size = 0;
+	for (int i = 0; i < count; ++i)	// lower hull
+	{
+		while (size >= 2 && cross(hull[size - 2], hull[size - 1], points[i]) <= 0.0f)
+		{
+			--size;
+		}
+		hull[size++] = points[i];
+	}
+	for (int i = count - 2, lower = size + 1; i >= 0; --i)	// upper hull
+	{
+		while (size >= lower && cross(hull[size - 2], hull[size - 1], points[i]) <= 0.0f)
+		{
+			--size;
+		}
+		hull[size++] = points[i];
+	}
+	--size;	// the last point repeats the first
+	if (size < 3 || size > IRON_WINDOW_GLASS_MAX)
+	{
+		return;
+	}
+
+	Vector2D mins = hull[0], maxs = hull[0];
+	for (int i = 1; i < size; ++i)
+	{
+		mins.Init(Min(mins.x, hull[i].x), Min(mins.y, hull[i].y));
+		maxs.Init(Max(maxs.x, hull[i].x), Max(maxs.y, hull[i].y));
+	}
+	const Vector2D centre = (mins + maxs) * 0.5f;
+	m_vecIronOpticWindowCircle.Init(centre.x, centre.y, (maxs.x - mins.x) * 0.5f);
+	m_flIronOpticWindowRadiusV = (maxs.y - mins.y) * 0.5f;
+	for (int i = 0; i < size; ++i)
+	{
+		m_vecIronOpticWindowGlass[i] = hull[i] - centre;
+	}
+	m_iIronOpticWindowGlassPoints = size;
 }

@@ -313,18 +313,19 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
 	const bool bThermal = NeoIronsightInThermals(pPlayer);
 
-	// Clear sight glass over the cloaked or thermal gun: the gun in slices around the glass, the clear view
-	// going down between them (see NeoIronsightGlassSplit).
+	// Clear sight glass over the cloaked or thermal gun: the clear view, then the gun in slices around the
+	// glass (see NeoIronsightGlassSplit).
 	NeoIronsightGlassSplit split;
 	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
 	{
 		int ret = 0;
 		CMatRenderContextPtr pRenderContext(materials);
+		NeoIronsightDrawGlassView(*pWeaponData);
 		for (int slice = 0; slice < split.slices; ++slice)
 		{
-			if (slice == split.viewBefore)
+			if (slice == split.depthBefore)
 			{
-				NeoIronsightDrawGlassView(*pWeaponData);
+				NeoIronsightDrawGlassDepth(*pWeaponData);
 			}
 			for (int i = 0; i < split.planeCount[slice]; ++i)
 			{

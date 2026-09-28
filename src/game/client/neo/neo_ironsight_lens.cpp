@@ -129,13 +129,15 @@ bool NeoIronsightWindowCamera(const CViewSetup &mainView, const CNEOWeaponInfo &
 	s_window.fovScale = NeoIronsightFovScale(mainView);
 
 	// The rays through the corners of the glass's bounding box, in eye space.
-	const Vector &circle = data.m_vecIronOpticLensCircle;
+	const Vector &circle = data.m_vecIronOpticWindowCircle;
 	Vector rays[4];
 	Vector middle(0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 4; ++i)
 	{
-		const float u = circle.x + ((i & 1) ? circle.z : -circle.z);
-		const float v = circle.y + ((i & 2) ? data.m_flIronOpticLensRadiusV : -data.m_flIronOpticLensRadiusV);
+		const float radiusU = circle.z * NEO_IRONSIGHT_WINDOW_GROW;
+		const float radiusV = data.m_flIronOpticWindowRadiusV * NEO_IRONSIGHT_WINDOW_GROW;
+		const float u = circle.x + ((i & 1) ? radiusU : -radiusU);
+		const float v = circle.y + ((i & 2) ? radiusV : -radiusV);
 		Vector eye;
 		VectorTransform(pane.At(u, v), s_window.worldToEye, eye);
 		if (eye.x <= 0.1f)
