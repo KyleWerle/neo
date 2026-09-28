@@ -1,5 +1,7 @@
 #include "cbase.h"
 #include "neo_predicted_viewmodel.h"
+#include "neo_ironsights.h"
+#include "bone_setup.h"
 
 #include "in_buttons.h"
 #include "neo_gamerules.h"
@@ -219,6 +221,71 @@ void CNEOPredictedViewModel::PostDataUpdate(DataUpdateType_t updateType)
 	BaseClass::PostDataUpdate(updateType);
 }
 
+void CNEOPredictedViewModel::StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask)
+{
+	BaseClass::StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
+
+	// On the sights, the idle sway and the fire animation's kick are damped against the idle rest
+	// pose, so the sight picture holds. Other sequences (reload, draw) play untouched.
+	if (!hdr || m_flIronsightBlend <= 0.0f)
+	{
+		return;
+	}
+	const int activity = GetSequenceActivity(GetSequence());
+	const bool bIdle = (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY);
+	if (!bIdle && !NeoIronsightIsRecoilActivity(activity))
+	{
+		return;
+	}
+
+	// Rest pose: the idle animation's first frame, which is the pose the sights are tuned in.
+	int restSequence = bIdle ? GetSequence() : SelectWeightedSequence(ACT_VM_IDLE);
+	if (restSequence < 0)
+	{
+		restSequence = GetSequence();
+	}
+
+	float poseparam[MAXSTUDIOPOSEPARAM];
+	GetPoseParameters(hdr, poseparam);
+	m_ironsightRest.Update(hdr, restSequence, 0.0f, poseparam);
+	const Vector *restPos = m_ironsightRest.pos;
+	const Quaternion *restQ = m_ironsightRest.q;
+
+	if (!bIdle)
+	{
+		// The gun is whatever bone carries the first attachment (the muzzle on NT viewmodels).
+		// Bones outside boneMask are not set up this pass and hold garbage, and the muzzle bone often
+		// exists only for its attachment, so walk up to the nearest bone that was set up (the gun body).
+		int gunBone = (hdr->GetNumAttachments() > 0) ? hdr->pAttachment(0).localbone : hdr->numbones() - 1;
+		while (gunBone >= 0 && !(hdr->boneFlags(gunBone) & boneMask))
+		{
+			gunBone = hdr->pBone(gunBone)->parent;
+		}
+		const auto *pWeapon = static_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
+		if (gunBone >= 0 && pWeapon)
+		{
+			// The fire animation's last frame is where it settles; the kick is measured from there.
+			m_ironsightSettled.Update(hdr, GetSequence(), 1.0f, poseparam);
+			NeoIronsightDampRecoil(hdr, pos, q, m_ironsightSettled.pos, m_ironsightSettled.q,
+				gunBone, pWeapon->GetNEOWpnData(), m_flIronsightBlend);
+		}
+		return;
+	}
+
+	const float liveWeight = NeoIronsightIdleScale(m_flIronsightBlend);
+	for (int i = 0; i < hdr->numbones(); ++i)
+	{
+		if (!(hdr->boneFlags(i) & boneMask))
+		{
+			continue;
+		}
+		pos[i] = Lerp(liveWeight, restPos[i], pos[i]);
+		Quaternion blended;
+		QuaternionSlerp(restQ[i], q[i], liveWeight, blended);
+		q[i] = blended;
+	}
+}
+
 void CNEOPredictedViewModel::ClientThink()
 {
 	SetNextClientThink(CLIENT_THINK_ALWAYS);
@@ -228,13 +295,27 @@ void CNEOPredictedViewModel::ClientThink()
 extern ConVar glow_outline_effect_enable;
 int CNEOPredictedViewModel::DrawModel(int flags)
 {
+	// On the sights, hide what the weapon lists as blocking the view (e.g. the MX optic's lens).
+	const auto *pWeapon = static_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
+	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
+	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
+
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 
 	if (pPlayer)
 	{
 		if (pPlayer->IsCloaked())
 		{
-			IMaterial *pass = materials->FindMaterial("models/player/toc", TEXTURE_GROUP_VIEW_MODEL);
+			// On the sights, a lighter cloak keeps the target sharp through the gun.
+			IMaterial *pass = nullptr;
+			if (pWeaponData && m_flIronsightBlend >= 0.5f && NeoIronsightsActive(*pWeaponData))
+			{
+				pass = materials->FindMaterial("models/player/toc_ironsight", TEXTURE_GROUP_VIEW_MODEL, false);
+			}
+			if (!pass || pass->IsErrorMaterial())
+			{
+				pass = materials->FindMaterial("models/player/toc", TEXTURE_GROUP_VIEW_MODEL);
+			}
 			Assert(pass && !pass->IsErrorMaterial());
 
 			if (pass && !pass->IsErrorMaterial())
@@ -519,19 +600,24 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 				m_flStartAimingChange = currentTime;
 				m_bViewAim = true;
 			}
-			const float endAimingChange = m_flStartAimingChange + NEO_ZOOM_SPEED;
+			const NeoAimPose aimPose = NeoGetAimPose(data);
+			const float aimChangeTime = NeoAimTransitionTime(data);
+			const float endAimingChange = m_flStartAimingChange + aimChangeTime;
 			const bool inAimingChange = (m_flStartAimingChange <= currentTime && currentTime < endAimingChange);
 			if (inAimingChange)
 			{
-				float percentage = clamp((currentTime - m_flStartAimingChange) / NEO_ZOOM_SPEED, 0.0f, 1.0f);
+				float percentage = clamp((currentTime - m_flStartAimingChange) / aimChangeTime, 0.0f, 1.0f);
 				if (playerAiming) percentage = 1.0f - percentage;
-				vOffset = Lerp(percentage, data.m_vecVMAimPosOffset, data.m_vecVMPosOffset);
-				angOffset = Lerp(percentage, data.m_angVMAimAngOffset, data.m_angVMAngOffset);
+				percentage = NeoAimTransitionCurve(data, percentage);
+				vOffset = Lerp(percentage, aimPose.pos, data.m_vecVMPosOffset);
+				angOffset = Lerp(percentage, aimPose.ang, data.m_angVMAngOffset);
+				m_flIronsightBlend = NeoIronsightsActive(data) ? (1.0f - percentage) : 0.0f;
 			}
 			else
 			{
-				vOffset = (playerAiming) ? data.m_vecVMAimPosOffset : data.m_vecVMPosOffset;
-				angOffset = (playerAiming) ? data.m_angVMAimAngOffset : data.m_angVMAngOffset;
+				vOffset = (playerAiming) ? aimPose.pos : data.m_vecVMPosOffset;
+				angOffset = (playerAiming) ? aimPose.ang : data.m_angVMAngOffset;
+				m_flIronsightBlend = (playerAiming && NeoIronsightsActive(data)) ? 1.0f : 0.0f;
 			}
 
 #ifdef CLIENT_DLL

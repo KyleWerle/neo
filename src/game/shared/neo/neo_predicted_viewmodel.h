@@ -5,6 +5,7 @@
 #endif
 
 #include "predicted_viewmodel.h"
+#include "neo_ironsights.h"
 
 #ifdef CLIENT_DLL
 //#include "clienteffectprecachesystem.h"
@@ -39,6 +40,7 @@ public:
 #ifdef CLIENT_DLL
 	virtual void PostDataUpdate(DataUpdateType_t updateType) override;
 	virtual void ClientThink() override;
+	virtual void StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask) override;
 
 	virtual int DrawModel(int flags);
 	virtual void ProcessMuzzleFlashEvent() final override;
@@ -69,7 +71,15 @@ public:
 	float m_flGunPush = 0.f;
 	float m_flGunPushLastChangeTime = 0.f;
 
+	// 0 at the hip, 1 fully on the sights (eased); stays 0 while ironsights are off.
+	float GetIronsightBlend() const { return m_flIronsightBlend; }
+
 private:
+	float m_flIronsightBlend = 0.f;
+#ifdef CLIENT_DLL
+	NeoIronsightRestPose m_ironsightRest;		// idle first frame
+	NeoIronsightRestPose m_ironsightSettled;	// current fire animation's last frame
+#endif
 	float m_flStartAimingChange;
 	bool m_bViewAim;
 	Vector m_vOffset;

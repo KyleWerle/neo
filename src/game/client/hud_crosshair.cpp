@@ -32,6 +32,8 @@
 #include "weapon_neobasecombatweapon.h"
 #include "weapon_srs.h"
 #include "neo_gamerules.h"
+#include "neo_ironsights.h"
+
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -556,6 +558,12 @@ void CHudCrosshair::Paint( void )
 		}
 		eNeoXHairWep = static_cast<ENeoCrosshairWep>(
 				UseCrosshairIndexFor(&m_crosshairInfo, iNeoXHairWep, &bHideCrosshair));
+
+		// With ironsights on, the sights do the aiming; crosshairs return only when aiming cloaked.
+		if (NeoIronsightsHideCrosshair(pNeoPlayer->m_bInAim, pNeoPlayer->IsCloaked()))
+		{
+			bHideCrosshair = true;
+		}
 	}
 	CrosshairWepInfo *crh = &m_crosshairInfo.wep[eNeoXHairWep];
 	const int iTexXHId = m_iTexXHId[clamp(crh->iStyle, 0, CROSSHAIR_STYLE__TOTAL - 1)];

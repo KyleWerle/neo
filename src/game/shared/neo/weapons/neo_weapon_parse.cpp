@@ -25,8 +25,12 @@ CNEOWeaponInfo::CNEOWeaponInfo()
 	m_bDropOnDeath = true;
 	iAimFOV = 0;
 
-	m_flVMFov = m_flVMAimFov = 0.f;
-	m_vecVMPosOffset = m_vecVMAimPosOffset = vec3_origin;
+	m_flVMFov = m_flVMAimFov = m_flVMIronFov = 0.f;
+	m_bHasIronsight = false;
+	m_flIronRecoilVertical = m_flIronRecoilSide = m_flIronRecoilBack = 1.f;
+	m_flIronRecoilMaxDist = m_flIronRecoilMaxAngle = 0.f;
+	m_szIronHideMaterials[0] = 0;
+	m_vecVMPosOffset = m_vecVMAimPosOffset = m_vecVMIronPosOffset = vec3_origin;
 	m_angVMAngOffset = m_angVMAimAngOffset = vec3_angle;
 }
 
@@ -68,28 +72,44 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 		m_angVMAngOffset[ROLL] = pViewModel->GetFloat("roll", 0);
 	}
 
-	// NEO TODO (Rain): add optional ironsight offsets
-	// in addition to "traditional" NT aim
-
-	// AimOffset = Ironsight ADS offset (Disabled)
-	// ZoomOffset = Traditional ADS offset
-#if 0
-	KeyValues *pAimOffset = pKeyValuesData->FindKey("AimOffset");
-#else
-	KeyValues* pAimOffset = pKeyValuesData->FindKey("ZoomOffset");
-#endif
-	if (pAimOffset)
+	// ZoomOffset = Traditional NT aim offset
+	// AimOffset = Ironsight offset, used instead when cl_neo_ironsights is enabled (see neo_ironsights.h)
+	if (KeyValues* pZoomOffset = pKeyValuesData->FindKey("ZoomOffset"))
 	{
-		m_flVMAimFov = pAimOffset->GetFloat("fov", 55);
+		m_flVMAimFov = pZoomOffset->GetFloat("fov", 55);
 
-		m_vecVMAimPosOffset.x = pAimOffset->GetFloat("forward", 0);
-		m_vecVMAimPosOffset.y = pAimOffset->GetFloat("right", 0);
-		m_vecVMAimPosOffset.z = pAimOffset->GetFloat("up", 0);
+		m_vecVMAimPosOffset.x = pZoomOffset->GetFloat("forward", 0);
+		m_vecVMAimPosOffset.y = pZoomOffset->GetFloat("right", 0);
+		m_vecVMAimPosOffset.z = pZoomOffset->GetFloat("up", 0);
 
-		m_angVMAimAngOffset[PITCH] = pAimOffset->GetFloat("pitch", 0);
-		m_angVMAimAngOffset[YAW] = pAimOffset->GetFloat("yaw", 0);
-		m_angVMAimAngOffset[ROLL] = pAimOffset->GetFloat("roll", 0);
+		m_angVMAimAngOffset[PITCH] = pZoomOffset->GetFloat("pitch", 0);
+		m_angVMAimAngOffset[YAW] = pZoomOffset->GetFloat("yaw", 0);
+		m_angVMAimAngOffset[ROLL] = pZoomOffset->GetFloat("roll", 0);
 	}
+
+	m_bHasIronsight = false;
+	if (KeyValues* pIronOffset = pKeyValuesData->FindKey("AimOffset"))
+	{
+		m_bHasIronsight = true;
+		m_flVMIronFov = pIronOffset->GetFloat("fov", 55);
+
+		m_vecVMIronPosOffset.x = pIronOffset->GetFloat("forward", 0);
+		m_vecVMIronPosOffset.y = pIronOffset->GetFloat("right", 0);
+		m_vecVMIronPosOffset.z = pIronOffset->GetFloat("up", 0);
+
+		m_angVMIronAngOffset[PITCH] = pIronOffset->GetFloat("pitch", 0);
+		m_angVMIronAngOffset[YAW] = pIronOffset->GetFloat("yaw", 0);
+		m_angVMIronAngOffset[ROLL] = pIronOffset->GetFloat("roll", 0);
+	}
+
+	// Optional per-weapon multipliers for the fire animation's kick while on the sights.
+	KeyValues* pIronRecoil = pKeyValuesData->FindKey("IronsightRecoil");
+	m_flIronRecoilVertical = pIronRecoil ? pIronRecoil->GetFloat("vertical", 1) : 1.f;
+	m_flIronRecoilSide = pIronRecoil ? pIronRecoil->GetFloat("side", 1) : 1.f;
+	m_flIronRecoilBack = pIronRecoil ? pIronRecoil->GetFloat("back", 1) : 1.f;
+	m_flIronRecoilMaxDist = pIronRecoil ? pIronRecoil->GetFloat("max_dist", 0) : 0.f;
+	m_flIronRecoilMaxAngle = pIronRecoil ? pIronRecoil->GetFloat("max_angle", 0) : 0.f;
+	V_strncpy(m_szIronHideMaterials, pKeyValuesData->GetString("IronsightHideMaterials", ""), sizeof(m_szIronHideMaterials));
 }
 
 

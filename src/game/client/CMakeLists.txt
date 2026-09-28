@@ -1733,6 +1733,7 @@ set(UNITY_SOURCE_NEO_SHARED
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_penetration_resistance.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_shared.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_spawnpoint.cpp
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsights.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel_muzzleflash.cpp
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_shot_manipulator.cpp
@@ -1763,6 +1764,7 @@ target_sources_grouped(
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_penetration_resistance.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_shared.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_player_spawnpoint.h
+    ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_ironsights.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_predicted_viewmodel_muzzleflash.h
     ${CMAKE_SOURCE_DIR}/game/shared/neo/neo_shot_manipulator.h

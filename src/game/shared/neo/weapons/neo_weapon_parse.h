@@ -38,6 +38,21 @@ public:
 	float	m_flVMAimFov;
 	Vector	m_vecVMAimPosOffset;
 	QAngle	m_angVMAimAngOffset;
+
+	bool	m_bHasIronsight;
+	float	m_flVMIronFov;
+	Vector	m_vecVMIronPosOffset;
+	QAngle	m_angVMIronAngOffset;
+
+	// Per-weapon multipliers on the cl_neo_ironsight_recoil_* scales ("IronsightRecoil" block).
+	float	m_flIronRecoilVertical;
+	float	m_flIronRecoilSide;
+	float	m_flIronRecoilBack;
+	float	m_flIronRecoilMaxDist;	// <= 0: use cl_neo_ironsight_recoil_max_dist
+	float	m_flIronRecoilMaxAngle;	// <= 0: use cl_neo_ironsight_recoil_max_angle
+
+	// Materials hidden while on the sights, e.g. an optic's lens (";"-separated, "IronsightHideMaterials").
+	char	m_szIronHideMaterials[256];
 };
 
 
