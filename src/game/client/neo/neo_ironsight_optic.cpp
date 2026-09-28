@@ -262,6 +262,29 @@ static void OpticView(const CViewSetup &mainView, const CNEOWeaponInfo &data, QA
 	QuaternionAngles(blended, angles);
 }
 
+// Whether anything shows the optic's view this frame, so the scene render can be skipped when not. Disc
+// lenses at the hip show only their own lens unless it is drawn over (cloak, thermals); the live view
+// fades in over the second half of aiming (as NeoIronsightDrawOpticDisc draws it). Sight glass is
+// already gated by the optic mode.
+static bool OpticViewShown(const CNEOWeaponInfo &data)
+{
+	if (!data.m_bIronOpticLensDisc || data.m_bIronOpticWindow)
+	{
+		return true;
+	}
+	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
+	if (!pPlayer)
+	{
+		return false;
+	}
+	if (pPlayer->IsCloaked() || NeoIronsightInThermals(pPlayer))
+	{
+		return true;
+	}
+	const C_NEOPredictedViewModel *pViewModel = pPlayer->GetNEOViewModel();
+	return pViewModel && pViewModel->GetIronsightBlend() > 0.5f;
+}
+
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
 void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 {
@@ -281,7 +304,7 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 	}
 
 	const CNEOWeaponInfo *pData = LocalOpticWeaponData();
-	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
+	if (!pData || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid() || !OpticViewShown(*pData))
 	{
 		return;
 	}
