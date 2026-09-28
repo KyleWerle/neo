@@ -32,6 +32,7 @@ CNEOWeaponInfo::CNEOWeaponInfo()
 	m_szIronHideMaterials[0] = 0;
 	m_flIronOpticFov = 0.f;
 	m_szIronOpticLens[0] = 0;
+	m_flIronOpticMagnification = 0.f;
 	m_bHasIronOpticLensMap = false;
 	m_szIronOpticLensBone[0] = 0;
 	m_bHasIronDots = false;
@@ -123,6 +124,7 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 
 	KeyValues* pOptic = pKeyValuesData->FindKey("IronsightOptic");
 	m_flIronOpticFov = pOptic ? pOptic->GetFloat("fov", 15) : 0.f;
+	m_flIronOpticMagnification = pOptic ? pOptic->GetFloat("magnification", 0) : 0.f;
 	V_strncpy(m_szIronOpticLens, pOptic ? pOptic->GetString("lens", "") : "", sizeof(m_szIronOpticLens));
 	if (pOptic)
 	{

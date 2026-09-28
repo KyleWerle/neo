@@ -160,6 +160,35 @@ static QAngle OpticCameraAngles(const CViewSetup &mainView, const CNEOWeaponInfo
 	return cameraAngles;
 }
 
+// The optic's field of view. With a "magnification" and the lens surface known, it comes from how big
+// the lens looks on screen right now: at 1x the picture matches the world around the lens exactly (like
+// empty glass), at 3x everything in it is three times larger, whatever the lens size, sight tuning or
+// viewmodel FOV. Otherwise the script's fixed "fov".
+static float OpticFov(const CViewSetup &mainView, const CNEOWeaponInfo &data)
+{
+	C_NEO_Player *pPlayer = OpticViewPlayer();
+	C_BaseAnimating *pViewModel = pPlayer ? pPlayer->GetNEOViewModel() : nullptr;
+	const int bone = (pViewModel && data.m_bHasIronOpticLensMap) ? pViewModel->LookupBone(data.m_szIronOpticLensBone) : -1;
+	if (data.m_flIronOpticMagnification <= 0.0f || bone < 0)
+	{
+		return data.m_flIronOpticFov;
+	}
+	matrix3x4_t lensToWorld;
+	pViewModel->GetBoneTransform(bone, lensToWorld);
+	Vector centre;
+	VectorTransform(data.m_vecIronOpticLensOrigin + (data.m_vecIronOpticLensU + data.m_vecIronOpticLensV) * 0.5f, lensToWorld, centre);
+	const float radius = data.m_vecIronOpticLensU.Length() * 0.5f;
+	const float distance = (centre - mainView.origin).Length();
+	if (distance <= radius)
+	{
+		return data.m_flIronOpticFov;
+	}
+	// The lens's half-angle as drawn with the viewmodel FOV, converted to the main view's.
+	const float tanViewmodel = radius / sqrtf(distance * distance - radius * radius);
+	const float tanMain = tanViewmodel * tanf(DEG2RAD(mainView.fov * 0.5f)) / tanf(DEG2RAD(mainView.fovViewmodel * 0.5f));
+	return RAD2DEG(2.0f * atanf(tanMain / data.m_flIronOpticMagnification));
+}
+
 // Renders the magnified view from the eye into the optic's render target, like a point_camera monitor.
 void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 {
@@ -171,11 +200,11 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 
 	CViewSetup opticView = mainView;
 	opticView.angles = OpticCameraAngles(mainView, *pData);
+	opticView.fov = OpticFov(mainView, *pData);
 	opticView.x = 0;
 	opticView.y = 0;
 	opticView.width = OPTIC_RT_SIZE;
 	opticView.height = OPTIC_RT_SIZE;
-	opticView.fov = pData->m_flIronOpticFov;
 	opticView.m_flAspectRatio = 1.0f;
 	opticView.m_bOrtho = false;
 	opticView.m_bViewToProjectionOverride = false;

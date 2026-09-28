@@ -55,7 +55,8 @@ public:
 	char	m_szIronHideMaterials[256];
 
 	// Optic on the sights ("IronsightOptic" block); m_flIronOpticFov <= 0 means none. See neo_ironsight_optic.h.
-	float	m_flIronOpticFov;		// field of view of the magnified live view
+	float	m_flIronOpticFov;		// field of view of the live view, when no magnification can be used
+	float	m_flIronOpticMagnification;	// zoom relative to the lens's size on screen (1 = like empty glass); needs "lens_map"
 	char	m_szIronOpticLens[MAX_WEAPON_STRING];	// lens material the live view is drawn on; empty = overlay only
 	// The lens surface on its bone, for drawing the optic ourselves while cloaked: point(u, v) =
 	// origin + u * uAxis + v * vAxis in "lens_bone" space ("lens_map", extracted from the model).
