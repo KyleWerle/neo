@@ -559,8 +559,9 @@ void CHudCrosshair::Paint( void )
 		eNeoXHairWep = static_cast<ENeoCrosshairWep>(
 				UseCrosshairIndexFor(&m_crosshairInfo, iNeoXHairWep, &bHideCrosshair));
 
-		// With ironsights on, the sights do the aiming; crosshairs return only when aiming cloaked.
-		if (NeoIronsightsHideCrosshair(pNeoPlayer->m_bInAim, pNeoPlayer->IsCloaked()))
+		// With ironsights on, the sights do the aiming; crosshairs return only when aiming cloaked
+		// with a weapon that has no glowing sight dots.
+		if (NeoIronsightsHideCrosshair(pNeoPlayer->m_bInAim, pNeoPlayer->IsCloaked(), pWeapon->GetNEOWpnData().m_bHasIronDots))
 		{
 			bHideCrosshair = true;
 		}

@@ -32,6 +32,10 @@ CNEOWeaponInfo::CNEOWeaponInfo()
 	m_szIronHideMaterials[0] = 0;
 	m_flIronOpticFov = 0.f;
 	m_szIronOpticLens[0] = 0;
+	m_bHasIronDots = false;
+	m_vecIronDotFront.Init();
+	m_vecIronDotRear.Init();
+	m_flIronDotSize = 0.f;
 	m_szIronOpticOverlay[0] = 0;
 	m_szIronOpticReticle[0] = 0;
 	m_vecVMPosOffset = m_vecVMAimPosOffset = m_vecVMIronPosOffset = vec3_origin;
@@ -118,6 +122,18 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	KeyValues* pOptic = pKeyValuesData->FindKey("IronsightOptic");
 	m_flIronOpticFov = pOptic ? pOptic->GetFloat("fov", 15) : 0.f;
 	V_strncpy(m_szIronOpticLens, pOptic ? pOptic->GetString("lens", "") : "", sizeof(m_szIronOpticLens));
+
+	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
+	m_bHasIronDots = pDots != nullptr;
+	if (pDots)
+	{
+		sscanf(pDots->GetString("front", "0 0"), "%f %f", &m_vecIronDotFront.x, &m_vecIronDotFront.z);
+		sscanf(pDots->GetString("rear", "0 0 0"), "%f %f %f", &m_vecIronDotRear.x, &m_vecIronDotRear.z, &m_vecIronDotRear.y);
+		m_flIronDotSize = pDots->GetFloat("size", 0.12f);
+		// Tritium-style: green front post, orange rear notch.
+		m_clrIronDotFront = pDots->FindKey("front_color") ? pDots->GetColor("front_color") : Color(60, 255, 60, 255);
+		m_clrIronDotRear = pDots->FindKey("rear_color") ? pDots->GetColor("rear_color") : Color(255, 110, 20, 255);
+	}
 	V_strncpy(m_szIronOpticOverlay, pOptic ? pOptic->GetString("overlay", "vgui/hud/scopes/scope03") : "", sizeof(m_szIronOpticOverlay));
 	V_strncpy(m_szIronOpticReticle, pOptic ? pOptic->GetString("reticle", "") : "", sizeof(m_szIronOpticReticle));
 }

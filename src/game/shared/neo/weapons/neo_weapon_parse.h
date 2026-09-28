@@ -59,6 +59,14 @@ public:
 	char	m_szIronOpticLens[MAX_WEAPON_STRING];	// lens material the live view is drawn on; empty = overlay only
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
+
+	// Glowing sight dots while cloaked ("IronsightDots" block). See neo_ironsight_dots.h.
+	bool	m_bHasIronDots;
+	Vector	m_vecIronDotFront;	// x = depth along the sight line, z = drop (0 depth = auto)
+	Vector	m_vecIronDotRear;	// x = depth, y = half the gap between the two dots, z = drop
+	float	m_flIronDotSize;	// dot radius in viewmodel units
+	Color	m_clrIronDotFront;
+	Color	m_clrIronDotRear;
 };
 
 

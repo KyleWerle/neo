@@ -69,8 +69,9 @@ void NeoIronsightDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 class IMaterial;
 
 // True when crosshairs should be hidden: ironsights are on and the debug crosshair is off. Aiming
-// while cloaked keeps it, since the cloaked viewmodel's sights are hard to see.
-bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked);
+// while cloaked keeps it, since the cloaked viewmodel's sights are hard to see, unless the weapon has
+// glowing sight dots to aim with instead.
+bool NeoIronsightsHideCrosshair(bool bAiming, bool bCloaked, bool bHasSightDots);
 
 // Hides the weapon's "IronsightHideMaterials" (e.g. an optic's lens) for its lifetime while the gun
 // is on the sights. Wrap the viewmodel draw in one; the materials are restored when it goes out of scope.

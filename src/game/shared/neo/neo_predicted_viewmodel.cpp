@@ -4,6 +4,7 @@
 #include "bone_setup.h"
 #ifdef CLIENT_DLL
 #include "neo/neo_ironsight_optic.h"
+#include "neo/neo_ironsight_dots.h"
 #endif
 
 #include "in_buttons.h"
@@ -298,13 +299,26 @@ void CNEOPredictedViewModel::ClientThink()
 extern ConVar glow_outline_effect_enable;
 int CNEOPredictedViewModel::DrawModel(int flags)
 {
-	// On the sights, hide what the weapon lists as blocking the view (e.g. the MX optic's lens).
 	const auto *pWeapon = static_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
 	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
+	// On the sights, hide what the weapon lists as blocking the view (e.g. the MX optic's lens).
 	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
 	// With a live optic, its view is drawn on the lens (e.g. the MX's).
 	const NeoIronsightOpticLens opticLens(pWeaponData);
 
+	const int ret = DrawGun(flags, pWeaponData);
+
+	// Glowing sight dots on top, pinned to the gun, while cloaked.
+	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
+	if (ret && pWeaponData && pPlayer && (flags & STUDIO_RENDER))
+	{
+		NeoIronsightDrawDots(this, *pWeaponData, m_flIronsightBlend, pPlayer->IsInAim(), pPlayer->IsCloaked());
+	}
+	return ret;
+}
+
+int CNEOPredictedViewModel::DrawGun(int flags, const CNEOWeaponInfo *pWeaponData)
+{
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
 
 	if (pPlayer)

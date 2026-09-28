@@ -43,6 +43,8 @@ public:
 	virtual void StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask) override;
 
 	virtual int DrawModel(int flags);
+	// The gun itself (cloak and thermal passes included), without the ironsight overlays DrawModel adds.
+	int DrawGun(int flags, const CNEOWeaponInfo *pWeaponData);
 	virtual void ProcessMuzzleFlashEvent() final override;
 
 	virtual RenderGroup_t GetRenderGroup() override;
