@@ -292,6 +292,21 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 //-----------------------------------------------------------------------------
 static constexpr float GLASS_SPLIT_GAP = 0.02f;	// half the gap around each pane's plane, in viewmodel units
 
+ConVar cl_neo_ironsight_window_skip("cl_neo_ironsight_window_skip", "-1", FCVAR_NONE,
+	"Tuning: how deep behind sight glass the clear view covers the gun (the weapon's \"window_skip\"), in"
+	" viewmodel units; -1 = the weapon's own.");
+
+// This frame's split, for drawing its view.
+static struct
+{
+	int frame = -1;
+	int drawnFrame = -1;
+	const CNEOWeaponInfo *pData = nullptr;
+	NeoLensPane pane;
+	float centreAlpha = 1.0f;
+	float fadeStart = 1.0f;
+} s_glassView;
+
 static void SetPlane(float plane[4], const Vector &normal, float dist)
 {
 	plane[0] = normal.x;
@@ -331,24 +346,47 @@ static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 	// The panes are parallel; a second one closer than two gaps behind the first counts as the same plane.
 	const float farDist = data.m_bHasIronOpticLensMap2 ? Max(DotProduct(normal, farPane.origin), nearDist) : nearDist;
 	const bool bTwoPanes = farDist - nearDist > 4.0f * GLASS_SPLIT_GAP;
+	const float tunedSkip = cl_neo_ironsight_window_skip.GetFloat();
+	const float skip = (tunedSkip >= 0.0f) ? tunedSkip : data.m_flIronOpticWindowSkip;
 	split = NeoIronsightGlassSplit();
-	SetPlane(split.planes[0][0], -normal, -nearDist + GLASS_SPLIT_GAP);	// in front of the (near) pane
-	split.planeCount[0] = 1;
-	SetPlane(split.planes[1][0], normal, farDist + GLASS_SPLIT_GAP);	// behind the (far) pane
-	split.planeCount[1] = 1;
-	split.slices = 2;
+	const auto addSlice = [&split](int planeCount) { split.planeCount[split.slices] = planeCount; return split.slices++; };
+	if (skip > 0.0f)
+	{
+		// Just behind the (far) pane, under the view.
+		const int slice = addSlice(2);
+		SetPlane(split.planes[slice][0], normal, farDist + GLASS_SPLIT_GAP);
+		SetPlane(split.planes[slice][1], -normal, -(farDist + GLASS_SPLIT_GAP + skip));
+	}
+	split.viewBefore = split.slices;
+	// Further behind the (far) pane, over the view.
+	SetPlane(split.planes[addSlice(1)][0], normal, farDist + GLASS_SPLIT_GAP + skip);
 	if (bTwoPanes)
 	{
 		// Between the panes: the sight housing, which frames the view through the near pane.
-		SetPlane(split.planes[2][0], normal, nearDist + GLASS_SPLIT_GAP);
-		SetPlane(split.planes[2][1], -normal, -farDist + GLASS_SPLIT_GAP);
-		split.planeCount[2] = 2;
-		split.slices = 3;
+		const int slice = addSlice(2);
+		SetPlane(split.planes[slice][0], normal, nearDist + GLASS_SPLIT_GAP);
+		SetPlane(split.planes[slice][1], -normal, -farDist + GLASS_SPLIT_GAP);
 	}
+	// In front of the (near) pane.
+	SetPlane(split.planes[addSlice(1)][0], -normal, -nearDist + GLASS_SPLIT_GAP);
 
-	// The view: once a frame, as the split is worked out once a frame (see below).
-	DrawLensShape(LiveViewMaterial(), pane, data, state.centreAlpha, state.fadeStart, true);
+	s_glassView.frame = gpGlobals->framecount;
+	s_glassView.pData = &data;
+	s_glassView.pane = pane;
+	s_glassView.centreAlpha = state.centreAlpha;
+	s_glassView.fadeStart = state.fadeStart;
 	return true;
+}
+
+void NeoIronsightDrawGlassView(const CNEOWeaponInfo &data)
+{
+	// Once a frame: a second (translucent) pass of the gun must not cover what the first drew on it.
+	if (s_glassView.frame != gpGlobals->framecount || s_glassView.pData != &data || s_glassView.drawnFrame == gpGlobals->framecount)
+	{
+		return;
+	}
+	s_glassView.drawnFrame = gpGlobals->framecount;
+	DrawLensShape(LiveViewMaterial(), s_glassView.pane, data, s_glassView.centreAlpha, s_glassView.fadeStart, true);
 }
 
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,

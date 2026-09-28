@@ -84,6 +84,9 @@ WeaponData
 		"lens_map"	"5.195 -1.034 12.81  -10.93 0 0  0 0 -10.96"
 		"lens_circle"	"0.603 0.181 0.17 0.1"
 		"lens_shape"	"8"
+		// A sight plate 0.19 to 0.22 behind the glass is see-through in its own material but solid under the
+		// cloak or thermal override: the clear view covers the gun that far behind the glass.
+		"window_skip"	"0.25"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

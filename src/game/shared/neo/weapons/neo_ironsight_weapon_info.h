@@ -76,6 +76,11 @@ public:
 	// "window": clear sight glass (red dots, holo sights). While the gun is drawn over (cloak, thermals), the
 	// glass shows the world behind it exactly (no zoom), with the glass's own texture on top.
 	bool	m_bIronOpticWindow = false;
+	// "window_skip": how deep behind the glass the clear view covers the gun, inside the glass's outline, in
+	// viewmodel units (the gun further back still shows through). For sight parts just behind the glass that
+	// are see-through in their own material but solid under the cloak or thermal override. Measure with
+	// art/optics/find-glass-plates.py; tune live with cl_neo_ironsight_window_skip.
+	float	m_flIronOpticWindowSkip = 0.0f;
 	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
 	// is hidden and its reticle drawn once, on the pane nearer the eye, so the art doesn't show twice.
 	bool	m_bIronOpticOnePane = false;

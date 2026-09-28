@@ -72,6 +72,7 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 		m_flIronOpticLensShape = Max(1.0f, pOptic->GetFloat("lens_shape", 2.0f));
 	}
 	m_bIronOpticWindow = pOptic && pOptic->GetBool("window") && m_bHasIronOpticLensMap;
+	m_flIronOpticWindowSkip = pOptic ? Max(0.0f, pOptic->GetFloat("window_skip", 0.0f)) : 0.0f;
 	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 
