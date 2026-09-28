@@ -65,6 +65,11 @@ public:
 	Vector	m_vecIronOpticLensOrigin;
 	Vector	m_vecIronOpticLensU;
 	Vector	m_vecIronOpticLensV;
+	// The round lens within that surface in UV: centre (x, y) and radius (z) ("lens_circle", default the
+	// whole square). With "lens_disc", the lens keeps its own material and the optic is drawn as this
+	// disc over it, fading in on the sights, with the reticle on top (for square lens meshes, e.g. the Jitte's).
+	Vector	m_vecIronOpticLensCircle;
+	bool	m_bIronOpticLensDisc;
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING];	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING];	// reticle texture over the live view; empty = red dot
 

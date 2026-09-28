@@ -39,7 +39,7 @@ public:
 		materials->BeginRenderTargetAllocation();
 		m_texture.Init(materials->CreateNamedRenderTargetTextureEx2(OPTIC_RT_NAME, OPTIC_RT_SIZE, OPTIC_RT_SIZE,
 			// No alpha channel, so the view always samples as opaque: its alpha is never meaningful, and the
-			// cloaked lens (NeoIronsightDrawCloakedOptic) supplies its own through vertex alpha.
+			// lens disc (NeoIronsightDrawOpticDisc) supplies its own through vertex alpha.
 			RT_SIZE_NO_CHANGE, IMAGE_FORMAT_BGRX8888, MATERIAL_RT_DEPTH_SEPARATE,
 			TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, CREATERENDERTARGETFLAGS_HDR));
 		materials->EndRenderTargetAllocation();
@@ -175,9 +175,10 @@ static float OpticFov(const CViewSetup &mainView, const CNEOWeaponInfo &data)
 	}
 	matrix3x4_t lensToWorld;
 	pViewModel->GetBoneTransform(bone, lensToWorld);
+	const Vector &circle = data.m_vecIronOpticLensCircle;
 	Vector centre;
-	VectorTransform(data.m_vecIronOpticLensOrigin + (data.m_vecIronOpticLensU + data.m_vecIronOpticLensV) * 0.5f, lensToWorld, centre);
-	const float radius = data.m_vecIronOpticLensU.Length() * 0.5f;
+	VectorTransform(data.m_vecIronOpticLensOrigin + data.m_vecIronOpticLensU * circle.x + data.m_vecIronOpticLensV * circle.y, lensToWorld, centre);
+	const float radius = data.m_vecIronOpticLensU.Length() * circle.z;
 	const float distance = (centre - mainView.origin).Length();
 	if (distance <= radius)
 	{
@@ -221,7 +222,9 @@ void CViewRender::DrawNeoIronsightOptic(const CViewSetup &mainView)
 //-----------------------------------------------------------------------------
 NeoIronsightOpticLens::NeoIronsightOpticLens(const CNEOWeaponInfo *pData)
 {
-	if (!pData || !pData->m_szIronOpticLens[0] || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
+	// Disc lenses keep their own material; NeoIronsightDrawOpticDisc draws over them.
+	if (!pData || !pData->m_szIronOpticLens[0] || pData->m_bIronOpticLensDisc || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP
+		|| !s_opticSystem.m_texture.IsValid())
 	{
 		return;
 	}
@@ -377,13 +380,15 @@ DECLARE_HUDELEMENT(CNeoHudIronsightOptic);
 // While cloaked the gun is drawn with the cloak override, which takes the lens's live view with it.
 // Draw the optic again on the lens surface ourselves (the weapon's "lens_map"), fading out towards the
 // rim so it blends into the cloaked gun: first the live view, then the reticle, both through vertex alpha.
+// Disc lenses ("lens_disc") are drawn this way cloaked or not, fading in over their own lens as the gun
+// comes onto the sights. (A glitchy pixelated view off the sights was tried and parked: branch optic-glitch.)
 //-----------------------------------------------------------------------------
 ConVar cl_neo_ironsight_optic_cloak_alpha("cl_neo_ironsight_optic_cloak_alpha", "0.9", FCVAR_ARCHIVE,
 	"Opacity of the optic's centre while cloaked.", true, 0, true, 1);
 ConVar cl_neo_ironsight_optic_cloak_fade("cl_neo_ironsight_optic_cloak_fade", "0.55", FCVAR_ARCHIVE,
 	"While cloaked, where the optic starts fading out, as a fraction of the lens radius.", true, 0, true, 1);
 
-static IMaterial *CloakedLiveViewMaterial()
+static IMaterial *OpticDiscLiveViewMaterial()
 {
 	static CMaterialReference s_material;
 	if (!s_material.IsValid())
@@ -394,18 +399,19 @@ static IMaterial *CloakedLiveViewMaterial()
 		pVMT->SetInt("$vertexcolor", 1);
 		pVMT->SetInt("$vertexalpha", 1);
 		pVMT->SetInt("$nocull", 1);
-		s_material.Init("__neo_ironsight_optic_cloaked", TEXTURE_GROUP_OTHER, pVMT);
+		s_material.Init("__neo_ironsight_optic_disc", TEXTURE_GROUP_OTHER, pVMT);
 	}
 	return s_material;
 }
 
-// A disc over the lens in rings: full opacity inside the fade radius, easing to zero at the rim.
-static void DrawLensDisc(IMaterial *pMaterial, const matrix3x4_t &lensToWorld, const CNEOWeaponInfo &data)
+// A disc over the lens circle in rings: centreAlpha inside the fade radius, easing to zero at the rim.
+// The live view fills the disc (bLiveView); anything else (the reticle) uses the lens's own UVs.
+static void DrawLensDisc(IMaterial *pMaterial, const matrix3x4_t &lensToWorld, const CNEOWeaponInfo &data,
+	float centreAlpha, float fadeStart, bool bLiveView)
 {
 	constexpr int RINGS = 8;
 	constexpr int SEGMENTS = 32;
-	const float centreAlpha = cl_neo_ironsight_optic_cloak_alpha.GetFloat();
-	const float fadeStart = cl_neo_ironsight_optic_cloak_fade.GetFloat();
+	const Vector &circle = data.m_vecIronOpticLensCircle;
 	const Vector toEye = CurrentViewOrigin();
 
 	// Lens UV (u, v) -> world, lifted a hair toward the eye so it sits on the lens rather than in it.
@@ -427,13 +433,20 @@ static void DrawLensDisc(IMaterial *pMaterial, const matrix3x4_t &lensToWorld, c
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, SEGMENTS * (2 * RINGS - 1));
 	const auto vertex = [&](float ringFraction, int segment) {
-		const float angle = 2.0f * M_PI_F * segment / SEGMENTS;
-		const float u = 0.5f + 0.5f * ringFraction * cosf(angle);
-		const float v = 0.5f + 0.5f * ringFraction * sinf(angle);
+		const float c = cosf(2.0f * M_PI_F * segment / SEGMENTS), s = sinf(2.0f * M_PI_F * segment / SEGMENTS);
+		const float u = circle.x + circle.z * ringFraction * c;
+		const float v = circle.y + circle.z * ringFraction * s;
 		Vector position;
 		point(u, v, position);
 		meshBuilder.Color4ub(255, 255, 255, alphaAt(ringFraction));
-		meshBuilder.TexCoord2f(0, u, v);
+		if (bLiveView)
+		{
+			meshBuilder.TexCoord2f(0, 0.5f + 0.5f * ringFraction * c, 0.5f + 0.5f * ringFraction * s);
+		}
+		else
+		{
+			meshBuilder.TexCoord2f(0, u, v);
+		}
 		meshBuilder.Position3fv(position.Base());
 		meshBuilder.AdvanceVertex();
 	};
@@ -458,12 +471,26 @@ static void DrawLensDisc(IMaterial *pMaterial, const matrix3x4_t &lensToWorld, c
 	pMesh->Draw();
 }
 
-void NeoIronsightDrawCloakedOptic(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data)
+void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, float ironsightBlend)
 {
-	if (!pViewModel || !data.m_bHasIronOpticLensMap || NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
+	if (!pViewModel || !data.m_bHasIronOpticLensMap || (!bCloaked && !data.m_bIronOpticLensDisc)
+		|| NeoGetIronsightOpticMode() != NEO_OPTIC_PIP || !s_opticSystem.m_texture.IsValid())
 	{
 		return;
 	}
+	// Disc lenses show only their own lens at the hip; the live view fades in over the second half of aiming.
+	float visibility = 1.0f;
+	if (data.m_bIronOpticLensDisc)
+	{
+		const float t = clamp((ironsightBlend - 0.5f) / 0.5f, 0.0f, 1.0f);
+		visibility = t * t * (3.0f - 2.0f * t);
+		if (visibility <= 0.0f)
+		{
+			return;
+		}
+	}
+	const float centreAlpha = visibility * (bCloaked ? cl_neo_ironsight_optic_cloak_alpha.GetFloat() : 1.0f);
+	const float fadeStart = bCloaked ? cl_neo_ironsight_optic_cloak_fade.GetFloat() : 1.0f;
 	const int bone = pViewModel->LookupBone(data.m_szIronOpticLensBone);
 	if (bone < 0)
 	{
@@ -471,13 +498,13 @@ void NeoIronsightDrawCloakedOptic(C_BaseAnimating *pViewModel, const CNEOWeaponI
 	}
 	matrix3x4_t lensToWorld;
 	pViewModel->GetBoneTransform(bone, lensToWorld);
-	DrawLensDisc(CloakedLiveViewMaterial(), lensToWorld, data);
+	DrawLensDisc(OpticDiscLiveViewMaterial(), lensToWorld, data, centreAlpha, fadeStart, true);
 	if (data.m_szIronOpticReticle[0])
 	{
 		IMaterial *pReticle = materials->FindMaterial(data.m_szIronOpticReticle, TEXTURE_GROUP_VGUI, false);
 		if (pReticle && !pReticle->IsErrorMaterial())
 		{
-			DrawLensDisc(pReticle, lensToWorld, data);
+			DrawLensDisc(pReticle, lensToWorld, data, centreAlpha, fadeStart, false);
 		}
 	}
 }
