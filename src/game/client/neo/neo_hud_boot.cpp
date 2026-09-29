@@ -3,6 +3,7 @@
 #include "neo_ghost_stroke.h"
 #include "neo_ironsights.h"
 #include "c_neo_player.h"
+#include "neo_gunplay_shots.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -63,6 +64,12 @@ static void WatchSpawn(float now)
 		s_flSpawnEpoch = now;
 	}
 	s_bWasAlive = bAlive;
+	// Spectating: a new player watched in first person boots the HUD again.
+	const float viewChanged = NeoGunplayWatchShots().viewChanged;
+	if (viewChanged > s_flSpawnEpoch && now - viewChanged < 0.1f)
+	{
+		s_flSpawnEpoch = viewChanged;
+	}
 }
 
 static vgui::HFont BootFont()

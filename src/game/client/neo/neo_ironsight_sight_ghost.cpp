@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_sight_ghost.h"
 #include "neo_ghost_stroke.h"
+#include "neo_gunplay_shots.h"
 #include "neo_ironsight_profile.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_optic.h"
@@ -178,25 +179,24 @@ static struct
 	float alignedSince = -1.0f;
 	float lock = 0.0f;
 	float shotTime = -1.0f;
-	const CNEOWeaponInfo *pShotWeapon = nullptr;
+	int shotCount = 0;
 	int lastClip = -1;	// the viewed weapon's rounds left, drawn beside the rear sight
 	int maxClip = -1;
 } s_anim;
 
 // Notes a shot when the viewed weapon's clip drops, and keeps its count for the readout.
+// Shots from the shot watcher (the local player's or a watched one's); a watched player's clip goes to them alone,
+// so their count isn't shown.
 static void WatchShots()
 {
-	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
-	auto *pWeapon = pPlayer ? dynamic_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
-	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
-	const int clip = pWeapon ? pWeapon->Clip1() : -1;
-	if (pWeaponData && pWeaponData == s_anim.pShotWeapon && clip >= 0 && clip < s_anim.lastClip)
+	const NeoGunplayShots &shots = NeoGunplayWatchShots();
+	if (shots.count != s_anim.shotCount)
 	{
 		s_anim.shotTime = gpGlobals->realtime;
 	}
-	s_anim.pShotWeapon = pWeaponData;
-	s_anim.lastClip = clip;
-	s_anim.maxClip = pWeapon ? pWeapon->GetMaxClip1() : -1;
+	s_anim.shotCount = shots.count;
+	s_anim.lastClip = (shots.pWeapon && !shots.bSpectating) ? shots.pWeapon->Clip1() : -1;
+	s_anim.maxClip = (shots.pWeapon && !shots.bSpectating) ? shots.pWeapon->GetMaxClip1() : -1;
 }
 
 void NeoIronsightPaintSightGhost(const Color &color)

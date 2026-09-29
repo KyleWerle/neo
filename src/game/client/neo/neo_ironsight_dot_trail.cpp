@@ -2,6 +2,7 @@
 #include "neo_ironsight_dot_trail.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_optic.h"
+#include "neo_gunplay_shots.h"
 #include "c_neo_player.h"
 #include "weapon_neobasecombatweapon.h"
 #include "iviewrender.h"
@@ -63,25 +64,23 @@ static struct
 	int newest = -1;
 	int count = 0;
 	float lastShot = -100.0f;
-	const CNEOWeaponInfo *pWeapon = nullptr;
-	int lastClip = -1;
+	int shotCount = 0;
+	float viewChanged = -1.0f;
 	float lastDebug = 0.0f;
 } s_trail;
 
 // Notes a shot when the viewed weapon's clip drops.
+// The view player's shots (neo_gunplay_shots.h), the local player's or a watched one's.
 static void WatchShots(float now)
 {
-	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
-	auto *pWeapon = pPlayer ? dynamic_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
-	const CNEOWeaponInfo *pData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
-	const int clip = pWeapon ? pWeapon->Clip1() : -1;
-	if (pData && pData == s_trail.pWeapon && clip >= 0 && clip < s_trail.lastClip)
+	const NeoGunplayShots &shots = NeoGunplayWatchShots();
+	if (shots.count != s_trail.shotCount || shots.viewChanged != s_trail.viewChanged)
 	{
 		s_trail.lastShot = now;
-		s_trail.count = 0;	// the flash puts the trail out
+		s_trail.count = 0;	// the flash puts the trail out (a new view player starts clean too)
 	}
-	s_trail.pWeapon = pData;
-	s_trail.lastClip = clip;
+	s_trail.shotCount = shots.count;
+	s_trail.viewChanged = shots.viewChanged;
 }
 
 void NeoIronsightRecordDotTrail(const Vector &direction, float angularRadius, float strength)

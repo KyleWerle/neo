@@ -3,6 +3,8 @@
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_optic.h"
+#include "neo_gunplay_shots.h"
 #include "prediction.h"
 #include "vstdlib/random.h"
 
@@ -205,12 +207,9 @@ void NeoViewmodelRecoilShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &cone
 	KnockShot(pWeapon, conePosition, false);
 }
 
-void NeoViewmodelRecoilRandomShot(C_NEOBaseCombatWeapon *pWeapon)
+// A knock toward a random point of the cone, from a private random stream (the game's own numbers are untouched).
+static void RandomKnock(C_NEOBaseCombatWeapon *pWeapon, bool bPellets)
 {
-	if (!prediction->IsFirstTimePredicted())
-	{
-		return;
-	}
 	static CUniformRandomStream s_random;
 	static bool s_bSeeded = false;
 	if (!s_bSeeded)
@@ -220,19 +219,55 @@ void NeoViewmodelRecoilRandomShot(C_NEOBaseCombatWeapon *pWeapon)
 	}
 	const float angle = s_random.RandomFloat(0.0f, 2.0f * M_PI_F);
 	const float distance = sqrtf(s_random.RandomFloat(0.0f, 1.0f));	// even over the disc
-	KnockShot(pWeapon, Vector2D(cosf(angle) * distance, sinf(angle) * distance), true);
+	KnockShot(pWeapon, Vector2D(cosf(angle) * distance, sinf(angle) * distance), bPellets);
+}
+
+void NeoViewmodelRecoilRandomShot(C_NEOBaseCombatWeapon *pWeapon)
+{
+	if (prediction->IsFirstTimePredicted())
+	{
+		RandomKnock(pWeapon, true);
+	}
+}
+
+// A player watched in first person: their shots aren't predicted here, and their seed isn't known, so each shot
+// (the shot watcher, by their muzzle flash) knocks toward a random point of the cone; a new view player starts
+// still.
+static void WatchSpectatedShots()
+{
+	static int s_iCount = 0;
+	static float s_flViewChanged = -1.0f;
+	const NeoGunplayShots &shots = NeoGunplayWatchShots();
+	if (shots.viewChanged != s_flViewChanged)
+	{
+		s_flViewChanged = shots.viewChanged;
+		s_iCount = shots.count;
+		s_recoil.rotation = s_recoil.tilt = s_recoil.linear = Spring3();
+		return;
+	}
+	if (shots.bSpectating && shots.pWeapon && shots.count != s_iCount)
+	{
+		const bool bPellets = (shots.pWeapon->GetNeoWepBits() & (NEO_WEP_SUPA7 | NEO_WEP_AA13)) != 0;
+		for (int i = s_iCount; i != shots.count && i - s_iCount < 3; ++i)
+		{
+			RandomKnock(shots.pWeapon, bPellets);
+		}
+	}
+	s_iCount = shots.count;
 }
 
 void NeoViewmodelRecoilApply(C_BasePlayer *pOwner, const QAngle &eyeAngles, float ironsightBlend, Vector &origin,
 	QAngle &angles)
 {
-	if (!pOwner || !pOwner->IsLocalPlayer())
+	// Whoever's eyes the view is through: the local player, or one watched in first person.
+	if (!pOwner || pOwner != NeoIronsightOpticViewPlayer())
 	{
 		return;
 	}
 	if (s_recoil.updatedFrame != gpGlobals->framecount)
 	{
 		s_recoil.updatedFrame = gpGlobals->framecount;
+		WatchSpectatedShots();
 		float freq, zeta;
 		NoseSpring(s_recoil.heaviness, freq, zeta);
 		const float omega = 2.0f * M_PI_F * freq;

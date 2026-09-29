@@ -2,6 +2,8 @@
 #include "neo_gunplay_crosshair.h"
 #include "neo_crosshair_family.h"
 #include "neo_gunplay_tunnel.h"
+#include "neo_gunplay_shots.h"
+#include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
 #include "neo_crosshair.h"
 #include "neo_predicted_viewmodel.h"
@@ -52,7 +54,7 @@ static struct
 	float lastTime = 0.0f;
 	int lastFrame = -1;
 	const C_NEOBaseCombatWeapon *pWeapon = nullptr;
-	int lastClip = -1;
+	int shotCount = 0;
 	float shotTime = -100.0f;
 	float precise = 0.0f;	// 0 to 1: the precision dot showing
 } s_layer;
@@ -133,10 +135,12 @@ void NeoCrosshairReadout(const NeoCrosshairFrame &frame, const Vector2D &at, con
 	vgui::surface()->DrawPrintText(text, count);
 }
 
-// Where the gun's knock and pivot have turned it from the aim, in screen pixels (right, down).
-static Vector2D GunDeviation(C_NEO_Player *pPlayer, float pixelsPerTangent)
+// Where the gun's knock and pivot have turned it from the aim, in screen pixels (right, down). The local player's
+// viewmodel is the watched player's while spectating in first person.
+static Vector2D GunDeviation(float pixelsPerTangent)
 {
-	auto *pViewModel = dynamic_cast<C_NEOPredictedViewModel *>(pPlayer->GetViewModel());
+	C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+	auto *pViewModel = pLocal ? dynamic_cast<C_NEOPredictedViewModel *>(pLocal->GetViewModel()) : nullptr;
 	if (!pViewModel)
 	{
 		return Vector2D(0.0f, 0.0f);
@@ -166,11 +170,13 @@ bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairSt
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
 	float spreadScale)
 {
-	auto *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	// Whoever's eyes the view is through: the local player, or one watched in first person.
+	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
 	if (!LayerShown(pWeapon) || !pPlayer)
 	{
 		return;
 	}
+	const NeoGunplayShots &shots = NeoGunplayWatchShots();
 	int wide, tall;
 	vgui::surface()->GetScreenSize(wide, tall);
 
@@ -178,7 +184,8 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	const float now = gpGlobals->realtime;
 	float dt = clamp(now - s_layer.lastTime, 0.0f, 0.1f);
 	s_layer.lastTime = now;
-	const bool bBoot = s_layer.lastFrame != gpGlobals->framecount - 1 || s_layer.pWeapon != pWeapon;
+	const bool bBoot = s_layer.lastFrame != gpGlobals->framecount - 1 || s_layer.pWeapon != pWeapon
+		|| now - shots.viewChanged < 0.001f;
 	if (bBoot)
 	{
 		dt = 0.0f;
@@ -187,15 +194,14 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		s_layer.spreadVelocity = 0.0f;
 		s_layer.aim = pPlayer->IsInAim() ? 1.0f : 0.0f;
 		s_layer.pWeapon = pWeapon;
-		s_layer.lastClip = pWeapon->Clip1();
+		s_layer.shotCount = shots.count;
 	}
-	// A shot: the clip drops.
-	const bool bShot = pWeapon->Clip1() < s_layer.lastClip;
+	const bool bShot = shots.count != s_layer.shotCount;
 	if (bShot)
 	{
 		s_layer.shotTime = now;
 	}
-	s_layer.lastClip = pWeapon->Clip1();
+	s_layer.shotCount = shots.count;
 	s_layer.lastFrame = gpGlobals->framecount;
 
 	// The spread's edge, eased (it steps shot to shot), and the hip-to-aimed look.
@@ -218,18 +224,31 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.pen.scale = frame.s;
 	frame.pen.trace = NeoSmoothStep((now - s_layer.bootStart) / TRACE_TIME);
 	frame.centre.Init(static_cast<float>(x), static_cast<float>(y));
-	const float scaledFov = DEG2RAD(ScaleFOVByWidthRatio(pPlayer->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
-	frame.deviation = GunDeviation(pPlayer, (wide * 0.5f) / tanf(scaledFov)) * cl_neo_gunplay_crosshair_parallax.GetFloat();
+	// The view's field of view is the local player's (spectating, the watched player's shows through it).
+	const float scaledFov = DEG2RAD(ScaleFOVByWidthRatio(C_BasePlayer::GetLocalPlayer()->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
+	frame.deviation = GunDeviation((wide * 0.5f) / tanf(scaledFov)) * cl_neo_gunplay_crosshair_parallax.GetFloat();
 	frame.spread = s_layer.spread;
 	frame.aim = NeoSmoothStep(s_layer.aim);
 	frame.alpha = cl_neo_gunplay_crosshair_alpha.GetFloat();
 	frame.sinceBoot = now - s_layer.bootStart;
 	frame.sinceShot = now - s_layer.shotTime;
-	frame.clip = pWeapon->Clip1();
-	frame.maxClip = pWeapon->GetMaxClip1();
+	// A watched player's clip and next attack go to them alone: no magazine readouts, and the gun's readiness from
+	// its last shot and its cycle.
+	frame.clip = shots.bSpectating ? -1 : pWeapon->Clip1();
+	frame.maxClip = shots.bSpectating ? -1 : pWeapon->GetMaxClip1();
 	frame.cycle = pWeapon->GetFireRate();
-	frame.ready = (frame.cycle > 0.0f)
-		? clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - gpGlobals->curtime) / frame.cycle, 0.0f, 1.0f) : 1.0f;
+	if (frame.cycle <= 0.0f)
+	{
+		frame.ready = 1.0f;
+	}
+	else if (shots.bSpectating)
+	{
+		frame.ready = clamp((now - s_layer.shotTime) / frame.cycle, 0.0f, 1.0f);
+	}
+	else
+	{
+		frame.ready = clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - gpGlobals->curtime) / frame.cycle, 0.0f, 1.0f);
+	}
 	frame.dt = dt;
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
