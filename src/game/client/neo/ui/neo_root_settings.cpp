@@ -1794,6 +1794,7 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 
 static const wchar_t *GUNPLAY_AIM_STYLE_LABELS[] = { L"Standard", L"ADS" };
 static const wchar_t *GUNPLAY_SIGHT_GHOST_LABELS[] = { L"Off", L"Cloaked", L"Always" };
+static constexpr float DOT_TRAIL_ON = 0.2f;	// the red dot afterimage switched on: cl_neo_ironsight_dot_trail's default
 
 void NeoSettings_Gunplay(NeoSettings *ns)
 {
@@ -1814,7 +1815,14 @@ void NeoSettings_Gunplay(NeoSettings *ns)
 		pGunplay->bSpreadPivot = GUNPLAY_MOTIONS[iMotion - GUNPLAY_MOTION_FULL].bPivot;
 	}
 	NeoUI::Divider(L"SIGHTS");
-	NeoUI::Slider(L"Red dot afterimage", &pGunplay->flDotTrail, 0.0f, 1.0f, 2, 0.05f);
+	// On or off; its strength is a config value (cl_neo_ironsight_dot_trail), kept while it stays on.
+	bool bDotTrail = pGunplay->flDotTrail > 0.0f;
+	const bool bPrevDotTrail = bDotTrail;
+	NeoUI::RingBoxBool(L"Red dot afterimage", &bDotTrail);
+	if (bDotTrail != bPrevDotTrail)
+	{
+		pGunplay->flDotTrail = bDotTrail ? DOT_TRAIL_ON : 0.0f;
+	}
 	NeoUI::RingBox(L"Sight ghost", GUNPLAY_SIGHT_GHOST_LABELS, ARRAYSIZE(GUNPLAY_SIGHT_GHOST_LABELS), &pGunplay->iSightGhost);
 }
 
