@@ -182,6 +182,9 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const C
 	pMesh->Draw();
 }
 
+// "reticle_in_lens" art fades out from this fraction of the lens circle to its edge.
+static constexpr float RETICLE_IN_LENS_FADE = 0.85f;
+
 // What this frame's lens drawing shows for the gun in view.
 struct LensState
 {
@@ -297,10 +300,13 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	}
 	if (bReticle)
 	{
-		// Sight glass: its own art over the whole glass, as it is on the gun.
-		const bool bFaded = state.bLiveView && !data.m_bIronOpticWindow;
-		DrawLensShape(state.pReticle, pane, data, LensAreaOf(data, data.m_bIronOpticWindow),
-			bFaded ? state.centreAlpha : 1.0f, bFaded ? state.fadeStart : 1.0f, false);
+		// Sight glass: its own art over the whole glass, as it is on the gun, unless its frame is dark (the view
+		// then shows clear past a soft edge around the lens circle).
+		const bool bWholeGlass = data.m_bIronOpticWindow && !data.m_bIronOpticReticleInLens;
+		const bool bFaded = state.bLiveView && !bWholeGlass;
+		const float fadeStart = data.m_bIronOpticReticleInLens ? RETICLE_IN_LENS_FADE : state.fadeStart;
+		DrawLensShape(state.pReticle, pane, data, LensAreaOf(data, bWholeGlass),
+			bFaded ? state.centreAlpha : 1.0f, bFaded ? fadeStart : 1.0f, false);
 	}
 	if (cl_neo_ironsight_optic_debug.GetInt() >= 2 && part != NEO_LENS_VIEW)
 	{

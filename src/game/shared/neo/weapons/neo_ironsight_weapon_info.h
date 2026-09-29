@@ -96,6 +96,9 @@ public:
 	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
 	// is hidden and its reticle drawn once, on the pane nearer the eye, so the art doesn't show twice.
 	bool	m_bIronOpticOnePane = false;
+	// "reticle_in_lens": sight glass whose art has a dark frame (ZR68 red dot) draws its reticle only in the
+	// clear part ("lens_circle"), softened at the edge, rather than over the whole glass.
+	bool	m_bIronOpticReticleInLens = false;
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING] = "";	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING] = "";	// reticle material over the live view
 
