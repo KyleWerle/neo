@@ -108,7 +108,11 @@ static bool SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, cons
 	auto *pPlayer = pNeoViewModel ? dynamic_cast<C_NEO_Player *>(pNeoViewModel->GetOwner()) : nullptr;
 	bool bKnown = false;
 	SightAxisMemory &memory = AxisMemoryOf(pPlayer ? pPlayer->entindex() : 0, data, bKnown);
-	if (pPlayer && pPlayer->IsInAim() && pNeoViewModel->GetIronsightBlend() >= 0.999f)
+	// Measured on every aimed frame between shots, the gun still coming up (or Z easing into the ADS style) as well:
+	// the dot is on the aim from the first frame, and the first shot kicks it from there. Waiting for the gun to
+	// settle on the sights left the dot off the aim, or missing, until it did.
+	const bool bAimed = pPlayer && pPlayer->IsInAim();
+	if (bAimed)
 	{
 		const int activity = pNeoViewModel->GetSequenceActivity(pNeoViewModel->GetSequence());
 		if (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY)
@@ -125,6 +129,15 @@ static bool SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, cons
 		// out other guns' memories frame after frame).
 		memory.pData = nullptr;
 		memory.used = 0;
+	}
+	// Aimed with nothing measured yet (a gun just drawn, still in its draw): on the aim, as a dot at infinity is.
+	if (bAimed && !bKnown)
+	{
+		axis = CurrentViewForward();
+		return true;
+	}
+	if (!bKnown)
+	{
 		return false;
 	}
 	axis = frame.right * memory.axis.x + frame.up * memory.axis.y + frame.normal * memory.axis.z;
