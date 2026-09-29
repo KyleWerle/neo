@@ -162,6 +162,7 @@ void NeoHudBootPaint(vgui::Panel *pPanel, NeoHudBootState &state)
 			NeoGhostBegin(white, RoundFloatToInt(255.0f * ringFade * (1.0f - behind / RING_DOTS)));
 			NeoGhostStroke(pen, at - Vector2D(0.6f * s, 0.0f), at + Vector2D(0.6f * s, 0.0f), NEO_GHOST_MEDIUM);
 		}
+		NeoGhostFlush();
 	}
 
 	// The tech line, sliding in from far to the right along the panel's bottom, then fading.

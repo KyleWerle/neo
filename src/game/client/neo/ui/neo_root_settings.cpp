@@ -680,6 +680,7 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pCrosshair->bGunplayLayer = cvr->cl_neo_gunplay_crosshair.GetBool();
 		pCrosshair->iGunplayCentre = cvr->cl_neo_gunplay_crosshair_centre.GetInt();
 		pCrosshair->flGunplayLayerAlpha = cvr->cl_neo_gunplay_crosshair_alpha.GetFloat();
+		pCrosshair->flGunplayOutline = cvr->cl_neo_gunplay_outline.GetFloat();
 	}
 	{
 		NeoSettings::Gunplay *pGunplay = &ns->gunplay;
@@ -961,6 +962,7 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_gunplay_crosshair.SetValue(pCrosshair->bGunplayLayer);
 		cvr->cl_neo_gunplay_crosshair_centre.SetValue(pCrosshair->iGunplayCentre);
 		cvr->cl_neo_gunplay_crosshair_alpha.SetValue(pCrosshair->flGunplayLayerAlpha);
+		cvr->cl_neo_gunplay_outline.SetValue(pCrosshair->flGunplayOutline);
 	}
 	{
 		const NeoSettings::Gunplay *pGunplay = &ns->gunplay;
@@ -1402,7 +1404,7 @@ static const wchar_t *GUNPLAY_CENTRE_LABELS[] = { L"None", L"Tiny square", L"Sma
 void NeoSettings_Crosshair(NeoSettings *ns)
 {
 	static constexpr int IVIEW_ROWS = 5;
-	static constexpr int IMISC_ROWS = 8;
+	static constexpr int IMISC_ROWS = 9;
 	NeoSettings::Crosshair *pCrosshair = &ns->crosshair;
 
 	g_uiCtx.dPanel.y += g_uiCtx.dPanel.tall;
@@ -1672,6 +1674,7 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		NeoUI::RingBoxBool(L"Animated layer", &pCrosshair->bGunplayLayer);
 		NeoUI::RingBox(L"Centre mark (Default, Alt)", GUNPLAY_CENTRE_LABELS, ARRAYSIZE(GUNPLAY_CENTRE_LABELS), &pCrosshair->iGunplayCentre);
 		NeoUI::Slider(L"Layer opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
+		NeoUI::Slider(L"Dark outline", &pCrosshair->flGunplayOutline, 0.0f, 1.0f, 2, 0.05f);
 	}
 	NeoUI::EndSection();
 }

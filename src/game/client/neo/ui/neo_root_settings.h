@@ -184,6 +184,7 @@ struct NeoSettings
 		bool bGunplayLayer;
 		int iGunplayCentre;
 		float flGunplayLayerAlpha;
+		float flGunplayOutline;
 
 		// Textures
 		struct Texture
@@ -288,6 +289,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_neo_gunplay_crosshair);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_centre);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_alpha);
+		CONVARREF_DEF(cl_neo_gunplay_outline);
 		CONVARREF_DEF(cl_neo_lean_automatic);
 		CONVARREF_DEF(cl_neo_squad_hud_original);
 		CONVARREF_DEF(cl_neo_hud_health_mode);

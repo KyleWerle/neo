@@ -118,6 +118,7 @@ void NeoCrosshairReadout(const NeoCrosshairFrame &frame, const Vector2D &at, con
 	{
 		return;
 	}
+	NeoGhostFlush();	// the strokes so far under the text
 	wchar_t text[64];
 	V_wcsncpy(text, pText, sizeof(text) - sizeof(wchar_t));
 	const int length = V_wcslen(text);
@@ -293,4 +294,5 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	case NEO_CROSSHAIR_RIFLE:
 	default:					NeoCrosshairPaintRifle(frame); break;
 	}
+	NeoGhostFlush();
 }

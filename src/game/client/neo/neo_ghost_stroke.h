@@ -26,3 +26,6 @@ void NeoGhostBegin(const Color &color, int alpha);
 
 // One stroke from a to b, in screen pixels, with square caps (strokes meeting at a corner join solid).
 void NeoGhostStroke(const NeoGhostPen &pen, const Vector2D &a, const Vector2D &b, NeoGhostWeight weight);
+
+// Draws the strokes waiting on their outlines (cl_neo_gunplay_outline): call when a drawing is done.
+void NeoGhostFlush();

@@ -298,6 +298,8 @@ void NeoIronsightPaintSightGhost(const Color &color)
 		Stroke(frame.At(under, -2.0f * s * s_anim.lock, 9.0f * s), frame.At(under, 2.0f * s * s_anim.lock, 9.0f * s), MEDIUM);
 	}
 
+	NeoGhostFlush();
+
 	if (s_anim.lastClip >= 0)
 	{
 		static vgui::HFont s_font = vgui::INVALID_FONT;
