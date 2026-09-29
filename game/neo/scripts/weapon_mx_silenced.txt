@@ -63,9 +63,12 @@ WeaponData
 	"AimOffset"
 	{
 		"fov"		"40"
-		"forward"	"2"
-		"right"		"0.75"
-		"up"		"5.2"
+		"forward"		"2"
+		"right"		"0.77"
+		"up"		"5.24"
+		"pitch"		"0"
+		"yaw"		"0"
+		"roll"		"0"
 	}
 
 	"IronsightOptic"
