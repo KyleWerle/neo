@@ -1675,6 +1675,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_spread_ghost.h
     neo/neo_gunplay_spectator_hits.cpp
     neo/neo_gunplay_spectator_hits.h
+    neo/neo_gunplay_reserve.cpp
+    neo/neo_gunplay_reserve.h
     neo/neo_quickinfo.cpp
     neo/neo_quickinfo.h
     neo/neo_quickinfo_draw.cpp

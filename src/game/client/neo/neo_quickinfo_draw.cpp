@@ -354,7 +354,7 @@ void PaintHousing(const QuickFrame &f)
 }
 
 // The spawn labels, typed in and back out, placed clear of the housing and of each other: above the number, beside
-// the brackets' upper halves (the channel codes sit by the lower halves), below the bottom.
+// the brackets' upper halves (the channel codes sit by the lower halves), below the crosshair's magazine count.
 void PaintLabels(const QuickFrame &f)
 {
 	if (f.labels < 0.0f || f.labels > 3.4f)
@@ -389,7 +389,7 @@ void PaintLabels(const QuickFrame &f)
 	{
 		wchar_t vision[32];
 		V_UTF8ToUnicode(f.pVisionName, vision, sizeof(vision));
-		put(vision, 0.0f, BOTTOM + 20.0f, 0);
+		put(vision, 0.0f, BOTTOM + 42.0f, 0);	// below the crosshair's magazine count (neo_gunplay_reserve.h)
 	}
 	NeoGhostFlush();
 }

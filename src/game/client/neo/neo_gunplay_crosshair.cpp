@@ -5,6 +5,7 @@
 #include "neo_gunplay_marks.h"
 #include "neo_gunplay_spread_ghost.h"
 #include "neo_quickinfo.h"
+#include "neo_gunplay_reserve.h"
 #include "neo_spread_pivot.h"
 #include "neo_gunplay_tunnel.h"
 #include "neo_gunplay_shots.h"
@@ -438,6 +439,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	{
 		PaintOverflow(frame, family);
 	}
+	NeoGunplayPaintReserve(frame);
 	NeoGunplayPaintAim(frame);
 	NeoGhostFlush();
 }
