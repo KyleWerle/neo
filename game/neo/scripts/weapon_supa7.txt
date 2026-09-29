@@ -91,6 +91,9 @@ WeaponData
 		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"-0.010 0  -0.010 1  1 0  1 1"
 		"lens_shape"	"4"
+		// Collimated: the red dot (u v radius in the art) floats at infinity; the octagon and small ring stay on
+		// the glass.
+		"collimated_dot"	"0.486 0.491 0.02"
 	}
 
 

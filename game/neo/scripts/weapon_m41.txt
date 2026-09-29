@@ -95,6 +95,9 @@ WeaponData
 		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0.078 0.229  0.078 0.972  0.249 0.030  0.775 0.030  0.947 0.229  0.947 0.972"
 		"lens_shape"	"3"
+		// Collimated: just the chevron (u v radius in the art, clear of the dashes) floats at infinity; the dashed
+		// line stays on the glass.
+		"collimated_dot"	"0.516 0.483 0.035"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

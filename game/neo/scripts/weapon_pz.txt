@@ -89,6 +89,10 @@ WeaponData
 		// The sight's parts sit 0.19 to 0.56 behind the glass, the gun's body from 0.93: the front of the gun
 		// shows through the glass, the sight's insides don't.
 		"window_skip"	"0.7"
+		// Collimated: only the small centre dot (u v radius in the art) floats at infinity; the ring stays on the
+		// glass. The glass material (pz_sight2, not the sight body's pz_sight) is hidden and its art drawn by us.
+		"lens"		"models/weapons/pz_sight2"
+		"collimated_dot"	"0.601 0.181 0.01"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

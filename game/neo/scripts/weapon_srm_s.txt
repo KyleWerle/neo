@@ -83,6 +83,10 @@ WeaponData
 		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0.008 0.005  0.008 0.987  0.010 0.003  0.010 0.988  0.993 0.003  0.994 0.005  0.994 0.987  0.993 0.988"
 		"lens_shape"	"4"
+		// Collimated: the red dot (u v radius in the art) floats at infinity, where the sight points, and
+		// slides off the glass seen from off axis. The glass material is hidden and its art drawn by us.
+		"lens"		"models/weapons/x_holopoint2"
+		"collimated_dot"	"0.5 0.492 0.025"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
