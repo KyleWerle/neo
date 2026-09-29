@@ -176,6 +176,8 @@ ConVar sv_neo_readyup_countdown("sv_neo_readyup_countdown", "5", FCVAR_REPLICATE
 ConVar sv_neo_ghost_spawn_bias("sv_neo_ghost_spawn_bias", "0", FCVAR_REPLICATED, "Spawn ghost in the same location as the previous round on odd-indexed rounds (Round 1 = index 0)", true, 0, true, 1);
 ConVar sv_neo_ghost_spawn_force("sv_neo_ghost_spawn_force", "-1", FCVAR_REPLICATED | FCVAR_CHEAT,
 	"Pin the ghost to a fixed neo_ghostspawnpoint every round. -1 uses default random selection.", true, -1, false, 0);
+ConVar sv_neo_jgr_spawn_force("sv_neo_jgr_spawn_force", "-1", FCVAR_REPLICATED | FCVAR_CHEAT,
+	"Pin the juggernaut to a fixed neo_juggernautspawnpoint every round. -1 uses default random selection.", true, -1, false, 0);
 ConVar sv_neo_teamdamage_assists("sv_neo_teamdamage_assists", "0", FCVAR_REPLICATED, "Whether to drain XP when assisting the death of a teammate.", true, 0.0f, true, 1.0f);
 ConVar sv_neo_client_autorecord("sv_neo_client_autorecord", "0", FCVAR_REPLICATED | FCVAR_DONTRECORD, "Record demos clientside", true, 0, true, 1);
 #ifdef CLIENT_DLL
@@ -878,7 +880,8 @@ void CNEORules::ResetMapSessionCommon()
 #ifdef GAME_DLL
 	m_pRestoredInfos.Purge();
 	m_readyAccIDs.Purge();
-	m_bIgnoreOverThreshold = false;
+	m_bForceLive = false;
+	ClearSnapshots();
 
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
@@ -2037,39 +2040,55 @@ void CNEORules::SpawnTheGhost(const Vector *origin)
 		// I'm not touching this right now cuz I don't want to risk breaking the parity behaviour
 
 		Assert(!m_ghostSpawns.IsEmpty());
-		int desiredSpawn; // zero-indexed
+		int desiredSpawn = -1; // zero-indexed
 
-		// If round number is zero, the match hasn't started yet, so the bias is not meaningful.
-		// Parity behaviour is to not spawn a ghost at all, but it's more useful to just spawn it somewhere.
-		if (!sv_neo_ghost_spawn_bias.GetBool() || roundNumber() == 0)
+		if (m_iGhostSpawnEntIdx >= 0)
 		{
-			desiredSpawn = RandomInt(0, m_ghostSpawns.Count()-1);
-		}
-		else
-		{
-			// Round numbers are one-indexed
-			Assert(roundNumber() > 0);
-			bool isFirstRound = (roundNumber() == 1);
-			if (isFirstRound)
+			for (int i = 0; i < m_ghostSpawns.Count(); ++i)
 			{
-				// Plugin parity: we want to shuffle the list of ghost spawns once at match beginning,
-				// and then play through them in round pairs, using the cycling logic right below this if-block.
-				m_ghostSpawns.Shuffle();
+				if (m_ghostSpawns[i]->entindex() == m_iGhostSpawnEntIdx)
+				{
+					desiredSpawn = i;
+					break;
+				}
+			}
+		}
+
+		if (desiredSpawn < 0)
+		{
+			// If round number is zero, the match hasn't started yet, so the bias is not meaningful.
+			// Parity behaviour is to not spawn a ghost at all, but it's more useful to just spawn it somewhere.
+			if (!sv_neo_ghost_spawn_bias.GetBool() || roundNumber() == 0)
+			{
+				desiredSpawn = RandomInt(0, m_ghostSpawns.Count()-1);
+			}
+			else
+			{
+				// Round numbers are one-indexed
+				Assert(roundNumber() > 0);
+				bool isFirstRound = (roundNumber() == 1);
+				if (isFirstRound)
+				{
+					// Plugin parity: we want to shuffle the list of ghost spawns once at match beginning,
+					// and then play through them in round pairs, using the cycling logic right below this if-block.
+					m_ghostSpawns.Shuffle();
+				}
+
+				desiredSpawn = Ceil2Int(roundNumber() / 2.f) % m_ghostSpawns.Count();
 			}
 
-			desiredSpawn = Ceil2Int(roundNumber() / 2.f) % m_ghostSpawns.Count();
-		}
-
-		if (sv_neo_ghost_spawn_force.GetInt() >= 0)
-		{
-			desiredSpawn = sv_neo_ghost_spawn_force.GetInt() % m_ghostSpawns.Count();
-			Msg("sv_neo_ghost_spawn_force: pinned ghost spawn %d of %d for this map\n",
-				desiredSpawn, m_ghostSpawns.Count());
+			if (sv_neo_ghost_spawn_force.GetInt() >= 0)
+			{
+				desiredSpawn = sv_neo_ghost_spawn_force.GetInt() % m_ghostSpawns.Count();
+				Msg("sv_neo_ghost_spawn_force: pinned ghost spawn %d of %d for this map\n",
+					desiredSpawn, m_ghostSpawns.Count());
+			}
 		}
 
 		Assert(desiredSpawn >= 0);
 		Assert(desiredSpawn < m_ghostSpawns.Count());
 
+		m_iGhostSpawnEntIdx = -1;
 		auto *ghostSpawn = m_ghostSpawns[desiredSpawn].Get();
 		if (ghostSpawn)
 		{
@@ -2091,6 +2110,7 @@ void CNEORules::SpawnTheGhost(const Vector *origin)
 				m_pGhost->SetAbsOrigin(ghostSpawn->GetAbsOrigin());
 				m_pGhost->Drop(vec3_origin);
 				ghostSpawn->m_OnSpawnedHere.FireOutput(m_pGhost, m_pGhost);
+				m_iGhostSpawnEntIdx = ghostSpawn->entindex();
 			}
 		}
 		else
@@ -2169,13 +2189,21 @@ void CNEORules::SpawnTheJuggernaut(const Vector* origin)
 			// Round numbers are one-indexed
 			Assert(roundNumber() > 0);
 			bool isFirstRound = (roundNumber() == 1);
-			if (isFirstRound)
+			if (isFirstRound && sv_neo_jgr_spawn_force.GetInt() < 0)
 			{
 				m_jgrSpawns.Shuffle();
 			}
 
 			desiredSpawn = roundNumber() % m_jgrSpawns.Count();
 		}
+
+		if (sv_neo_jgr_spawn_force.GetInt() >= 0)
+		{
+			desiredSpawn = sv_neo_jgr_spawn_force.GetInt() % m_jgrSpawns.Count();
+			Msg("sv_neo_jgr_spawn_force: pinned juggernaut spawn %d of %d for this map\n",
+				desiredSpawn, m_jgrSpawns.Count());
+		}
+
 		Assert(desiredSpawn >= 0);
 		Assert(desiredSpawn < m_jgrSpawns.Count());
 
@@ -2361,7 +2389,7 @@ void CNEORules::CheckChatCommand(CNEO_Player *pNeoCmdPlayer, const char *pSzChat
 					"Ready up commands (only available while waiting for players):\n"
 					".ready - Ready up yourself\n"
 					".unready - Unready yourself\n"
-					".start - Override players amount restriction\n"
+					".forcelive - Override players amount restriction and force live match\n"
 					".readylist - List players that are not ready\n");
 			ClientPrint(pNeoCmdPlayer, HUD_PRINTTALK, szHelpText);
 		}
@@ -2381,7 +2409,7 @@ void CNEORules::CheckChatCommand(CNEO_Player *pNeoCmdPlayer, const char *pSzChat
 
 	if (sv_neo_readyup_lobby.GetBool() && (bNonCmdGameType || m_nRoundStatus != NeoRoundStatus::Idle))
 	{
-		for (const auto pSzCheck : {"ready", "unready", "start", "readylist"})
+		for (const auto pSzCheck : {"ready", "unready", "forcelive", "readylist"})
 		{
 			if (V_strcmp(pSzChat, pSzCheck) == 0)
 			{
@@ -2409,18 +2437,10 @@ void CNEORules::CheckChatCommand(CNEO_Player *pNeoCmdPlayer, const char *pSzChat
 				}
 				ReadyToggle(pNeoCmdPlayer, flags);
 			}
-			else if (V_strcmp(pSzChat, "start") == 0)
+			else if (V_strcmp(pSzChat, "forcelive") == 0)
 			{
-				const auto readyPlayers = FetchReadyPlayers();
-				if (readyPlayers.array[TEAM_JINRAI] > iThres && readyPlayers.array[TEAM_NSF] > iThres)
-				{
-					m_bIgnoreOverThreshold = true;
-					ClientPrint(pNeoCmdPlayer, HUD_PRINTTALK, "Overriding threshold, allowing more players.");
-				}
-				else
-				{
-					ClientPrint(pNeoCmdPlayer, HUD_PRINTTALK, "You must go past the threshold in order to set override.");
-				}
+				m_bForceLive = true;
+				ClientPrint(pNeoCmdPlayer, HUD_PRINTTALK, "Overriding threshold, forcing live match now.");
 			}
 			else if (V_strcmp(pSzChat, "readylist") == 0)
 			{
@@ -2711,29 +2731,18 @@ void CNEORules::StartNextRound()
 	// Do not start if: Non-ready-up mode, no players in either teams
 	if ((!bLobby && bTooFewToStart)
 			// If ready-up mode and doesn't exactly match the threshold on ready-up or players
-			|| (bLobby && !m_bIgnoreOverThreshold && (!bEqualThres || (readyPlayers.array[TEAM_JINRAI] != iThres || readyPlayers.array[TEAM_NSF] != iThres)))
-			// If ready-up mode, allows over threshold and is lower than threshold or not equal teams
-			|| (bLobby && m_bIgnoreOverThreshold &&
-				((readyPlayers.array[TEAM_JINRAI] < iThres || readyPlayers.array[TEAM_NSF] < iThres)
-				 || GetGlobalTeam(TEAM_JINRAI)->GetNumPlayers() != GetGlobalTeam(TEAM_NSF)->GetNumPlayers()))
-			)
+			|| (bLobby && !m_bForceLive && (!bEqualThres || (readyPlayers.array[TEAM_JINRAI] != iThres || readyPlayers.array[TEAM_NSF] != iThres))))
 	{
 		if (bLobby)
 		{
 			bool bPrintHelpInfo = (m_iPrintHelpCounter == 0);
-			if (!m_bIgnoreOverThreshold && (readyPlayers.array[TEAM_JINRAI] > iThres || readyPlayers.array[TEAM_NSF] > iThres))
+			if (!m_bForceLive && (readyPlayers.array[TEAM_JINRAI] > iThres || readyPlayers.array[TEAM_NSF] > iThres))
 			{
 				char szPrint[128];
-				V_sprintf_safe(szPrint, "More players than %dv%d! Type \".start\" to allow more players to start!",
+				V_sprintf_safe(szPrint, "More players than %dv%d! Type \".forcelive\" to allow more players to start!",
 							   iThres, iThres);
 				UTIL_ClientPrintAll(HUD_PRINTTALK, szPrint);
 				bPrintHelpInfo = false;
-			}
-
-			// Untoggle the overrider if there's suddenly less players than threshold
-			if (m_bIgnoreOverThreshold && (readyPlayers.array[TEAM_JINRAI] < iThres || readyPlayers.array[TEAM_NSF] < iThres))
-			{
-				m_bIgnoreOverThreshold = false;
 			}
 
 			char szPrint[64];
@@ -2766,6 +2775,7 @@ void CNEORules::StartNextRound()
 		{
 			SetRoundStatus(NeoRoundStatus::Countdown);
 			m_iRoundNumber = 0;
+			m_bForceLive = false;
 			m_flNeoRoundStartTime = gpGlobals->curtime;
 			m_flNeoNextRoundStartTime = gpGlobals->curtime + sv_neo_readyup_countdown.GetFloat();
 			UTIL_CenterPrintAll("- ALL PLAYERS READY: MATCH STARTING SOON... -\n");
@@ -2874,8 +2884,10 @@ void CNEORules::StartNextRound()
 		pJinrai->SetRoundsWon(0);
 		pNSF->SetScore(0);
 		pNSF->SetRoundsWon(0);
+		ClearSnapshots();
 	}
 
+	m_iGhostSpawnEntIdx = -1;
 	if (m_iNextRestore.flags & NEXT_ROUND_GAMERULE_RESTORE_FLAG_SCORES)
 	{
 		GetGlobalTeam(TEAM_JINRAI)->SetScore(m_iNextRestore.iScoreJinrai);
@@ -2891,6 +2903,10 @@ void CNEORules::StartNextRound()
 	{
 		GetGlobalTeam(TEAM_JINRAI)->SetRoundsWon(m_iNextRestore.iRoundsWonJinrai);
 		GetGlobalTeam(TEAM_NSF)->SetRoundsWon(m_iNextRestore.iRoundsWonNSF);
+	}
+	if (m_iNextRestore.flags & NEXT_ROUND_GAMERULE_RESTORE_FLAG_GHOST)
+	{
+		m_iGhostSpawnEntIdx = m_iNextRestore.iGhostSpawnEntIdx;
 	}
 	m_iNextRestore = {}; // Zero-out
 
@@ -2926,6 +2942,21 @@ void CNEORules::StartNextRound()
 			continue;
 		}
 
+		// NEXT_ROUND_PLAYER_RESTORE_FLAG_SPAWN already set by NeoSpawnManager::RequestSpawn
+		if (pPlayer->m_iNextRestore.flags & NEXT_ROUND_PLAYER_RESTORE_FLAG_WEAPON)
+		{
+			pPlayer->m_iLoadoutWepChoice = pPlayer->m_iNextRestore.iLoadoutWepChoice;
+		}
+		if (pPlayer->m_iNextRestore.flags & NEXT_ROUND_PLAYER_RESTORE_FLAG_XP)
+		{
+			pPlayer->m_iXP.Set(pPlayer->m_iNextRestore.iXP);
+		}
+		if (pPlayer->m_iNextRestore.flags & NEXT_ROUND_PLAYER_RESTORE_FLAG_DEATH)
+		{
+			pPlayer->ResetDeathCount();
+			pPlayer->IncrementDeathCount(pPlayer->m_iNextRestore.iDeaths);
+		}
+
 		pPlayer->m_bKilledInflicted = false;
 		if (pPlayer->GetActiveWeapon())
 		{
@@ -2943,16 +2974,6 @@ void CNEORules::StartNextRound()
 		pPlayer->m_bIsPendingTKKick = false;
 
 		pPlayer->SetTestMessageVisible(false);
-
-		if (pPlayer->m_iNextRestore.flags & NEXT_ROUND_PLAYER_RESTORE_FLAG_XP)
-		{
-			pPlayer->m_iXP.Set(pPlayer->m_iNextRestore.iXP);
-		}
-		if (pPlayer->m_iNextRestore.flags & NEXT_ROUND_PLAYER_RESTORE_FLAG_DEATH)
-		{
-			pPlayer->ResetDeathCount();
-			pPlayer->IncrementDeathCount(pPlayer->m_iNextRestore.iDeaths);
-		}
 		pPlayer->m_iNextRestore = {}; // Zero-out
 	}
 
@@ -2965,7 +2986,6 @@ void CNEORules::StartNextRound()
 	V_memset(m_arrayiEntPrevCap, 0, sizeof(m_arrayiEntPrevCap));
 	m_iEntPrevCapSize = 0;
 
-	MatchSessionBackup();
 	FireLegacyEvent_NeoRoundEnd();
 
 	char RoundMsg[27];
@@ -2974,6 +2994,7 @@ void CNEORules::StartNextRound()
 	UTIL_CenterPrintAll(RoundMsg);
 
 	SetGameRelatedVars();
+	MatchSessionBackup();
 
 	IGameEvent *event = gameeventmanager->CreateEvent("round_start");
 	if (event)
@@ -3418,6 +3439,7 @@ void CNEORules::RestartGame()
 	pJinrai->SetRoundsWon(0);
 	pNSF->SetScore(0);
 	pNSF->SetRoundsWon(0);
+	ClearSnapshots();
 
 	m_flIntermissionEndTime = 0;
 	m_flRestartGameTime = 0.0;
@@ -4638,9 +4660,9 @@ int CNEORules::GetGameType(void)
 	return m_nGameTypeSelected;
 }
 
-int CNEORules::GetHiddenHudElements(void)
+void CNEORules::SetHiddenHudElements(int bits)
 {
-	return m_iHiddenHudElements;
+	m_iHiddenHudElements = bits;
 }
 
 int CNEORules::GetForcedTeam(void)

@@ -234,7 +234,10 @@ public:
 #endif
 
 	virtual int GetGameType(void) OVERRIDE;
-	int GetHiddenHudElements();
+
+	int GetHiddenHudElements() const { return m_iHiddenHudElements; }
+	void SetHiddenHudElements(int bits);
+
 	int GetForcedTeam();
 	int GetForcedClass();
 	int GetForcedSkin();
@@ -339,7 +342,7 @@ public:
 	void CheckChatCommand(CNEO_Player *pNeoPlayer, const char *pSzChat);
 	ReadyPlayers FetchReadyPlayers() const;
 	CUtlHashtable<AccountID_t> m_readyAccIDs;
-	bool m_bIgnoreOverThreshold = false;
+	bool m_bForceLive = false;
 	bool ReadyUpPlayerIsReady(CNEO_Player *pNeoPlayer) const;
 
 	void CheckGameType();
@@ -599,8 +602,10 @@ public:
 		int iRoundNumber;
 		int iRoundsWonJinrai;
 		int iRoundsWonNSF;
+		int iGhostSpawnEntIdx;
 	};
 	NeoRestore m_iNextRestore = {};
+	int m_iGhostSpawnEntIdx = -1;
 #endif
 };
 
