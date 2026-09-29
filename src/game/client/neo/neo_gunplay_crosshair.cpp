@@ -28,6 +28,9 @@ ConVar cl_neo_gunplay_crosshair_parallax("cl_neo_gunplay_crosshair_parallax", "1
 ConVar cl_neo_gunplay_crosshair_centre("cl_neo_gunplay_crosshair_centre", "0", FCVAR_ARCHIVE,
 	"What marks the centre in place of the Default or Alt crosshair: 0 = nothing (the layer's moving parts show the"
 	" aim), 1 = a tiny square, 2 = a small cross. A Custom crosshair is always drawn as it is.", true, 0, true, 2);
+ConVar cl_neo_gunplay_crosshair_debug("cl_neo_gunplay_crosshair_debug", "0", FCVAR_NONE,
+	"Debug: on each shot, print the time since the last one and how ready the layer showed the gun just before it"
+	" (1.00 when the layer's readiness matches the gun).");
 ConVar cl_neo_gunplay_crosshair_family("cl_neo_gunplay_crosshair_family", "-1", FCVAR_NONE,
 	"Debug: draw every gun's crosshair as this family (0 rifle, 1 SMG, 2 MG, 3 shotgun, 4 pistol, 5 scoped;"
 	" -1 = each gun its own).", true, -1, true, NEO_CROSSHAIR_FAMILY__TOTAL - 1);
@@ -57,6 +60,7 @@ static struct
 	int shotCount = 0;
 	float shotTime = -100.0f;
 	float precise = 0.0f;	// 0 to 1: the precision dot showing
+	float lastReady = 1.0f;	// the frame before's readiness (the debug print)
 } s_layer;
 
 NeoCrosshairFamily NeoCrosshairFamilyOf(const C_NEOBaseCombatWeapon *pWeapon)
@@ -199,6 +203,11 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	const bool bShot = shots.count != s_layer.shotCount;
 	if (bShot)
 	{
+		if (cl_neo_gunplay_crosshair_debug.GetBool())
+		{
+			Msg("[xhair] %s shot: %.3f s since the last (cycle %.3f), shown ready %.2f just before\n",
+				pWeapon->GetClassname(), now - s_layer.shotTime, pWeapon->GetFireRate(), s_layer.lastReady);
+		}
 		s_layer.shotTime = now;
 	}
 	s_layer.shotCount = shots.count;
@@ -247,8 +256,14 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	}
 	else
 	{
-		frame.ready = clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - gpGlobals->curtime) / frame.cycle, 0.0f, 1.0f);
+		// The next attack is in the gun's predicted time, ahead of the clock the HUD draws on: measured against that,
+		// the readiness ran late (the shotguns' rings still filling when they could fire). Against the predicted
+		// time, between its ticks.
+		C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+		const float predictedNow = pLocal->GetFinalPredictedTime() + gpGlobals->interpolation_amount * TICK_INTERVAL;
+		frame.ready = clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - predictedNow) / frame.cycle, 0.0f, 1.0f);
 	}
+	s_layer.lastReady = frame.ready;
 	frame.dt = dt;
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
