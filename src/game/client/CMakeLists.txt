@@ -1666,6 +1666,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ghost_stroke.h
     neo/neo_gunplay_crosshair.cpp
     neo/neo_gunplay_crosshair.h
+    neo/neo_crosshair_family.h
+    neo/neo_crosshair_rifle.cpp
     neo/neo_gunplay_tunnel.cpp
     neo/neo_gunplay_tunnel.h
     neo/neo_ironsight_dots.cpp
