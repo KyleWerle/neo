@@ -132,10 +132,3 @@ void NeoCrosshairAimSmg(const NeoCrosshairFrame &frame, const Vector2D &at, bool
 		NeoGhostStroke(frame.pen, corner, corner - Vector2D(0.0f, s_corners[c].y * bracket), NEO_GHOST_MEDIUM);
 	}
 }
-
-float NeoCrosshairReachSmg(const NeoCrosshairFrame &frame, float spread)
-{
-	using namespace NeoCrosshairSmg;
-	const float s = frame.s, half = Max(spread + GAP * s, MIN_HALF * s);
-	return half + (MAG_GAP + 2.0f) * s * frame.aim;	// aimed, the magazine's dot row under the box
-}

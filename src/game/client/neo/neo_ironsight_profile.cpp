@@ -35,6 +35,6 @@ int NeoIronsightProfileTakeCalls(NeoIronsightProfileSection section)
 
 const char *NeoIronsightProfileSectionName(NeoIronsightProfileSection section)
 {
-	static const char *const s_names[NEO_PROFILE__COUNT] = { "optic render", "lens drawing", "damping", "sights", "augment" };
+	static const char *const s_names[NEO_PROFILE__COUNT] = { "optic render", "lens drawing", "damping", "sights", "augment", "hud" };
 	return (section >= 0 && section < NEO_PROFILE__COUNT) ? s_names[section] : "";
 }

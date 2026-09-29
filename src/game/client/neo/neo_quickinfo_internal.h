@@ -1,36 +1,68 @@
 #pragma once
 
-// Shared between the quick info's state (neo_quickinfo.cpp) and its drawing (neo_quickinfo_draw.cpp).
+// Shared between the quick info's state (neo_quickinfo.cpp), its drawing helpers (neo_quickinfo_paint.cpp), the
+// band (neo_quickinfo_draw.cpp), the ammo readout (neo_quickinfo_ammo.cpp) and the speed graph
+// (neo_quickinfo_speed.cpp).
 
 #include "neo_ghost_stroke.h"
 #include "mathlib/vector2d.h"
 #include "Color.h"
 
+class C_NEO_Player;
+
 namespace NeoQuickInfo
 {
-// The housing, pixels at 1080p from the crosshair (y down). Outside the deadzone (DEADZONE): the brackets' feet
-// start at x 88 and y 70, the bar spans x within its half-width at y -100.
-constexpr float DEADZONE = 85.0f;
-constexpr float BAR_Y = -100.0f;
-constexpr float BAR_H = 4.0f;
-constexpr float BX = 100.0f;			// the brackets' spines
-constexpr float TOP = -70.0f, BOTTOM = 70.0f;
-constexpr float FOOT = 12.0f;
-constexpr float FILL_W = 5.0f;			// the fill inside each bracket
-constexpr float FILL_GAP = 3.0f;
-constexpr float DOT = 80.0f;			// the vision dots, on the diagonals
-constexpr float JUMP_COST = 45.0f;		// SUPER_JMP_COST: a recon's jump cell
+// The band, pixels at 1080p from the screen's centre (y down): under the chat box (whose bottom is 349 px below
+// the centre at 1080p; the wing tips' tops are at 367) and above the compass's labels (from about 490). Top down:
+// the ammo's header (weapon name, magazines), its round ticks (rounds left, fire mode), the integrity bar and the
+// wings, integrity's number with the vision dots, the etched rail with the channel codes, the spawn labels.
+constexpr float BAND_Y = 400.0f;					// the integrity bar's centre line
+constexpr float BAR_HALF = 150.0f;
+constexpr float BAR_H = 6.0f;
+constexpr float WING_IN = 168.0f, WING_OUT = 380.0f;	// each wing's inner end and tip, either side
+constexpr float WING_RISE = 24.0f;					// the tips sit this much higher than the inner ends
+constexpr float WING_FRAME = 9.0f;					// the frame's half height around the wing's fill
+constexpr float FILL_H = 8.0f;
+constexpr float HEADER_Y = BAND_Y - 45.0f;			// the weapon's name and its magazines left
+constexpr float TICKS_Y = BAND_Y - 19.0f;			// the round ticks
+constexpr float TICK_H = 14.0f;
+constexpr float TICK_HALF = 90.0f;					// the ammo's half width: clear of the wings' inner ends
+constexpr int MAX_TICKS = 30;						// past this, a tick is several rounds
+constexpr float NUMBER_Y = BAND_Y + 21.0f;			// integrity's number, under the bar
+constexpr float DOT_NEAR = 34.0f, DOT_FAR = 46.0f;	// the vision dots, either side of the number
+constexpr float RAIL_Y = BAND_Y + 44.0f;			// the etched rail
+constexpr float CODES_Y = BAND_Y + 58.0f;			// the channel codes on it: at the left tip, centred, at the right tip
+constexpr float LABELS_Y = BAND_Y + 82.0f;			// the spawn labels, each under its code
+constexpr float MARK = 4.0f;						// a registration cross's half size
+constexpr float JUMP_COST = 45.0f;					// SUPER_JMP_COST: a recon's jump cell
 
 // The layers, far to near: each sways on its own spring by its depth.
-enum Layer { LAYER_DETAIL, LAYER_BRACKET, LAYER_BAR, LAYER_LABELS, LAYER_DOTS, LAYER__COUNT };
+enum Layer { LAYER_DETAIL, LAYER_FRAME, LAYER_BAR, LAYER_LABELS, LAYER_DOTS, LAYER__COUNT };
 
-// What each class's housing holds. Assault (and the VIP): therm-optic left, sprint right. Recon: therm-optic left,
-// two jump cells right (its aux only pays for super jumps). Support: armour, integrity down both brackets.
+// What each class's wings hold. Assault (and the VIP): therm-optic left, sprint right. Recon: therm-optic left,
+// two jump cells right (its aux only pays for super jumps). Support: armour, integrity along both wings.
 // Juggernaut: sprint both sides.
 enum Kind { KIND_RECON, KIND_ASSAULT, KIND_SUPPORT, KIND_JUGGERNAUT };
 
+// The HUD's OCR faces, at 1080p: 17, 20 and 26 px tall.
+enum Font { FONT_SMALLER, FONT_SMALL, FONT_LARGE };
+
 struct Chip { float from, to, time; };	// a hit's afterimage on the bar, as bar fractions
 constexpr int MAX_CHIPS = 4;
+
+// The active weapon, as the ammo panel shows it (the band replaces that panel too).
+struct Ammo
+{
+	bool bShown = false;			// a weapon, and the rules don't hide the ammo
+	wchar_t name[48] = L"";
+	const wchar_t *pMode = nullptr;	// AUTO, SEMI, BUCK, SLUG, THROW; none for the ghost and melee
+	int rounds = 0, maxRounds = 0;	// maxRounds 0: the name alone
+	bool bHeat = false;				// the BALC: a heat meter in the ticks' row
+	float heat = 0.0f;				// 0 to 1
+	bool bOverheated = false;
+	wchar_t mags[16] = L"";			// magazines left, or the Supa 7's shells + slugs; empty for none
+	bool bMagsOut = false;
+};
 
 struct QuickFrame
 {
@@ -38,9 +70,10 @@ struct QuickFrame
 	Color color;
 	float s;						// the screen's height over 1080
 	NeoGhostPen pen;				// the boot's trace-in
-	Vector2D centre;
+	Vector2D centre;				// the screen's
 	Vector2D sway[LAYER__COUNT];	// each layer's offset, pixels at 1080p
 	float alpha;					// the fade (floor to full) times the boot's reveal
+	float reveal;					// the boot's reveal alone
 	float now;
 	bool bDetail;
 
@@ -57,9 +90,30 @@ struct QuickFrame
 	float jumpReady[2], jumpSpent[2];	// times a recon's cell locked and was spent
 	float labels;					// seconds since the spawn labels began (negative: none)
 	const char *pVisionName;
+	Ammo ammo;
 };
 
-float BarHalf(Kind kind);
-void PaintHousing(const QuickFrame &frame);
+// Drawing helpers (neo_quickinfo_paint.cpp). Positions are pixels at 1080p from f.centre, on a layer that sways.
+Vector2D At(const QuickFrame &f, Layer layer, float x, float y);
+int Alpha(const QuickFrame &f, float a);
+void Line(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, NeoGhostWeight weight, const Color &c, float a);
+void Box(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, const Color &c, float a);
+// A filled strip h tall along a slant from (x0, y0) to (x1, y1), its ends upright.
+void Strip(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, float h, const Color &c, float a);
+// Text with its vertical middle at y, aligned by align (-1 ending at x, 0 centred, 1 starting at x), shadowed so it
+// reads on anything; count characters of it. Returns its width, pixels at 1080p.
+float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, float x, float y, int align, Font font,
+	const Color &c, float a);
+// A registration mark: a small cross.
+void Cross(const QuickFrame &f, Layer layer, float x, float y, float a);
+
+extern const Color WARN;
+
+void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo);
+void PaintBand(const QuickFrame &frame);
+void PaintAmmo(const QuickFrame &frame);
+// The speed graph, bottom left where the health panel was: it keeps its own samples, so call it every frame the
+// band draws (bBoot clears them).
+void PaintSpeed(const QuickFrame &frame, C_NEO_Player *pPlayer, float dt, bool bBoot, float floorAlpha);
 void PaintLabels(const QuickFrame &frame);
 } // namespace NeoQuickInfo

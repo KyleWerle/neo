@@ -2,17 +2,19 @@
 #include "neo_quickinfo.h"
 #include "neo_quickinfo_internal.h"
 #include "neo_gunplay_shots.h"
+#include "neo_gunplay_crosshair.h"
 #include "neo_ironsights.h"
 #include "c_neo_player.h"
 #include "neo_gamerules.h"
 #include "weapon_neobasecombatweapon.h"
+#include "neo_ironsight_profile.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 ConVar cl_neo_hud_quickinfo("cl_neo_hud_quickinfo", "0", FCVAR_ARCHIVE,
-	"Quick info around the crosshair: integrity, therm-optic and aux as a housing at the centre, in place of the"
-	" health / therm-optic / aux panel at the screen's edge.", true, 0, true, 1);
+	"Quick info: integrity, therm-optic, aux and ammo as a band below the crosshair, at the edge of your view, and a"
+	" speed graph bottom left, in place of the health / therm-optic / aux and ammo panels in the screen's corners.", true, 0, true, 1);
 ConVar cl_neo_hud_quickinfo_floor("cl_neo_hud_quickinfo_floor", "0.3", FCVAR_ARCHIVE,
 	"The quick info's opacity at rest (it rises to full on any change, a low value or an active mode).", true, 0, true, 1);
 ConVar cl_neo_hud_quickinfo_detail("cl_neo_hud_quickinfo_detail", "1", FCVAR_ARCHIVE,
@@ -24,7 +26,7 @@ ConVar cl_neo_hud_quickinfo_sway("cl_neo_hud_quickinfo_sway", "1", FCVAR_ARCHIVE
 
 namespace NeoQuickInfo
 {
-static constexpr float BOOT_TIME = 0.55f;		// the housing's reveal on spawn
+static constexpr float BOOT_TIME = 0.55f;		// the band's reveal on spawn
 static constexpr float BUSY_HOLD = 2.2f;		// full for this long after any change
 static constexpr float SWAY_MAX = 4.0f;			// pixels at 1080p
 static constexpr float SWAY_GAIN = 0.022f;		// pixels per degree a second of turning (180 deg/s reaches the cap)
@@ -36,7 +38,7 @@ static struct
 {
 	LayerSpring layers[LAYER__COUNT] = {
 		{ 0.45f, 9.0f, 0.62f, 0.0f },	// detail: far back, the least motion
-		{ 0.85f, 12.0f, 0.58f, 1.7f },	// brackets
+		{ 0.85f, 12.0f, 0.58f, 1.7f },	// wing frames
 		{ 1.0f, 13.0f, 0.6f, 3.1f },	// bar
 		{ 1.15f, 11.0f, 0.55f, 4.4f },	// labels
 		{ 1.35f, 15.0f, 0.52f, 5.6f },	// vision dots: nearest
@@ -56,6 +58,8 @@ static struct
 	Chip chips[MAX_CHIPS];
 	int chipCount = 0;
 	QAngle lastAngles;
+	int wantedFrame = -1;		// the last frame it was meant to draw (a fade may have held it back)
+	wchar_t ammoKey[96] = L"";
 } s_qi;
 
 static Kind KindOf(int neoClass)
@@ -78,7 +82,7 @@ static const char *VisionName(int neoClass)
 	default:				return nullptr;
 	}
 }
-// The bar's fill for integrity: support's bar holds its last 40% (the brackets hold the rest).
+// The bar's fill for integrity: support's bar holds its last 40% (the wings hold the rest).
 static float BarFraction(Kind kind, float hp)
 {
 	return (kind == KIND_SUPPORT) ? clamp(hp / 0.4f, 0.0f, 1.0f) : hp;
@@ -97,7 +101,7 @@ static void Sway(C_NEO_Player *pPlayer, float dt, float now, bool bBoot)
 	}
 	s_qi.lastAngles = angles;
 	const bool bOn = cl_neo_hud_quickinfo_sway.GetBool();
-	// Turning right, the housing trails left; looking down, it trails up.
+	// Turning right, the band trails left; looking down, it trails up.
 	const Vector2D trail(clamp(rate.x * SWAY_GAIN, -SWAY_MAX, SWAY_MAX), clamp(-rate.y * SWAY_GAIN, -SWAY_MAX, SWAY_MAX));
 	for (LayerSpring &layer : s_qi.layers)
 	{
@@ -221,24 +225,27 @@ bool NeoQuickInfoOn()
 	return cl_neo_hud_quickinfo.GetBool();
 }
 
-float NeoQuickInfoDeadzone()
+bool NeoQuickInfoShowing()
 {
-	return NeoQuickInfoOn() ? NeoQuickInfo::DEADZONE : 0.0f;
+	return NeoQuickInfoOn() && NeoQuickInfo::s_qi.wantedFrame >= gpGlobals->framecount - 1;
 }
 
-void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color, int x, int y)
+void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_HUD, "NeoQuickInfoPaint");
 	using namespace NeoQuickInfo;
-	// The local player's own, alive; not through a scope (its view stays as it is) and not where the rules hide
-	// the panel it replaces. A watched player's therm-optic and aux never reach this client.
+	// The local player's own, alive, and not where the rules hide the panel it replaces; through a scope too (the
+	// stock panels stay up there). A watched player's therm-optic and aux never reach this client.
 	if (!NeoQuickInfoOn() || !pPlayer || !pPlayer->IsLocalPlayer() || !pPlayer->IsAlive() || pPlayer->IsObserver()
 		|| (NEORules() && (NEORules()->GetHiddenHudElements() & NEO_HUD_ELEMENT_HEALTH_THERMOPTIC_AUX)))
 	{
 		s_qi.lastFrame = -1;
 		return;
 	}
-	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
-	if (pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_SCOPEDWEAPON) && pPlayer->IsInAim())
+	s_qi.wantedFrame = gpGlobals->framecount;
+	// Under a fade to black it waits, and boots (typing its labels) as the view comes back up.
+	const float visible = NeoHudFadeVisible();
+	if (NeoHudFadedOut())
 	{
 		s_qi.lastFrame = -1;
 		return;
@@ -261,6 +268,17 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color, int x, int y)
 	s_qi.lastFrame = gpGlobals->framecount;
 	Update(pPlayer, kind, dt, now, bBoot);
 	Sway(pPlayer, dt, now, bBoot);
+	// The ammo: a shot, a reload or a switch brings the band up to full too.
+	Ammo ammo;
+	ReadAmmo(pPlayer, ammo);
+	wchar_t key[ARRAYSIZE(s_qi.ammoKey)];
+	V_snwprintf(key, ARRAYSIZE(key), L"%ls|%d|%ls|%d|%ls", ammo.name, ammo.rounds, ammo.mags, RoundFloatToInt(ammo.heat * 20.0f),
+		ammo.pMode ? ammo.pMode : L"");
+	if (!bBoot && V_wcscmp(key, s_qi.ammoKey) != 0)
+	{
+		s_qi.lastChange = now;
+	}
+	V_wcsncpy(s_qi.ammoKey, key, sizeof(s_qi.ammoKey));
 
 	int wide, tall;
 	vgui::surface()->GetScreenSize(wide, tall);
@@ -271,12 +289,14 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color, int x, int y)
 	const float boot = clamp((now - s_qi.bootTime) / BOOT_TIME, 0.0f, 1.0f);
 	frame.pen.scale = frame.s;
 	frame.pen.trace = NeoSmoothStep(boot);
-	frame.centre.Init(static_cast<float>(x), static_cast<float>(y));
+	// Fixed to the screen, not the aim: the crosshair roams free above it.
+	frame.centre.Init(wide * 0.5f, tall * 0.5f);
 	for (int i = 0; i < LAYER__COUNT; ++i)
 	{
 		frame.sway[i] = s_qi.layers[i].offset;
 	}
-	frame.alpha = s_qi.fade * NeoSmoothStep(Min(1.0f, boot * 1.4f));
+	frame.reveal = NeoSmoothStep(Min(1.0f, boot * 1.4f)) * visible;
+	frame.alpha = s_qi.fade * frame.reveal;
 	frame.now = now;
 	frame.bDetail = cl_neo_hud_quickinfo_detail.GetBool();
 	frame.hp = s_qi.hp;
@@ -298,8 +318,11 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color, int x, int y)
 		frame.jumpSpent[i] = s_qi.jumpSpent[i];
 	}
 	frame.labels = now - s_qi.bootTime;
-	PaintHousing(frame);
+	frame.ammo = ammo;
+	PaintBand(frame);
+	PaintAmmo(frame);
+	PaintSpeed(frame, pPlayer, dt, bBoot, cl_neo_hud_quickinfo_floor.GetFloat());
 	// The labels read at full strength whatever the fade.
-	frame.alpha = NeoSmoothStep(Min(1.0f, boot * 1.4f));
+	frame.alpha = frame.reveal;
 	PaintLabels(frame);
 }

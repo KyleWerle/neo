@@ -1675,11 +1675,12 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_spread_ghost.h
     neo/neo_gunplay_spectator_hits.cpp
     neo/neo_gunplay_spectator_hits.h
-    neo/neo_gunplay_reserve.cpp
-    neo/neo_gunplay_reserve.h
     neo/neo_quickinfo.cpp
     neo/neo_quickinfo.h
     neo/neo_quickinfo_draw.cpp
+    neo/neo_quickinfo_paint.cpp
+    neo/neo_quickinfo_ammo.cpp
+    neo/neo_quickinfo_speed.cpp
     neo/neo_quickinfo_internal.h
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp

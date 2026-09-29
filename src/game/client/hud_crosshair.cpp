@@ -572,6 +572,13 @@ void CHudCrosshair::Paint( void )
 			bHideCrosshair = true;
 		}
 	}
+	// With Enable Gunplay, nothing of the crosshair shows over a fade to black (the spawn's, the firing range's): the
+	// HUD paints over the view's fade. (Off, stock.)
+	const bool bFadedOut = NeoGunplayEnabled() && NeoHudFadedOut();
+	if (bFadedOut)
+	{
+		bHideCrosshair = true;
+	}
 	CrosshairWepInfo *crh = &m_crosshairInfo.wep[eNeoXHairWep];
 	const int iTexXHId = m_iTexXHId[clamp(crh->iStyle, 0, CROSSHAIR_STYLE__TOTAL - 1)];
 
@@ -587,12 +594,17 @@ void CHudCrosshair::Paint( void )
 	}
 
 	// The sight ghost (HUD linework over the sights while aiming) in the crosshair colour.
-	if (!bCrosshairHiddenByRules)
+	if (!bCrosshairHiddenByRules && !bFadedOut)
 	{
 		NeoIronsightPaintSightGhost(crh->color);
 		NeoIronsightPaintDotTrail();
-		// Quick info around the crosshair (its own setting, Settings > HUD), on the sights too.
-		NeoQuickInfoPaint(pPlayer, crh->color, iX, iY);
+	}
+	// The quick info band below the crosshair (its own setting, Settings > HUD), on the sights too; scoped in, it
+	// waits for the scope's black borders below and goes over them (the panels it replaces stay up in a scope).
+	const bool bScopedIn = bIsScopedWep && pPlayer->m_bInAim;
+	if (!bScopedIn)
+	{
+		NeoQuickInfoPaint(pPlayer, crh->color);
 	}
 
 	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.
@@ -715,6 +727,7 @@ void CHudCrosshair::Paint( void )
 
 		// Reset corner rounding.
 		SetRoundedCorners(prevCornerFlags);
+		NeoQuickInfoPaint(pPlayer, crh->color);
 	}
 }
 

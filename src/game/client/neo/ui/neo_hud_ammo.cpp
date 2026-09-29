@@ -20,6 +20,7 @@
 #include "weapon_neobasecombatweapon.h"
 #include "weapon_smokegrenade.h"
 #include "weapon_supa7.h"
+#include "neo/neo_quickinfo.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -288,7 +289,8 @@ void CNEOHud_Ammo::DrawNeoHudElement()
 		return;
 	}
 
-	if (cl_neo_hud_ammo_enabled.GetBool())
+	// The quick info band carries the ammo while it shows.
+	if (cl_neo_hud_ammo_enabled.GetBool() && !NeoQuickInfoShowing())
 	{
 		DrawAmmo();
 	}

@@ -1857,7 +1857,7 @@ void NeoSettings_HUD(NeoSettings *ns)
 	NeoUI::Divider(L"MISCELLANEOUS");
 	NeoUI::RingBoxBool(L"Classic squad list", &pHud->bShowSquadList);
 	NeoUI::RingBoxBool(L"HUD boot animation", &pHud->bHudBoot);
-	NeoUI::RingBoxBool(L"Crosshair quick info", &pHud->bQuickInfo);
+	NeoUI::RingBoxBool(L"Quick info band", &pHud->bQuickInfo);
 	NeoUI::RingBox(L"Health display mode", HEALTHMODE_LABELS, pHud->iHealthMode >= 2 ? ARRAYSIZE(HEALTHMODE_LABELS) : 2, &pHud->iHealthMode);
 	NeoUI::RingBox(L"Objective verbosity", OBJVERBOSITY_LABELS, ARRAYSIZE(OBJVERBOSITY_LABELS), &pHud->iObjVerbosity);
 	NeoUI::RingBoxBool(L"Show hints", &pHud->bShowHints);

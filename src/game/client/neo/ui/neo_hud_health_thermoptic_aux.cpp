@@ -249,8 +249,8 @@ void CNEOHud_HTA::DrawNeoHudElement()
 		return;
 	}
 
-	// The quick info around the crosshair replaces this panel while it's on.
-	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoOn())
+	// The quick info band below the crosshair replaces this panel while it shows.
+	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoShowing())
 	{
 		DrawHTA();
 	}

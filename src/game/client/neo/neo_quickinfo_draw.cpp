@@ -2,95 +2,25 @@
 #include "neo_quickinfo_internal.h"
 #include "neo_ironsights.h"
 #include "vstdlib/random.h"
-#include <vgui/ISurface.h>
-#include <vgui/IScheme.h>
-#include <vgui_controls/Controls.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// The housing's drawing (QUICKINFO.md): lines in the ghost's strokes (their outline pass), fills as flat
-// translucent boxes, text in the HUD's OCR faces. Every position is in pixels at 1080p from the crosshair, on a
-// layer that sways by its depth.
+// The band's drawing (QUICKINFO.md): the integrity bar and its number, the wings, the instrument detail, the spawn
+// labels. Every position is in pixels at 1080p from the screen's centre, on a layer that sways by its depth.
 
 namespace NeoQuickInfo
 {
-static const Color WARN(255, 181, 71, 255);
 static const Color CRIT(255, 81, 99, 255);
 static const Color ECHO(90, 220, 255, 255);	// the failing signal's cyan echo
 
-constexpr float FILL_TOP = TOP + 4.0f, FILL_BOTTOM = BOTTOM - 4.0f, FILL_H = FILL_BOTTOM - FILL_TOP;
 constexpr float DASH = 4.0f, DASH_GAP = 3.0f;	// the cloak's dashes, fitted per run
+constexpr float ETCHED = 0.75f;				// the channel codes' opacity: faint lines, but text you can read
+constexpr float ETCHED_FLOOR = 0.5f;			// and they fade only this far at rest (the band goes to its floor)
+constexpr float CELL = 0.48f;					// a recon's jump cell, of the wing's length (the rest is the gap)
 
-float BarHalf(Kind kind)
-{
-	return (kind == KIND_SUPPORT) ? 72.0f : (kind == KIND_JUGGERNAUT) ? 68.0f : 60.0f;
-}
-
-static Vector2D At(const QuickFrame &f, Layer layer, float x, float y)
-{
-	return f.centre + (Vector2D(x, y) + f.sway[layer]) * f.s;
-}
-static int Alpha(const QuickFrame &f, float a)
-{
-	return clamp(RoundFloatToInt(f.color.a() * a * f.alpha), 0, 255);
-}
-static void Line(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, NeoGhostWeight weight,
-	const Color &c, float a)
-{
-	NeoGhostBegin(c, Alpha(f, a));
-	NeoGhostStroke(f.pen, At(f, layer, x0, y0), At(f, layer, x1, y1), weight);
-}
-static void Box(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, const Color &c, float a)
-{
-	NeoGhostFlush();	// strokes waiting on their outline go under the fill
-	const Vector2D p0 = At(f, layer, Min(x0, x1), Min(y0, y1)), p1 = At(f, layer, Max(x0, x1), Max(y0, y1));
-	vgui::surface()->DrawSetColor(c.r(), c.g(), c.b(), Alpha(f, a));
-	vgui::surface()->DrawFilledRect(RoundFloatToInt(p0.x), RoundFloatToInt(p0.y), Max(RoundFloatToInt(p1.x), RoundFloatToInt(p0.x) + 1),
-		Max(RoundFloatToInt(p1.y), RoundFloatToInt(p0.y) + 1));
-}
-
-static vgui::HFont Font(bool bLarge)
-{
-	static vgui::HFont s_fonts[2] = { vgui::INVALID_FONT, vgui::INVALID_FONT };
-	vgui::HFont &font = s_fonts[bLarge ? 1 : 0];
-	if (font == vgui::INVALID_FONT)
-	{
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetDefaultScheme());
-		font = pScheme ? pScheme->GetFont(bLarge ? "NHudOCRSmallNoAdditive" : "NHudOCRSmallerNoAdditive", true) : vgui::INVALID_FONT;
-	}
-	return font;
-}
-// Text at (x, y) (its vertical middle), aligned by align (-1 right, 0 centre, 1 left), with a dark shadow to read
-// on anything.
-static void Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, float x, float y, int align, bool bLarge,
-	const Color &c, float a)
-{
-	const vgui::HFont font = Font(bLarge);
-	if (font == vgui::INVALID_FONT || count <= 0)
-	{
-		return;
-	}
-	NeoGhostFlush();
-	int wide, tall;
-	vgui::surface()->GetTextSize(font, pText, wide, tall);
-	if (count < V_wcslen(pText))
-	{
-		wide = wide * count / Max(1, V_wcslen(pText));
-	}
-	const Vector2D at = At(f, layer, x, y);
-	const int tx = RoundFloatToInt(at.x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(at.y) - tall / 2;
-	vgui::surface()->DrawSetTextFont(font);
-	vgui::surface()->DrawSetTextColor(0, 0, 0, Alpha(f, a * 0.7f));
-	vgui::surface()->DrawSetTextPos(tx + 1, ty + 1);
-	vgui::surface()->DrawPrintText(pText, count);
-	vgui::surface()->DrawSetTextColor(c.r(), c.g(), c.b(), Alpha(f, a));
-	vgui::surface()->DrawSetTextPos(tx, ty);
-	vgui::surface()->DrawPrintText(pText, count);
-}
-
-// A housing line: solid, or while cloaked a whole number of dashes fitted to the run, starting and ending on its
-// corners, so corners stay solid and the mirrored brackets dash identically. The dashes never move; a brightness
+// A frame line: solid, or while cloaked a whole number of dashes fitted to the run, starting and ending on its
+// corners, so corners stay solid and the mirrored wings dash identically. The dashes never move; a brightness
 // wave passes along them (its phase carried across the runs by wave0). Returns the run's length.
 static float Run(const QuickFrame &f, Layer layer, float x0, float y0, float x1, float y1, float a, float wave0)
 {
@@ -116,11 +46,15 @@ static float Run(const QuickFrame &f, Layer layer, float x0, float y0, float x1,
 	return length;
 }
 
+// A point along a wing, t from its inner end (0) to its tip (1), side sd (-1 left, 1 right).
+static float WingX(int sd, float t) { return sd * (WING_IN + (WING_OUT - WING_IN) * t); }
+static float WingY(float t) { return BAND_Y - WING_RISE * t; }
+
 static const Color &HpColor(const QuickFrame &f)
 {
 	return (f.hp <= 0.25f) ? CRIT : (f.hp <= 0.5f) ? WARN : f.color;
 }
-// Support's armour: integrity spread over the brackets first (drained from the bottom up), then the bar.
+// Support's armour: integrity spread over the wings first (drained from the tips in), then the bar.
 static float SupportBar(float hp) { return clamp(hp / 0.4f, 0.0f, 1.0f); }
 static float SupportSide(float hp) { return clamp((hp - 0.4f) / 0.6f, 0.0f, 1.0f); }
 // Segments go dark from the outside in, a pair at a time.
@@ -143,39 +77,40 @@ static void BarBox(const QuickFrame &f, float x0, float y0, float x1, float y1, 
 	Box(f, LAYER_BAR, x0 - 2.0f, mid, x1 - 2.0f, y1, c, a);
 }
 
+// Integrity: segmented per class (recon fine, assault heavier, support in plates, the juggernaut one heavy doubled
+// bar), draining from both ends in; the number above it.
 static void PaintBar(const QuickFrame &f)
 {
 	const bool bGlitch = f.now - f.glitchTime < 0.07f;
-	const float half = BarHalf(f.kind), h = BAR_H;
 	const Color &c = HpColor(f);
 	const float pulse = (f.hp <= 0.25f) ? 0.55f + 0.45f * sinf(f.now * 9.0f) : 1.0f;
-	if (f.kind == KIND_ASSAULT || f.kind == KIND_SUPPORT)
+	const float frac = (f.kind == KIND_SUPPORT) ? SupportBar(f.hp) : f.hp;
+	const float h = (f.kind == KIND_SUPPORT) ? BAR_H * 1.5f : BAR_H, y0 = BAND_Y - h * 0.5f, y1 = BAND_Y + h * 0.5f;
+	if (f.bDetail && f.hp <= 0.25f)
 	{
-		const int n = (f.kind == KIND_ASSAULT) ? 10 : 6;
-		const float gap = (f.kind == KIND_ASSAULT) ? 2.5f : 4.0f, hh = (f.kind == KIND_SUPPORT) ? h * 1.6f : h;
-		const float segW = (half * 2.0f - gap * (n - 1)) / n;
+		// A failing signal: faint red and cyan echoes either side.
+		const float hw = BAR_HALF * frac;
+		Box(f, LAYER_BAR, -hw - 2.0f, y0 - 1.5f, hw - 2.0f, y1 - 1.5f, CRIT, 0.3f);
+		Box(f, LAYER_BAR, -hw + 2.0f, y0 + 1.5f, hw + 2.0f, y1 + 1.5f, ECHO, 0.25f);
+	}
+	const int n = (f.kind == KIND_RECON) ? 20 : (f.kind == KIND_ASSAULT) ? 10 : (f.kind == KIND_SUPPORT) ? 6 : 1;
+	if (n > 1)
+	{
+		const float gap = (f.kind == KIND_SUPPORT) ? 5.0f : 3.0f;
+		const float segW = (BAR_HALF * 2.0f - gap * (n - 1)) / n;
 		for (int i = 0; i < n; ++i)
 		{
-			const float x0 = -half + i * (segW + gap);
-			const float lit = LitFromOutside(i, n, (f.kind == KIND_SUPPORT) ? SupportBar(f.hp) : f.hp);
-			BarBox(f, x0, BAR_Y - hh * 0.5f, x0 + segW, BAR_Y + hh * 0.5f, c, (lit > 0.0f) ? 0.25f + 0.6f * lit * pulse : 0.08f, bGlitch);
+			const float x0 = -BAR_HALF + i * (segW + gap);
+			const float lit = LitFromOutside(i, n, frac);
+			BarBox(f, x0, y0, x0 + segW, y1, c, (lit > 0.0f) ? 0.25f + 0.6f * lit * pulse : 0.08f, bGlitch);
 		}
 	}
 	else
 	{
-		BarBox(f, -half, BAR_Y - h * 0.5f, half, BAR_Y + h * 0.5f, f.color, 0.08f, bGlitch);
-		const float hw = half * f.hp;
-		BarBox(f, -hw, BAR_Y - h * 0.5f, hw, BAR_Y + h * 0.5f, c, 0.85f * pulse, bGlitch);
-		if (f.kind == KIND_JUGGERNAUT)
-		{
-			BarBox(f, -hw, BAR_Y + h, hw, BAR_Y + h + 1.2f, c, 0.7f, bGlitch);
-		}
-		if (f.bDetail && f.hp <= 0.25f)
-		{
-			// A failing signal: faint red and cyan echoes either side.
-			Box(f, LAYER_BAR, -hw - 1.5f, BAR_Y - h * 0.5f - 1.0f, hw - 1.5f, BAR_Y + h * 0.5f - 1.0f, CRIT, 0.3f);
-			Box(f, LAYER_BAR, -hw + 1.5f, BAR_Y - h * 0.5f + 1.0f, hw + 1.5f, BAR_Y + h * 0.5f + 1.0f, ECHO, 0.25f);
-		}
+		BarBox(f, -BAR_HALF, y0, BAR_HALF, y1, f.color, 0.08f, bGlitch);
+		const float hw = BAR_HALF * frac;
+		BarBox(f, -hw, y0, hw, y1, c, 0.85f * pulse, bGlitch);
+		BarBox(f, -hw, y1 + 2.0f, hw, y1 + 3.5f, c, 0.7f, bGlitch);	// the juggernaut's second line
 	}
 	// The chips: a hit's lost chunk held bright a moment, then wiped inward to the new value.
 	for (int i = 0; i < f.chips; ++i)
@@ -189,80 +124,82 @@ static void PaintBar(const QuickFrame &f)
 		}
 		for (int sd = -1; sd <= 1; sd += 2)
 		{
-			const float xa = sd * half * chip.to, xb = sd * half * outer;
-			Box(f, LAYER_BAR, xa, BAR_Y - h * 0.5f - 1.0f, xb, BAR_Y + h * 0.5f + 1.0f, f.color, 0.9f);
-			Line(f, LAYER_BAR, xb, BAR_Y - h * 0.5f - 2.0f, xb, BAR_Y + h * 0.5f + 2.0f, NEO_GHOST_LIGHT, f.color, 1.0f);
+			const float xa = sd * BAR_HALF * chip.to, xb = sd * BAR_HALF * outer;
+			Box(f, LAYER_BAR, xa, y0 - 1.0f, xb, y1 + 1.0f, f.color, 0.9f);
+			Line(f, LAYER_BAR, xb, y0 - 2.0f, xb, y1 + 2.0f, NEO_GHOST_LIGHT, f.color, 1.0f);
 		}
 	}
-	// The frame's end ticks, dashed with the rest while cloaked.
+	// The end ticks, dashed with the frames while cloaked.
 	float wave = 0.0f;
 	for (int sd = -1; sd <= 1; sd += 2)
 	{
-		wave += Run(f, LAYER_BAR, sd * (half + 3.0f), BAR_Y - 5.0f, sd * (half + 3.0f), BAR_Y + 5.0f, 0.7f, wave);
+		wave += Run(f, LAYER_BAR, sd * (BAR_HALF + 4.0f), BAND_Y - 6.0f, sd * (BAR_HALF + 4.0f), BAND_Y + 6.0f, 0.7f, wave);
 	}
 	// The number, flickering through digits a moment when it changes.
 	wchar_t number[8];
 	const bool bFlicker = f.bDetail && f.now - f.hpChangeTime < 0.09f;
 	V_snwprintf(number, ARRAYSIZE(number), L"%d", bFlicker ? RandomInt(10, 98) : f.hpNumber);
-	Text(f, LAYER_BAR, number, V_wcslen(number), 0.0f, BAR_Y - 12.0f, 0, true, c, 0.95f);
+	Text(f, LAYER_BAR, number, V_wcslen(number), 0.0f, NUMBER_Y, 0, FONT_LARGE, c, 0.95f);
 }
 
-static void PaintBracket(const QuickFrame &f, int sd)
+// A wing's frame: a parallelogram around its fill, upright ends, its long sides on the wing's slant.
+static void PaintWingFrame(const QuickFrame &f, int sd)
 {
-	const float x = sd * BX, xf = sd * (BX - FOOT);
+	const float xi = WingX(sd, 0.0f), xo = WingX(sd, 1.0f), yi = WingY(0.0f), yo = WingY(1.0f);
 	float wave = 0.0f;
-	wave += Run(f, LAYER_BRACKET, xf, TOP, x, TOP, 0.9f, wave);
-	wave += Run(f, LAYER_BRACKET, x, TOP, x, BOTTOM, 0.9f, wave);
-	Run(f, LAYER_BRACKET, x, BOTTOM, xf, BOTTOM, 0.9f, wave);
+	wave += Run(f, LAYER_FRAME, xi, yi - WING_FRAME, xo, yo - WING_FRAME, 0.9f, wave);
+	wave += Run(f, LAYER_FRAME, xo, yo - WING_FRAME, xo, yo + WING_FRAME, 0.9f, wave);
+	wave += Run(f, LAYER_FRAME, xo, yo + WING_FRAME, xi, yi + WING_FRAME, 0.9f, wave);
+	Run(f, LAYER_FRAME, xi, yi + WING_FRAME, xi, yi - WING_FRAME, 0.9f, wave);
 }
-static float TrackOuter(int sd) { return sd * (BX - FILL_GAP); }
-static float TrackInner(int sd) { return sd * (BX - FILL_GAP - FILL_W); }
 
-// A fill rising from the bottom of a bracket's track; hollow (an outline over a faint fill) while cloaked.
+// A fill out along a wing from its inner end; hollow (an outline over a faint fill) while cloaked.
 static void PaintFill(const QuickFrame &f, int sd, float frac, const Color &c, bool bHollow)
 {
-	const float x0 = TrackOuter(sd), x1 = TrackInner(sd);
-	Box(f, LAYER_BRACKET, x0, FILL_TOP, x1, FILL_BOTTOM, f.color, 0.07f);
-	const float top = FILL_BOTTOM - FILL_H * clamp(frac, 0.0f, 1.0f);
+	frac = clamp(frac, 0.0f, 1.0f);
+	const float xi = WingX(sd, 0.0f), yi = WingY(0.0f), xt = WingX(sd, frac), yt = WingY(frac), half = FILL_H * 0.5f;
+	Strip(f, LAYER_BAR, xi, yi, WingX(sd, 1.0f), WingY(1.0f), FILL_H, f.color, 0.07f);
 	if (bHollow && f.bDetail)
 	{
-		Box(f, LAYER_BRACKET, x0, top, x1, FILL_BOTTOM, c, 0.12f);
-		Line(f, LAYER_BRACKET, x0, top, x1, top, NEO_GHOST_LIGHT, c, 0.9f);
-		Line(f, LAYER_BRACKET, x0, top, x0, FILL_BOTTOM, NEO_GHOST_LIGHT, c, 0.6f);
-		Line(f, LAYER_BRACKET, x1, top, x1, FILL_BOTTOM, NEO_GHOST_LIGHT, c, 0.6f);
+		Strip(f, LAYER_BAR, xi, yi, xt, yt, FILL_H, c, 0.12f);
+		Line(f, LAYER_BAR, xi, yi - half, xt, yt - half, NEO_GHOST_LIGHT, c, 0.6f);
+		Line(f, LAYER_BAR, xi, yi + half, xt, yt + half, NEO_GHOST_LIGHT, c, 0.6f);
+		Line(f, LAYER_BAR, xt, yt - half, xt, yt + half, NEO_GHOST_LIGHT, c, 0.9f);
 		return;
 	}
-	Box(f, LAYER_BRACKET, x0, top, x1, FILL_BOTTOM, c, 0.75f);
+	Strip(f, LAYER_BAR, xi, yi, xt, yt, FILL_H, c, 0.75f);
 }
 
-// A recon's two jump cells, bottom one first: a full cell locks bright with a flash; a spent one's outline blinks
-// twice.
+// A recon's two jump cells, the inner one first: a full cell locks bright with a flash; a spent one's outline
+// blinks twice.
 static void PaintJumpCells(const QuickFrame &f, int sd)
 {
-	const float x0 = TrackOuter(sd), x1 = TrackInner(sd), gap = 4.0f, cell = (FILL_H - gap) * 0.5f;
-	Box(f, LAYER_BRACKET, x0, FILL_TOP, x1, FILL_BOTTOM, f.color, 0.07f);
+	const float half = FILL_H * 0.5f;
 	for (int i = 0; i < 2; ++i)
 	{
-		const float bottom = FILL_BOTTOM - i * (cell + gap), top = bottom - cell;
+		const float a = i * (1.0f - CELL), b = a + CELL;
+		const float xa = WingX(sd, a), ya = WingY(a), xb = WingX(sd, b), yb = WingY(b);
+		Strip(f, LAYER_BAR, xa, ya, xb, yb, FILL_H, f.color, 0.07f);
 		const float fill = clamp((f.aux - i * JUMP_COST) / JUMP_COST, 0.0f, 1.0f);
 		if (fill >= 1.0f)
 		{
 			const float flash = Max(0.0f, 1.0f - (f.now - f.jumpReady[i]) / 0.25f);
-			Box(f, LAYER_BRACKET, x0, top, x1, bottom, f.color, 0.75f + 0.25f * flash);
+			Strip(f, LAYER_BAR, xa, ya, xb, yb, FILL_H, f.color, 0.75f + 0.25f * flash);
 			if (flash > 0.0f)
 			{
-				Box(f, LAYER_BRACKET, sd * (BX - 1.0f), top, sd * (BX - FILL_GAP - FILL_W - 3.0f), bottom, f.color, 0.35f * flash);
+				Strip(f, LAYER_BAR, xa, ya, xb, yb, FILL_H + 6.0f, f.color, 0.35f * flash);
 			}
 			continue;
 		}
-		Box(f, LAYER_BRACKET, x0, bottom - cell * fill, x1, bottom, f.color, 0.3f);
-		Line(f, LAYER_BRACKET, x0, top, x1, top, NEO_GHOST_LIGHT, f.color, 0.4f);
+		const float t = a + (b - a) * fill;
+		Strip(f, LAYER_BAR, xa, ya, WingX(sd, t), WingY(t), FILL_H, f.color, 0.3f);
+		Line(f, LAYER_BAR, xb, yb - half, xb, yb + half, NEO_GHOST_LIGHT, f.color, 0.4f);
 		const float spent = f.now - f.jumpSpent[i];
 		if (spent < 0.32f && static_cast<int>(spent / 0.08f) % 2 == 0)
 		{
-			Line(f, LAYER_BRACKET, x0, top, x0, bottom, NEO_GHOST_LIGHT, f.color, 1.0f);
-			Line(f, LAYER_BRACKET, x1, top, x1, bottom, NEO_GHOST_LIGHT, f.color, 1.0f);
-			Line(f, LAYER_BRACKET, x0, bottom, x1, bottom, NEO_GHOST_LIGHT, f.color, 1.0f);
+			Line(f, LAYER_BAR, xa, ya - half, xb, yb - half, NEO_GHOST_LIGHT, f.color, 1.0f);
+			Line(f, LAYER_BAR, xa, ya + half, xb, yb + half, NEO_GHOST_LIGHT, f.color, 1.0f);
+			Line(f, LAYER_BAR, xa, ya - half, xa, ya + half, NEO_GHOST_LIGHT, f.color, 1.0f);
 		}
 	}
 }
@@ -270,52 +207,72 @@ static void PaintJumpCells(const QuickFrame &f, int sd)
 // Sprint stamina: a tick at the minimum to start a sprint; draining, a bright edge rides the tip.
 static void PaintSprint(const QuickFrame &f, int sd)
 {
-	PaintFill(f, sd, f.aux / 100.0f, (f.aux < 20.0f) ? WARN : f.color, false);
-	const float minimum = FILL_BOTTOM - FILL_H * 0.02f - 2.0f;
-	Line(f, LAYER_BRACKET, sd * (BX - FILL_GAP - FILL_W - 1.0f), minimum, sd * (BX - FILL_GAP - FILL_W - 4.0f), minimum, NEO_GHOST_LIGHT, f.color, 0.6f);
+	const float t = f.aux / 100.0f, half = FILL_H * 0.5f;
+	PaintFill(f, sd, t, (f.aux < 20.0f) ? WARN : f.color, false);
+	const float xm = WingX(sd, 0.02f), ym = WingY(0.02f);
+	Line(f, LAYER_BAR, xm, ym - half - 1.0f, xm, ym - half - 3.5f, NEO_GHOST_LIGHT, f.color, 0.6f);
 	if (f.bSprinting)
 	{
-		const float tip = FILL_BOTTOM - FILL_H * f.aux / 100.0f;
-		Line(f, LAYER_BRACKET, sd * (BX - FILL_GAP + 1.0f), tip, sd * (BX - FILL_GAP - FILL_W - 1.0f), tip, NEO_GHOST_MEDIUM, f.color, 1.0f);
+		const float xt = WingX(sd, t), yt = WingY(t);
+		Line(f, LAYER_BAR, xt, yt - half - 1.0f, xt, yt + half + 1.0f, NEO_GHOST_MEDIUM, f.color, 1.0f);
 	}
 }
 
-// Instrument detail, far back and faint: graduations up each track, channel codes, registration marks.
+// Instrument detail, far back and faint: graduations under the bar and each wing, the etched rail with its
+// registration marks, and the channel codes on one baseline: at the left tip, centred, at the right tip.
 static void PaintDetail(const QuickFrame &f)
 {
 	static const wchar_t *s_codes[][2] = { { L"TOC.CH2", L"JMP.CH1" }, { L"TOC.CH2", L"AUX.CH1" }, { L"ARM.CH0", L"ARM.CH0" },
 		{ L"AUX.CH1", L"AUX.CH1" } };
+	for (int k = 0; k <= 4; ++k)
+	{
+		if (k == 2)
+		{
+			continue;	// the number sits there
+		}
+		const bool bMajor = (k % 2 == 0);
+		const float x = -BAR_HALF + k * BAR_HALF * 0.5f;
+		Line(f, LAYER_DETAIL, x, BAND_Y + 10.0f, x, BAND_Y + (bMajor ? 17.0f : 14.0f), NEO_GHOST_LIGHT, f.color, bMajor ? 0.45f : 0.25f);
+	}
 	for (int sd = -1; sd <= 1; sd += 2)
 	{
-		const float xi = sd * (BX - FILL_GAP - FILL_W - 2.0f);
 		for (int k = 0; k <= 10; ++k)
 		{
 			const bool bMajor = (k == 0 || k == 5 || k == 10);
-			const float y = FILL_BOTTOM - FILL_H * k / 10.0f;
-			Line(f, LAYER_DETAIL, xi, y, xi - sd * (bMajor ? 4.0f : 2.0f), y, NEO_GHOST_LIGHT, f.color, bMajor ? 0.45f : 0.25f);
+			const float t = k / 10.0f, x = WingX(sd, t), y = WingY(t) + WING_FRAME + 3.0f;
+			Line(f, LAYER_DETAIL, x, y, x, y + (bMajor ? 6.0f : 3.0f), NEO_GHOST_LIGHT, f.color, bMajor ? 0.45f : 0.25f);
 		}
-		const wchar_t *pCode = s_codes[f.kind][(sd < 0) ? 0 : 1];
-		Text(f, LAYER_DETAIL, pCode, V_wcslen(pCode), sd * (BX + 8.0f), 40.0f, (sd < 0) ? -1 : 1, false, f.color, 0.3f);
+		// Registration crosses: at the rail's end, over the bar's end (above the ammo), past the wing's tip.
+		Cross(f, LAYER_DETAIL, sd * (WING_OUT + 16.0f), RAIL_Y, 0.45f);
+		Cross(f, LAYER_DETAIL, sd * BAR_HALF, HEADER_Y - 16.0f, 0.45f);
+		Cross(f, LAYER_DETAIL, sd * (WING_OUT + 16.0f), BAND_Y - WING_RISE, 0.45f);
 	}
-	Text(f, LAYER_DETAIL, L"INT.CH0", 7, -(BarHalf(f.kind) + 10.0f), BAR_Y, -1, false, f.color, 0.3f);
-	for (int corner = 0; corner < 4; ++corner)
+	// The rail as a ruler: a fine tick every tenth of each half, a longer one at the centre.
+	Line(f, LAYER_DETAIL, -WING_OUT, RAIL_Y, WING_OUT, RAIL_Y, NEO_GHOST_LIGHT, f.color, 0.35f);
+	for (int k = -10; k <= 10; ++k)
 	{
-		const float x = ((corner & 1) ? 1.0f : -1.0f) * (BX + 12.0f), y = ((corner & 2) ? 1.0f : -1.0f) * (BOTTOM + 12.0f);
-		Line(f, LAYER_DETAIL, x - 2.5f, y, x + 2.5f, y, NEO_GHOST_LIGHT, f.color, 0.35f);
-		Line(f, LAYER_DETAIL, x, y - 2.5f, x, y + 2.5f, NEO_GHOST_LIGHT, f.color, 0.35f);
+		const float x = k * WING_OUT / 10.0f;
+		const float up = (k == 0) ? 5.0f : 0.0f, down = (k == 0) ? 5.0f : (k % 5 == 0) ? 4.5f : 2.5f;
+		Line(f, LAYER_DETAIL, x, RAIL_Y - up, x, RAIL_Y + down, NEO_GHOST_LIGHT, f.color, (k == 0) ? 0.45f : 0.3f);
 	}
+	// The codes: faint at 30% of a band already faded to its floor they were near invisible.
+	QuickFrame etched = f;
+	etched.alpha = Max(f.alpha, ETCHED_FLOOR * f.reveal);
+	const wchar_t *pLeft = s_codes[f.kind][0], *pRight = s_codes[f.kind][1];
+	Text(etched, LAYER_DETAIL, pLeft, V_wcslen(pLeft), -WING_OUT, CODES_Y, 1, FONT_SMALL, f.color, ETCHED);
+	Text(etched, LAYER_DETAIL, L"INT.CH0", 7, 0.0f, CODES_Y, 0, FONT_SMALL, f.color, ETCHED);
+	Text(etched, LAYER_DETAIL, pRight, V_wcslen(pRight), WING_OUT, CODES_Y, -1, FONT_SMALL, f.color, ETCHED);
 }
 
-void PaintHousing(const QuickFrame &f)
+void PaintBand(const QuickFrame &f)
 {
 	if (f.bDetail)
 	{
 		PaintDetail(f);
 	}
-	PaintBar(f);
 	for (int sd = -1; sd <= 1; sd += 2)
 	{
-		PaintBracket(f, sd);
+		PaintWingFrame(f, sd);
 	}
 	switch (f.kind)
 	{
@@ -340,21 +297,24 @@ void PaintHousing(const QuickFrame &f)
 		}
 		break;
 	}
-	// Vision: four static dots, lit while the mode is on (it has no drain, so nothing moves).
+	PaintBar(f);
+	// Vision: four static dots either side of integrity's number, lit while the mode is on (no drain, so nothing moves).
 	if (f.bHasVision)
 	{
-		const float r = f.bVision ? 1.0f : 0.65f;
-		for (int corner = 0; corner < 4; ++corner)
+		const float r = f.bVision ? 1.5f : 1.0f;
+		for (int sd = -1; sd <= 1; sd += 2)
 		{
-			const float x = ((corner & 1) ? 1.0f : -1.0f) * DOT, y = ((corner & 2) ? 1.0f : -1.0f) * DOT;
-			Box(f, LAYER_DOTS, x - r, y - r, x + r, y + r, f.color, f.bVision ? 1.0f : 0.3f);
+			for (const float x : { DOT_NEAR, DOT_FAR })
+			{
+				Box(f, LAYER_DOTS, sd * x - r, NUMBER_Y - r, sd * x + r, NUMBER_Y + r, f.color, f.bVision ? 1.0f : 0.3f);
+			}
 		}
 	}
 	NeoGhostFlush();
 }
 
-// The spawn labels, typed in and back out, placed clear of the housing and of each other: above the number, beside
-// the brackets' upper halves (the channel codes sit by the lower halves), below the crosshair's magazine count.
+// The spawn labels, typed in and back out: each part's name under its channel code, on the code's own anchor, and
+// the vision mode above the ammo. Nothing shares a row, so nothing overlaps.
 void PaintLabels(const QuickFrame &f)
 {
 	if (f.labels < 0.0f || f.labels > 3.4f)
@@ -378,18 +338,18 @@ void PaintLabels(const QuickFrame &f)
 			shown[count] = L'_';
 			shownCount = count + 1;
 		}
-		Text(f, LAYER_LABELS, shown, shownCount, x, y, align, true, f.color, 1.0f);
+		Text(f, LAYER_LABELS, shown, shownCount, x, y, align, FONT_SMALL, f.color, 1.0f);
 	};
 	static const wchar_t *s_left[] = { L"THERM-OPTIC", L"THERM-OPTIC", L"ARMOUR", L"AUX" };
 	static const wchar_t *s_right[] = { L"JUMP", L"AUX", L"ARMOUR", L"AUX" };
-	put(L"INTEGRITY", 0.0f, BAR_Y - 30.0f, 0);
-	put(s_left[f.kind], -(BX + 12.0f), -20.0f, -1);
-	put(s_right[f.kind], BX + 12.0f, -20.0f, 1);
+	put(s_left[f.kind], -WING_OUT, LABELS_Y, 1);
+	put(L"INTEGRITY", 0.0f, LABELS_Y, 0);
+	put(s_right[f.kind], WING_OUT, LABELS_Y, -1);
 	if (f.bHasVision && f.pVisionName)
 	{
 		wchar_t vision[32];
 		V_UTF8ToUnicode(f.pVisionName, vision, sizeof(vision));
-		put(vision, 0.0f, BOTTOM + 42.0f, 0);	// below the crosshair's magazine count (neo_gunplay_reserve.h)
+		put(vision, 0.0f, HEADER_Y - 30.0f, 0);
 	}
 	NeoGhostFlush();
 }

@@ -1,10 +1,11 @@
 #pragma once
 
-// Quick info around the crosshair (QUICKINFO.md): the edge panel's integrity, therm-optic and aux brought to the
-// centre as a housing: an integrity bar on top, a mirrored bracket either side holding each class's fill, four
-// vision dots, fine instrument detail, layered depth with an organic sway. Static: a fixed size outside a fixed
-// crosshair deadzone that the gunplay crosshair clamps to. Its own setting (Settings > HUD), not part of Enable
-// Gunplay; on, it replaces the edge health / therm-optic / aux panel.
+// Quick info (QUICKINFO.md): the corner panels' integrity, therm-optic, aux and ammo brought in to the edge of your
+// view as a low band below the crosshair: the ammo (name, magazines, round ticks, fire mode) over an integrity bar,
+// its number and four vision dots under it, a wing either side holding each class's fill, fine instrument detail on
+// an etched rail, layered depth with an organic sway; and a speed graph bottom left. Fixed to the screen at a fixed
+// size, well clear of every crosshair and of the chat. Its own setting (Settings > HUD), not part of Enable
+// Gunplay; on, it replaces the health / therm-optic / aux and ammo panels and nothing else.
 
 class C_NEO_Player;
 class Color;
@@ -12,9 +13,9 @@ class Color;
 // The setting (cl_neo_hud_quickinfo).
 bool NeoQuickInfoOn();
 
-// The crosshair deadzone's size, pixels at 1080p from the aim (a circle; the SMG's box a square of the same half
-// side), or 0 while the quick info is off: nothing of the gunplay crosshair leaves it.
-float NeoQuickInfoDeadzone();
+// On and drawn (or held back only by a screen fade) this frame or the last: the ammo panel gives way to it. Off, or
+// hidden (dead, spectating, the rules), the stock panels stay.
+bool NeoQuickInfoShowing();
 
-// Paints the housing around the crosshair at (x, y) in the crosshair's HUD pass, in the crosshair's colour.
-void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color, int x, int y);
+// Paints the band in the crosshair's HUD pass, in the crosshair's colour.
+void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color);

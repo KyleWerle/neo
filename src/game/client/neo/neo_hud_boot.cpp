@@ -161,6 +161,7 @@ void NeoHudBootPaint(vgui::Panel *pPanel, NeoHudBootState &state)
 	{
 		const Vector2D centre(wide - (RING_RADIUS + 3.0f) * s, (RING_RADIUS + 3.0f) * s);
 		const float lead = now * 10.0f;
+		NeoGhostPanelLocal(true);	// in the panel's own coordinates
 		for (int i = 0; i < RING_DOTS; ++i)
 		{
 			float behind = lead - i;
@@ -170,7 +171,7 @@ void NeoHudBootPaint(vgui::Panel *pPanel, NeoHudBootState &state)
 			NeoGhostBegin(white, RoundFloatToInt(255.0f * ringFade * (1.0f - behind / RING_DOTS)));
 			NeoGhostStroke(pen, at - Vector2D(0.6f * s, 0.0f), at + Vector2D(0.6f * s, 0.0f), NEO_GHOST_MEDIUM);
 		}
-		NeoGhostFlush();
+		NeoGhostPanelLocal(false);	// flushes them
 	}
 
 	// The tech line, sliding in from far to the right along the panel's bottom, then fading.
