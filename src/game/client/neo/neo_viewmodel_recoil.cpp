@@ -36,21 +36,28 @@ ConVar cl_neo_viewmodel_recoil_rof_ref("cl_neo_viewmodel_recoil_rof_ref", "0.15"
 	" tilt shrunk in proportion (down to 30%), so fast automatics wobble rather than shake: the random left and right"
 	" kicks otherwise pile up.", true, 0.01f, true, 1);
 static constexpr float SIDEWAYS_MIN_SCALE = 0.3f;
-// The shotguns cycle slowly, so their random kicks got the full turn and tilt (doubled at the hip) and the nose's
-// light damping rang on after each one: a big, loose shake. Damped, it was over in a frame or two: their recoil
-// numbers are an SMG's. A heavy, slower shove straight back and up instead, the arms bracing against it.
-ConVar cl_neo_viewmodel_recoil_pellet_strength("cl_neo_viewmodel_recoil_pellet_strength", "2.5", FCVAR_ARCHIVE,
-	"Shotguns: how many times harder their knock is than their recoil numbers give (those are an SMG's).",
+// Heavy guns: the recoil numbers are compressed and much alike (the shotguns' are an SMG's, the M41s have none),
+// so every gun knocked about a degree on the fast spring, peaking in two or three frames: snipers and shotguns
+// felt like SMGs. The slower a gun cycles, the heavier its knock: harder, on a slower, more damped spring that
+// eases back, from the automatics (as they were) at LIGHT_CYCLE to these settings at _heavy_cycle and slower.
+// The shotguns are heavy whatever their cycle.
+ConVar cl_neo_viewmodel_recoil_heavy_cycle("cl_neo_viewmodel_recoil_heavy_cycle", "0.8", FCVAR_ARCHIVE,
+	"Guns cycling this slowly or slower, in seconds between shots (and the shotguns), knock with the heavy settings;"
+	" faster ones blend toward the automatics' as their cycle nears 0.1.", true, 0.15f, true, 3);
+ConVar cl_neo_viewmodel_recoil_heavy_strength("cl_neo_viewmodel_recoil_heavy_strength", "2.5", FCVAR_ARCHIVE,
+	"Heavy guns: how many times harder their nose and back knock is than their recoil numbers give.",
 	true, 0, true, 6);
-ConVar cl_neo_viewmodel_recoil_pellet_freq("cl_neo_viewmodel_recoil_pellet_freq", "2", FCVAR_ARCHIVE,
-	"Shotguns: how fast the nose springs back after their shot, in Hz, in place of cl_neo_viewmodel_recoil_freq"
-	" (slower: a shove the arms take, easing back, not a flick).", true, 0.5f, true, 30);
-ConVar cl_neo_viewmodel_recoil_pellet_side("cl_neo_viewmodel_recoil_pellet_side", "0.2", FCVAR_ARCHIVE,
-	"Shotguns (their random knock): how much of the sideways turn and tilt they get (of their harder knock).",
-	true, 0, true, 1);
-ConVar cl_neo_viewmodel_recoil_pellet_damping("cl_neo_viewmodel_recoil_pellet_damping", "0.9", FCVAR_ARCHIVE,
-	"Shotguns: how damped the nose is after their shot, in place of cl_neo_viewmodel_recoil_damping (1 = no"
-	" overshoot: it eases back in one go). The kick is sized for it, so the peak stays the same.", true, 0.1f, true, 1);
+ConVar cl_neo_viewmodel_recoil_heavy_freq("cl_neo_viewmodel_recoil_heavy_freq", "2", FCVAR_ARCHIVE,
+	"Heavy guns: how fast the nose springs back, in Hz, in place of cl_neo_viewmodel_recoil_freq (slower: a shove"
+	" the arms take, easing back, not a flick).", true, 0.5f, true, 30);
+ConVar cl_neo_viewmodel_recoil_heavy_damping("cl_neo_viewmodel_recoil_heavy_damping", "0.9", FCVAR_ARCHIVE,
+	"Heavy guns: how damped the nose is, in place of cl_neo_viewmodel_recoil_damping (1 = no overshoot: it eases"
+	" back in one go). The kick is sized for it, so the peak doesn't shrink.", true, 0.1f, true, 1);
+ConVar cl_neo_viewmodel_recoil_pellet_side("cl_neo_viewmodel_recoil_pellet_side", "0.5", FCVAR_ARCHIVE,
+	"Shotguns (their random knock): how much of the sideways turn and tilt they get.", true, 0, true, 1);
+static constexpr float LIGHT_CYCLE = 0.1f;
+static constexpr float MAX_STRENGTH = 3.0f;
+static constexpr float MAX_SIDEWAYS_STRENGTH = 1.0f;	// the turn and tilt were tuned on the automatics (about 0.9)
 
 // How much of v0 / w an impulse v0 on a spring of damping zeta reaches at its peak (under 1, it falls from 1 as
 // the damping grows: 0.37 at 1).
@@ -103,7 +110,7 @@ static struct
 	Spring3 rotation;	// pitch, yaw (degrees; its roll unused)
 	Spring3 tilt;		// roll (degrees), in x
 	Spring3 linear;		// forward, right, up (units)
-	bool bPellets = false;	// the last shot was a shotgun's (its own nose damping)
+	float heaviness = 0.0f;	// the last shot's gun: 0 an automatic, 1 heavy (its nose's spring)
 	int updatedFrame = -1;
 } s_recoil;
 
@@ -117,7 +124,26 @@ static float ShotStrength(C_NEOBaseCombatWeapon *pWeapon, bool bAimed)
 	const float kickSize = Max(fabsf(kick.minX), fabsf(kick.maxX)) + 0.5f * Max(fabsf(kick.minY), fabsf(kick.maxY));
 	const float recoilSize = (Max(fabsf(recoil.minX), fabsf(recoil.maxX)) + 0.5f * Max(fabsf(recoil.minY), fabsf(recoil.maxY)))
 		* (bAimed ? recoil.adsFactor : recoil.hipFactor);
-	return clamp(sqrtf(Max(kickSize, recoilSize)), 0.4f, 2.0f);
+	return clamp(sqrtf(Max(kickSize, recoilSize)), 0.7f, 2.0f);
+}
+
+// How heavy a gun's knock is, 0 (an automatic) to 1, by its cycle time (log scale).
+static float Heaviness(C_NEOBaseCombatWeapon *pWeapon, bool bPellets)
+{
+	if (bPellets)
+	{
+		return 1.0f;
+	}
+	const float heavyCycle = Max(cl_neo_viewmodel_recoil_heavy_cycle.GetFloat(), LIGHT_CYCLE * 1.01f);
+	return clamp(logf(Max(pWeapon->GetFireRate(), 0.001f) / LIGHT_CYCLE) / logf(heavyCycle / LIGHT_CYCLE), 0.0f, 1.0f);
+}
+
+// The nose's spring for a gun this heavy: its frequency (Hz, blended on a log scale) and damping.
+static void NoseSpring(float heaviness, float &freq, float &zeta)
+{
+	const float light = cl_neo_viewmodel_recoil_freq.GetFloat();
+	freq = light * powf(cl_neo_viewmodel_recoil_heavy_freq.GetFloat() / light, heaviness);
+	zeta = Lerp(heaviness, cl_neo_viewmodel_recoil_damping.GetFloat(), cl_neo_viewmodel_recoil_heavy_damping.GetFloat());
 }
 
 static void KnockShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &conePosition, bool bPellets)
@@ -128,9 +154,12 @@ static void KnockShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &conePositi
 	{
 		return;
 	}
-	s_recoil.bPellets = bPellets;
-	const float strength = ShotStrength(pWeapon, pOwner->IsInAim()) * scale
-		* (bPellets ? cl_neo_viewmodel_recoil_pellet_strength.GetFloat() : 1.0f);
+	const float heaviness = Heaviness(pWeapon, bPellets);
+	s_recoil.heaviness = heaviness;
+	const float baseStrength = ShotStrength(pWeapon, pOwner->IsInAim());
+	const float strength = Min(baseStrength * Lerp(heaviness, 1.0f, cl_neo_viewmodel_recoil_heavy_strength.GetFloat()),
+		MAX_STRENGTH) * scale;
+	const float sideStrength = Min(baseStrength, MAX_SIDEWAYS_STRENGTH) * scale;
 	const float lateral = cl_neo_viewmodel_recoil_lateral.GetFloat();
 	// Where the shot went within its cone, -1..1 each way; the turn and tilt use it as it is (less on a gun that
 	// cycles fast, by its cycle time: see cl_neo_viewmodel_recoil_rof_ref, and on a shotgun), the rest scaled.
@@ -141,21 +170,28 @@ static void KnockShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &conePositi
 	const float side = coneSide * lateral;
 	const float lift = clamp(conePosition.y, -1.0f, 1.0f) * lateral;
 
-	// An impulse v0 on a spring peaks near v0 / w, so each kick is its peak times w.
-	const float omega = 2.0f * M_PI_F * (bPellets ? cl_neo_viewmodel_recoil_pellet_freq : cl_neo_viewmodel_recoil_freq).GetFloat();
+	// An impulse v0 on a spring peaks near v0 / w, so each kick is its peak times w. The more damped heavy spring
+	// would peak lower: sized up for it, from the automatics' as they were (their peak a part of v0 / w) to the
+	// heavy guns' full peak.
+	float freq, zeta;
+	NoseSpring(heaviness, freq, zeta);
+	const float omega = 2.0f * M_PI_F * freq;
 	const float omegaLinear = omega * LINEAR_FREQ_SCALE;
-	// Nose up (negative pitch), turned toward the shot (right = negative yaw) and tilted with it.
-	s_recoil.rotation.v += Vector(-(KICK_PITCH + 0.5f * KICK_PITCH * lift), -cl_neo_viewmodel_recoil_turn.GetFloat() * coneSide,
-		0.0f) * (strength * omega / (bPellets ? SpringPeakFraction(cl_neo_viewmodel_recoil_pellet_damping.GetFloat()) : 1.0f));
+	const float lightPeak = SpringPeakFraction(cl_neo_viewmodel_recoil_damping.GetFloat());
+	const float peakSize = Lerp(heaviness, lightPeak, 1.0f) / SpringPeakFraction(zeta);
+	// Nose up (negative pitch) and turned toward the shot (right = negative yaw).
+	s_recoil.rotation.v += Vector(-(KICK_PITCH + 0.5f * KICK_PITCH * lift) * strength,
+		-cl_neo_viewmodel_recoil_turn.GetFloat() * coneSide * sideStrength, 0.0f) * (omega * peakSize);
 	const float omegaTilt = 2.0f * M_PI_F * cl_neo_viewmodel_recoil_tilt_freq.GetFloat();
 	// Most shots land near the cone's centre (about 0.3 out), where a proportional tilt was about a degree and
 	// didn't read: the square root keeps the side and the edge shots biggest, but tilts the common ones clearly.
 	const float tiltSide = ((rawSide < 0.0f) ? -sqrtf(-rawSide) : sqrtf(rawSide)) * rateScale;
-	s_recoil.tilt.v.x += cl_neo_viewmodel_recoil_tilt.GetFloat() * tiltSide * strength * omegaTilt / TILT_PEAK;
+	s_recoil.tilt.v.x += cl_neo_viewmodel_recoil_tilt.GetFloat() * tiltSide * sideStrength * omegaTilt / TILT_PEAK;
 	if (cl_neo_viewmodel_recoil_debug.GetBool())
 	{
-		Msg("[knock] cone %.2f %.2f  strength %.2f  rate scale %.2f  tilt now %.2f deg (peak since last shot %.2f)\n",
-			conePosition.x, conePosition.y, strength, rateScale, s_recoil.tilt.x.x, s_flTiltPeak);
+		Msg("[knock] cone %.2f %.2f  strength %.2f  heaviness %.2f (%.1f Hz, damping %.2f)  rate scale %.2f  tilt now %.2f"
+			" deg (peak since last shot %.2f)\n", conePosition.x, conePosition.y, strength, heaviness, freq, zeta, rateScale,
+			s_recoil.tilt.x.x, s_flTiltPeak);
 		s_flTiltPeak = 0.0f;
 	}
 	// The whole gun back toward the eye (and aside with the shot, if asked).
@@ -196,8 +232,9 @@ void NeoViewmodelRecoilApply(C_BasePlayer *pOwner, const QAngle &eyeAngles, floa
 	if (s_recoil.updatedFrame != gpGlobals->framecount)
 	{
 		s_recoil.updatedFrame = gpGlobals->framecount;
-		const float omega = 2.0f * M_PI_F * (s_recoil.bPellets ? cl_neo_viewmodel_recoil_pellet_freq : cl_neo_viewmodel_recoil_freq).GetFloat();
-		const float zeta = (s_recoil.bPellets ? cl_neo_viewmodel_recoil_pellet_damping : cl_neo_viewmodel_recoil_damping).GetFloat();
+		float freq, zeta;
+		NoseSpring(s_recoil.heaviness, freq, zeta);
+		const float omega = 2.0f * M_PI_F * freq;
 		// Small steps: the springs are stiff next to a slow frame.
 		constexpr float STEP = 1.0f / 240.0f;
 		for (float left = Min(gpGlobals->frametime, 0.1f); left > 0.0f; left -= STEP)
