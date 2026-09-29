@@ -98,6 +98,15 @@ void PaintSpeed(const QuickFrame &frame, C_NEO_Player *pPlayer, float dt, bool b
 	g.alpha = s_speed.fade * frame.reveal;
 	const auto y = [&](float v) { return GY1 - (GY1 - GY0) * Min(1.0f, v / top); };
 
+	// Its dark backing, darker the brighter the scene behind it.
+	{
+		const float tall = frame.centre.y * 2.0f;
+		const Vector2D spots[3] = { Vector2D(120.0f * frame.s, tall - 60.0f * frame.s), Vector2D(260.0f * frame.s, tall - 60.0f * frame.s),
+			Vector2D(400.0f * frame.s, tall - 60.0f * frame.s) };
+		const float alpha = BackingAlpha(BACKING_SPEED, pPlayer, spots, 3, dt, bBoot) * (0.5f + 0.5f * s_speed.fade) * frame.reveal;
+		PaintBacking(g, LAYER_DETAIL, Vector2D(255.0f, -72.0f), Vector2D(215.0f, 62.0f), Vector2D(45.0f, 40.0f), alpha);
+	}
+
 	// The floor (the time axis) with a tick a second, longer every four; a registration cross at each corner, the
 	// left pair out past the speed labels.
 	Line(g, LAYER_DETAIL, GX0, GY1, GX1, GY1, NEO_GHOST_MEDIUM, g.color, 0.7f);

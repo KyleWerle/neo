@@ -48,6 +48,10 @@ enum Kind { KIND_RECON, KIND_ASSAULT, KIND_SUPPORT, KIND_JUGGERNAUT };
 // on its own (the rest, the chassis: frames, rail, codes, graduations, crosses, stays steady at the floor).
 enum Part { PART_INTEGRITY, PART_LEFT, PART_RIGHT, PART_AMMO, PART_VISION, PART__COUNT };
 
+// The dark backings (neo_quickinfo_backing.cpp): one behind the band, one behind the speed graph.
+enum Backing { BACKING_BAND, BACKING_SPEED, BACKING__COUNT };
+constexpr int MAX_BACKING_SPOTS = 5;
+
 // The HUD's OCR faces, at 1080p: 17, 20 and 26 px tall.
 enum Font { FONT_SMALLER, FONT_SMALL, FONT_LARGE };
 
@@ -115,6 +119,11 @@ void Cross(const QuickFrame &f, Layer layer, float x, float y, float a);
 QuickFrame WithAlpha(const QuickFrame &f, float alpha);
 
 extern const Color WARN;
+
+// A backing's opacity for how bright the scene is behind it, measured through its spots (screen pixels); call once
+// a frame each, in order (they share one ray a frame). And the backing: a feathered rounded blob, 1080p units.
+float BackingAlpha(Backing backing, C_NEO_Player *pPlayer, const Vector2D *pSpots, int spots, float dt, bool bBoot);
+void PaintBacking(const QuickFrame &f, Layer layer, const Vector2D &centre, const Vector2D &inner, const Vector2D &feather, float alpha);
 
 void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo);
 void PaintBand(const QuickFrame &frame);

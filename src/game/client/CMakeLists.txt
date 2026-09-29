@@ -1681,6 +1681,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_quickinfo_paint.cpp
     neo/neo_quickinfo_ammo.cpp
     neo/neo_quickinfo_speed.cpp
+    neo/neo_quickinfo_backing.cpp
     neo/neo_quickinfo_internal.h
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp

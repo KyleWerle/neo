@@ -32,6 +32,7 @@ struct QueuedQuad
 	Vector2D corners[4];
 	Color color;
 	int alpha;
+	unsigned char alphas[4];	// each corner's (a feathered fill); all alpha otherwise
 };
 static constexpr int MAX_QUEUED = 1024;
 static QueuedQuad s_quads[MAX_QUEUED];
@@ -60,6 +61,10 @@ static void SetQuad(QueuedQuad &q, const Vector2D &start, const Vector2D &end, c
 	q.corners[3] = start + across;
 	q.color = color;
 	q.alpha = alpha;
+	for (unsigned char &corner : q.alphas)
+	{
+		corner = static_cast<unsigned char>(alpha);
+	}
 }
 
 void NeoGhostStroke(const NeoGhostPen &pen, const Vector2D &a, const Vector2D &b, NeoGhostWeight weight)
@@ -106,9 +111,32 @@ void NeoGhostFill(const Vector2D corners[4])
 	for (int i = 0; i < 4; ++i)
 	{
 		q.corners[i] = corners[i];
+		q.alphas[i] = static_cast<unsigned char>(s_iAlpha);
 	}
 	q.color = s_color;
 	q.alpha = s_iAlpha;
+}
+
+void NeoGhostFillShaded(const Vector2D corners[4], const float shade[4])
+{
+	if (s_iAlpha <= 0)
+	{
+		return;
+	}
+	if (s_iQuads == MAX_QUEUED)
+	{
+		NeoGhostFlush();
+	}
+	QueuedQuad &q = s_quads[s_iQuads++];
+	int most = 0;
+	for (int i = 0; i < 4; ++i)
+	{
+		q.corners[i] = corners[i];
+		q.alphas[i] = static_cast<unsigned char>(clamp(RoundFloatToInt(s_iAlpha * shade[i]), 0, 255));
+		most = Max(most, static_cast<int>(q.alphas[i]));
+	}
+	q.color = s_color;
+	q.alpha = most / 2;	// drawn a call each (no per-corner alpha there), about its average
 }
 
 void NeoGhostFillRect(float x0, float y0, float x1, float y1)
@@ -127,7 +155,7 @@ static void DrawBatched(const QueuedQuad *pQuads, int count, IMesh *pMesh)
 		const QueuedQuad &q = pQuads[i];
 		for (int k = 0; k < 4; ++k)
 		{
-			meshBuilder.Color4ub(q.color.r(), q.color.g(), q.color.b(), static_cast<unsigned char>(q.alpha));
+			meshBuilder.Color4ub(q.color.r(), q.color.g(), q.color.b(), q.alphas[k]);
 			meshBuilder.TexCoord2f(0, 0.5f, 0.5f);
 			meshBuilder.Position3f(q.corners[k].x, q.corners[k].y, 0.0f);
 			meshBuilder.AdvanceVertex();

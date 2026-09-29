@@ -352,6 +352,23 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 	}
 	frame.labels = now - s_qi.bootTime;
 	frame.ammo = ammo;
+	// The band's dark backing, behind everything (the far layer), darker the brighter the scene behind it; a little
+	// lighter while the band rests.
+	{
+		Vector2D spots[MAX_BACKING_SPOTS];
+		for (int i = 0; i < MAX_BACKING_SPOTS; ++i)
+		{
+			spots[i] = frame.centre + Vector2D((i - 2) * 160.0f, BAND_Y) * frame.s;
+		}
+		float active = 0.0f;
+		for (const float part : frame.parts)
+		{
+			active = Max(active, part);
+		}
+		const float alpha = BackingAlpha(BACKING_BAND, pPlayer, spots, MAX_BACKING_SPOTS, dt, bBoot) * (0.5f + 0.5f * active)
+			* frame.reveal;
+		PaintBacking(frame, LAYER_DETAIL, Vector2D(0.0f, BAND_Y + 5.0f), Vector2D(400.0f, 62.0f), Vector2D(60.0f, 40.0f), alpha);
+	}
 	PaintBand(frame);
 	PaintAmmo(WithAlpha(frame, frame.parts[PART_AMMO]));
 	PaintSpeed(frame, pPlayer, dt, bBoot, cl_neo_hud_quickinfo_floor.GetFloat());
