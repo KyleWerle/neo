@@ -10,6 +10,7 @@
 #include "filesystem.h"
 #include "studio.h"
 #include "bone_setup.h"
+#include "vguicenterprint.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -18,6 +19,19 @@
 #ifdef CLIENT_DLL
 ConVar cl_neo_ironsights("cl_neo_ironsights", "0", FCVAR_ARCHIVE,
 	"Aim down the weapon's sights instead of the traditional NT aim pose, for weapons that define one.", true, 0, true, 1);
+// Hip-fire and ADS players are on the same footing (the sights change only how the gun is shown), so switching
+// on the fly is just this setting; bindable in Settings > Keys ("Ironsights / ADS (toggle)", kb_act.lst).
+// Client-side only: no usercmd button bit needed.
+CON_COMMAND(cl_neo_ironsights_toggle, "Switch between aiming down the sights and the traditional NT aim.")
+{
+	cl_neo_ironsights.SetValue(!cl_neo_ironsights.GetBool());
+	if (internalCenterPrint)
+	{
+		char text[32];
+		V_strncpy(text, cl_neo_ironsights.GetBool() ? "Aim down sights" : "Traditional aim", sizeof(text));
+		internalCenterPrint->Print(text);
+	}
+}
 ConVar cl_neo_ironsight_time("cl_neo_ironsight_time", "0.2", FCVAR_ARCHIVE,
 	"Seconds for the viewmodel to move between hip and ironsight.", true, 0.01f, true, 1.0f);
 
