@@ -36,6 +36,7 @@
 #include "neo/neo_ironsight_augment.h"
 #include "neo/neo_ironsight_sight_ghost.h"
 #include "neo/neo_ironsight_dot_trail.h"
+#include "neo/neo_gunplay_crosshair.h"
 
 #endif
 
@@ -649,6 +650,8 @@ void CHudCrosshair::Paint( void )
 	}
 	else if (!bHideCrosshair)
 	{
+		// With Enable Gunplay, the Default crosshair gives way to the layer's plain cross.
+		const bool bGunplayCentre = NeoGunplayReplacesCrosshair(pWeapon, crh->iStyle);
 		if (showFriendlyFireCrosshair)
 		{
 			vgui::surface()->DrawSetTexture(m_iTexIFFId);
@@ -658,6 +661,10 @@ void CHudCrosshair::Paint( void )
 			iTexTall >>= 2;
 			vgui::surface()->DrawSetColor(COLOR_RED);
 			vgui::surface()->DrawTexturedRect(iX - iTexWide, iY - iTexTall, iX + iTexWide, iY + iTexTall);
+		}
+		else if (bGunplayCentre)
+		{
+			// Drawn by the gunplay crosshair layer below.
 		}
 		else if (iTexXHId > 0)
 		{
@@ -673,6 +680,8 @@ void CHudCrosshair::Paint( void )
 		{
 			PaintCrosshair(crh, HalfInaccuracyConeInScreenPixels(pWeapon, m_iHalfScreenWidth), iX, iY);
 		}
+		// With Enable Gunplay: ghost linework around the player's crosshair (neo_gunplay_crosshair.h).
+		NeoGunplayPaintCrosshairLayer(pWeapon, crh->color, iX, iY, bGunplayCentre);
 	}
 
 	if (bIsScopedWep && pPlayer->m_bInAim)

@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ironsight_sight_ghost.h"
+#include "neo_ghost_stroke.h"
 #include "neo_ironsight_profile.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_optic.h"
@@ -77,40 +78,16 @@ struct GhostFrame
 	Vector2D At(const Vector2D &origin, float x, float y) const { return origin + axis * x + down * y; }
 };
 
-// Stroke weights, in pixels at 1080p: heavy for what the eye aligns (notch edges, front tip), medium for
-// structure, light for accents. Each stroke is a thin quad, so any weight turns with the gun's cant.
-enum GhostWeight
-{
-	HEAVY,
-	MEDIUM,
-	LIGHT,
-};
-float s_flScale = 1.0f;
-float s_flTrace = 1.0f;	// how far each stroke has traced out from its middle (booting in or out)
-int s_iWhiteTexture = -1;
+// Stroke weights (neo_ghost_stroke.h): heavy for what the eye aligns (notch edges, front tip), medium for
+// structure, light for accents.
+constexpr NeoGhostWeight HEAVY = NEO_GHOST_HEAVY;
+constexpr NeoGhostWeight MEDIUM = NEO_GHOST_MEDIUM;
+constexpr NeoGhostWeight LIGHT = NEO_GHOST_LIGHT;
+NeoGhostPen s_pen;	// its trace is how far each stroke has traced out from its middle (booting in or out)
 
-void Stroke(const Vector2D &a, const Vector2D &b, GhostWeight weight)
+void Stroke(const Vector2D &a, const Vector2D &b, NeoGhostWeight weight)
 {
-	static const float s_widths[] = { 2.4f, 1.4f, 0.8f };
-	const float width = Max(1.0f, s_widths[weight] * s_flScale);
-	const Vector2D middle = (a + b) * 0.5f;
-	const Vector2D from = middle + (a - middle) * s_flTrace, to = middle + (b - middle) * s_flTrace;
-	Vector2D along = to - from;
-	const float length = along.Length();
-	if (length < 0.01f)
-	{
-		return;
-	}
-	along /= length;
-	// Square caps: each end runs on by half the width, so strokes meeting at a corner join solid.
-	const Vector2D across(-along.y * width * 0.5f, along.x * width * 0.5f);
-	const Vector2D start = from - along * (width * 0.5f), end = to + along * (width * 0.5f);
-	vgui::Vertex_t quad[4];
-	quad[0].Init(start - across, Vector2D(0, 0));
-	quad[1].Init(end - across, Vector2D(1, 0));
-	quad[2].Init(end + across, Vector2D(1, 1));
-	quad[3].Init(start + across, Vector2D(0, 1));
-	vgui::surface()->DrawTexturedPolygon(4, quad);
+	NeoGhostStroke(s_pen, a, b, weight);
 }
 
 void DrawRear(int style, const GhostFrame &f, const Vector2D &left, const Vector2D &right, float s)
@@ -272,7 +249,7 @@ void NeoIronsightPaintSightGhost(const Color &color)
 	}
 	s_anim.lastFrame = gpGlobals->framecount;
 	const float boot = now - s_anim.bootStart;
-	s_flTrace = Min(s_ghost.aim, clamp(boot / GHOST_TRACE_TIME, 0.0f, 1.0f));
+	s_pen.trace = Min(s_ghost.aim, clamp(boot / GHOST_TRACE_TIME, 0.0f, 1.0f));
 
 	// A shot scrambles the linework for a moment: the whole ghost jitters and flickers.
 	WatchShots();
@@ -309,14 +286,8 @@ void NeoIronsightPaintSightGhost(const Color &color)
 	}
 
 	const int alpha = RoundFloatToInt(255.0f * cl_neo_ironsight_sight_ghost_alpha.GetFloat() * flicker);
-	if (s_iWhiteTexture < 0)
-	{
-		s_iWhiteTexture = vgui::surface()->CreateNewTextureID();
-		vgui::surface()->DrawSetTextureFile(s_iWhiteTexture, "vgui/white", true, false);
-	}
-	s_flScale = tall / 1080.0f;
-	vgui::surface()->DrawSetTexture(s_iWhiteTexture);
-	vgui::surface()->DrawSetColor(color.r(), color.g(), color.b(), alpha);
+	s_pen.scale = tall / 1080.0f;
+	NeoGhostBegin(color, alpha);
 	// Locked: the rear sight steps in on the tip, and a tick appears under the notch.
 	const Vector2D lockIn = frame.axis * (1.5f * s * s_anim.lock);
 	DrawRear(pData->m_iIronGhostRear, frame, left + lockIn, right - lockIn, s);
