@@ -63,7 +63,8 @@ static vgui::HFont GetFont(Font font)
 	vgui::HFont &handle = s_fonts[font];
 	if (handle == vgui::INVALID_FONT)
 	{
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetDefaultScheme());
+		// The HUD's faces live in the client scheme (the default scheme is the engine's, without them: no text at all).
+		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
 		handle = pScheme ? pScheme->GetFont(s_names[font], true) : vgui::INVALID_FONT;
 	}
 	return handle;
