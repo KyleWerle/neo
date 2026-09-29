@@ -26,8 +26,41 @@ static constexpr float TYPE_DELAY = 0.04f;			// the readout types in after the s
 static constexpr float TYPE_TIME = 0.16f;
 static constexpr float READY_WIDTH = 10.0f;		// the ready bar under the readout, on slow guns
 static constexpr float READY_CYCLE = 0.25f;		// guns cycling this slowly or slower get it
+// The aim crosshair: a small echo of the Alt, its arms and post bridging out to the caps and post when settled.
+static constexpr float AIM_GAP = 1.5f;
+static constexpr float AIM_ARM = 4.0f;
+static constexpr float AIM_POST_LENGTH = 3.0f;
 
 } // namespace NeoCrosshairRifle
+
+void NeoCrosshairAimRifle(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph)
+{
+	using namespace NeoCrosshairRifle;
+	const float s = frame.s;
+	const float gap = AIM_GAP * s;
+	const float arm = bGlyph ? AIM_ARM * s : 0.0f;
+	const float post = bGlyph ? AIM_POST_LENGTH * s : 0.0f;
+	const float edge = frame.spread + GAP * s;
+
+	// Settled, one crosshair: the arms run on into the caps, the post into the post (straight out from the aim
+	// crosshair, where the caps and post sit once the layers have come together).
+	for (int side = -1; side <= 1; side += 2)
+	{
+		NeoCrosshairBridge(frame, at + Vector2D(side * (gap + arm), 0.0f), at + Vector2D(side * edge, 0.0f));
+	}
+	NeoCrosshairBridge(frame, at + Vector2D(0.0f, gap + post), at + Vector2D(0.0f, edge));
+	if (!bGlyph)
+	{
+		return;
+	}
+	// The brightest layer: full strength whatever the layer opacity (that one is the spread view's).
+	NeoGhostBegin(frame.color, frame.color.a());
+	for (int side = -1; side <= 1; side += 2)
+	{
+		NeoGhostStroke(frame.pen, at + Vector2D(side * gap, 0.0f), at + Vector2D(side * (gap + arm), 0.0f), NEO_GHOST_HEAVY);
+	}
+	NeoGhostStroke(frame.pen, at + Vector2D(0.0f, gap), at + Vector2D(0.0f, gap + post), NEO_GHOST_MEDIUM);
+}
 
 void NeoCrosshairPaintRifle(const NeoCrosshairFrame &frame)
 {

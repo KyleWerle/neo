@@ -2,6 +2,7 @@
 #include "neo_spread_pivot.h"
 #include "neo_ironsight_lens.h"
 #include "neo_viewmodel_recoil.h"
+#include "neo_gunplay_marks.h"
 #include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
@@ -90,11 +91,65 @@ void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, con
 	Vector right, up;
 	VectorVectors(aim, right, up);
 	s_pivot.lastShot = aim + right * offset.x + up * offset.y;
+	// The crosshair's impact mark for it, at the same place.
+	NeoGunplayMarkShot(pWeapon, s_pivot.lastShot);
 	s_pivot.lastShotTime = gpGlobals->curtime;
 	C_BasePlayer *pOwner = pWeapon ? ToBasePlayer(pWeapon->GetOwner()) : nullptr;
 	s_pivot.lastShotEyes = pOwner ? pOwner->EyeAngles() : QAngle(0.0f, 0.0f, 0.0f);
 	// The same shot knocks the arms (cl_neo_viewmodel_recoil), toward where it went within its cone.
 	NeoViewmodelRecoilShot(pWeapon, Vector2D(offset.x / Max(spread.x, 0.0001f), offset.y / Max(spread.y, 0.0001f)));
+}
+
+static NeoSpreadPattern s_pattern;
+
+const NeoSpreadPattern &NeoSpreadPivotLastPattern()
+{
+	return s_pattern;
+}
+
+void NeoSpreadPivotPellets(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &aim, const Vector &spread,
+	int pellets)
+{
+	if (!prediction->IsFirstTimePredicted() || pellets <= 0)
+	{
+		return;
+	}
+	Vector directions[NeoSpreadPattern::MAX_PELLETS];
+	const int count = Min(pellets, NeoSpreadPattern::MAX_PELLETS);
+	Vector right, up;
+	VectorVectors(aim, right, up);
+	Vector2D centre(0.0f, 0.0f);
+	s_pattern.time = gpGlobals->realtime;
+	s_pattern.fired = gpGlobals->curtime;
+	s_pattern.pWeapon = pWeapon;
+	s_pattern.count = count;
+	for (int i = 0; i < count; ++i)
+	{
+		// FireBullets reseeds each pellet with the command's seed plus its index.
+		const Vector2D offset = SpreadOffset(cmd.random_seed, i, spread);
+		directions[i] = aim + right * offset.x + up * offset.y;
+		centre += offset / count;
+		s_pattern.cone[i].Init(offset.x / Max(spread.x, 0.0001f), offset.y / Max(spread.y, 0.0001f));
+	}
+	NeoGunplayMarkPellets(pWeapon, directions, count);
+
+	// The gun turns toward the pattern's centre, as it does to a single shot.
+	s_pivot.pWeapon = pWeapon;
+	s_pivot.lastShot = aim + right * centre.x + up * centre.y;
+	s_pivot.lastShotTime = gpGlobals->curtime;
+	C_BasePlayer *pOwner = pWeapon ? ToBasePlayer(pWeapon->GetOwner()) : nullptr;
+	s_pivot.lastShotEyes = pOwner ? pOwner->EyeAngles() : QAngle(0.0f, 0.0f, 0.0f);
+
+	// And knocks that way. The centre of n pellets strays about 1/sqrt(n) as far as one does: scaled back up, the
+	// knock has a single shot's range, its direction still the pellets'.
+	Vector2D knock(centre.x / Max(spread.x, 0.0001f), centre.y / Max(spread.y, 0.0001f));
+	knock *= sqrtf(static_cast<float>(count));
+	const float length = knock.Length();
+	if (length > 1.0f)
+	{
+		knock /= length;
+	}
+	NeoViewmodelRecoilPelletShot(pWeapon, knock);
 }
 
 // Where the gun should point now, as a spread offset.

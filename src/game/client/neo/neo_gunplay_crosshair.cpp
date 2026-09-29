@@ -1,6 +1,10 @@
 #include "cbase.h"
 #include "neo_gunplay_crosshair.h"
 #include "neo_crosshair_family.h"
+#include "neo_gunplay_aim.h"
+#include "neo_gunplay_marks.h"
+#include "neo_gunplay_spread_ghost.h"
+#include "neo_spread_pivot.h"
 #include "neo_gunplay_tunnel.h"
 #include "neo_gunplay_shots.h"
 #include "neo_ironsight_optic.h"
@@ -9,6 +13,7 @@
 #include "neo_predicted_viewmodel.h"
 #include "c_neo_player.h"
 #include "view.h"
+#include "ivieweffects.h"
 #include "weapon_neobasecombatweapon.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
@@ -25,9 +30,6 @@ ConVar cl_neo_gunplay_crosshair_alpha("cl_neo_gunplay_crosshair_alpha", "1", FCV
 ConVar cl_neo_gunplay_crosshair_parallax("cl_neo_gunplay_crosshair_parallax", "1", FCVAR_ARCHIVE,
 	"How much the layer's parts near the gun move with its knock and pivot against your crosshair.",
 	true, 0, true, 3);
-ConVar cl_neo_gunplay_crosshair_centre("cl_neo_gunplay_crosshair_centre", "0", FCVAR_ARCHIVE,
-	"What marks the centre in place of the Default or Alt crosshair: 0 = nothing (the layer's moving parts show the"
-	" aim), 1 = a tiny square, 2 = a small cross. A Custom crosshair is always drawn as it is.", true, 0, true, 2);
 ConVar cl_neo_gunplay_crosshair_debug("cl_neo_gunplay_crosshair_debug", "0", FCVAR_NONE,
 	"Debug: on each shot, print the time since the last one and how ready the layer showed the gun just before it"
 	" (1.00 when the layer's readiness matches the gun).");
@@ -35,8 +37,6 @@ ConVar cl_neo_gunplay_crosshair_family("cl_neo_gunplay_crosshair_family", "-1", 
 	"Debug: draw every gun's crosshair as this family (0 rifle, 1 SMG, 2 MG, 3 shotgun, 4 pistol, 5 scoped;"
 	" -1 = each gun its own).", true, -1, true, NEO_CROSSHAIR_FAMILY__TOTAL - 1);
 
-static constexpr float CROSS_ARM = 4.0f;			// the plain centre cross, each arm, at 1080p
-static constexpr float SQUARE_HALF = 1.5f;			// the tiny centre square
 static constexpr float PRECISION_SIZE = 2.0f;		// the precision dot, its side
 static constexpr float PRECISION_TIME = 0.05f;		// it comes and goes this quickly
 static constexpr float PRECISE_SPREAD = 1e-5f;		// a cone this narrow (a tangent) is no spread at all
@@ -46,6 +46,7 @@ static constexpr float AIM_TIME = 0.15f;			// hip to aimed look
 static constexpr float TRACE_TIME = 0.11f;			// coming online, as the sight ghost does
 static constexpr float TUNNEL_OPACITY = 0.6f;		// of the layer's
 static constexpr float SHOT_TIME = 0.08f;			// a shot scrambles the layer this long
+static constexpr float FADE_HIDDEN = 0.05f;		// a screen fade darker than this hides the layer (it boots after)
 static constexpr float SCRAMBLE_CYCLE = 0.3f;		// fully on guns this slow; less on faster ones (no constant flicker)
 
 static struct
@@ -171,9 +172,27 @@ bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairSt
 	return LayerShown(pWeapon) && (crosshairStyle == CROSSHAIR_STYLE_DEFAULT || crosshairStyle == CROSSHAIR_STYLE_ALT_B);
 }
 
-void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
+// How much of the view shows through a screen fade (the spawn's fade in from black): 1 none, 0 fully faded.
+static float FadeVisible()
+{
+	byte r, g, b, a;
+	bool bBlend;
+	vieweffects->GetFadeParams(&r, &g, &b, &a, &bBlend);
+	return 1.0f - a / 255.0f;
+}
+
+void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &colorIn, int x, int y, bool bCentre,
 	float spreadScale)
 {
+	// Under a screen fade (the spawn's fade in from black): the HUD paints over the view's fade, so the layer fades
+	// with it, and isn't drawn at all while nearly black; drawn again, it boots and traces in as the view comes up.
+	const float visible = FadeVisible();
+	if (visible < FADE_HIDDEN)
+	{
+		return;
+	}
+	Color color = colorIn;
+	color[3] = static_cast<unsigned char>(RoundFloatToInt(colorIn.a() * visible));
 	// Whoever's eyes the view is through: the local player, or one watched in first person.
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
 	if (!LayerShown(pWeapon) || !pPlayer)
@@ -221,8 +240,13 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		s_layer.spreadVelocity += SHOT_POP * (tall / 1080.0f);
 	}
 	const float omega = 1.0f / SPREAD_TIME;
-	s_layer.spreadVelocity += ((target - s_layer.spread) * omega * omega - 2.0f * omega * s_layer.spreadVelocity) * dt;
-	s_layer.spread = Max(0.0f, s_layer.spread + s_layer.spreadVelocity * dt);
+	NeoCrosshairSpring(s_layer.spread, s_layer.spreadVelocity, target, omega, dt);
+	if (!IsFinite(s_layer.spread) || !IsFinite(s_layer.spreadVelocity))
+	{
+		s_layer.spread = target;
+		s_layer.spreadVelocity = 0.0f;
+	}
+	s_layer.spread = Max(0.0f, s_layer.spread);
 	s_layer.aim = Approach(pPlayer->IsInAim() ? 1.0f : 0.0f, s_layer.aim, dt / AIM_TIME);
 
 	NeoCrosshairFrame frame;
@@ -235,10 +259,13 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.centre.Init(static_cast<float>(x), static_cast<float>(y));
 	// The view's field of view is the local player's (spectating, the watched player's shows through it).
 	const float scaledFov = DEG2RAD(ScaleFOVByWidthRatio(C_BasePlayer::GetLocalPlayer()->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
-	frame.deviation = GunDeviation((wide * 0.5f) / tanf(scaledFov)) * cl_neo_gunplay_crosshair_parallax.GetFloat();
+	const float pixelsPerTangent = (wide * 0.5f) / tanf(scaledFov);
+	frame.deviation = GunDeviation(pixelsPerTangent) * cl_neo_gunplay_crosshair_parallax.GetFloat();
+	frame.pixelsPerTangent = pixelsPerTangent * spreadScale;
 	frame.spread = s_layer.spread;
+	frame.spreadExact = target;
 	frame.aim = NeoSmoothStep(s_layer.aim);
-	frame.alpha = cl_neo_gunplay_crosshair_alpha.GetFloat();
+	frame.alpha = cl_neo_gunplay_crosshair_alpha.GetFloat() * visible;
 	frame.sinceBoot = now - s_layer.bootStart;
 	frame.sinceShot = now - s_layer.shotTime;
 	// A watched player's clip and next attack go to them alone: no magazine readouts, and the gun's readiness from
@@ -262,11 +289,20 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
 		const float predictedNow = pLocal->GetFinalPredictedTime() + gpGlobals->interpolation_amount * TICK_INTERVAL;
 		frame.ready = clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - predictedNow) / frame.cycle, 0.0f, 1.0f);
+		// The shotguns: also from the shot itself. The AA13 only adds its fire rate to its next attack, which after a
+		// pause is still in the past, so that alone showed it ready (or half) straight after a shot.
+		const NeoSpreadPattern &pattern = NeoSpreadPivotLastPattern();
+		if (pattern.pWeapon == pWeapon && predictedNow >= pattern.fired)
+		{
+			frame.ready = Min(frame.ready, clamp((predictedNow - pattern.fired) / frame.cycle, 0.0f, 1.0f));
+		}
 	}
 	s_layer.lastReady = frame.ready;
 	frame.dt = dt;
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
+	// Layer 1, the aim crosshair, and the link between the layers.
+	NeoGunplayAimUpdate(frame);
 
 	// The precision dot: the next shot is sure to go exactly where aimed (no spread at all: the precise guns, aimed
 	// and settled). Very small, at the aim point, whatever the centre mark.
@@ -278,27 +314,6 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		const int x0 = x - size / 2, y0 = y - size / 2;
 		vgui::surface()->DrawSetColor(color.r(), color.g(), color.b(), RoundFloatToInt(color.a() * s_layer.precise));
 		vgui::surface()->DrawFilledRect(x0, y0, x0 + size, y0 + size);
-	}
-
-	// The centre mark in place of the Default or Alt crosshair (cl_neo_gunplay_crosshair_centre): steady, full strength, traced in with the rest.
-	const int centreStyle = cl_neo_gunplay_crosshair_centre.GetInt();
-	if (bCentre && centreStyle == 2)
-	{
-		NeoGhostBegin(color, color.a());
-		const float arm = CROSS_ARM * frame.s;
-		NeoGhostStroke(frame.pen, frame.centre - Vector2D(arm, 0.0f), frame.centre + Vector2D(arm, 0.0f), NEO_GHOST_MEDIUM);
-		NeoGhostStroke(frame.pen, frame.centre - Vector2D(0.0f, arm), frame.centre + Vector2D(0.0f, arm), NEO_GHOST_MEDIUM);
-	}
-	else if (bCentre && centreStyle == 1)
-	{
-		NeoGhostBegin(color, color.a());
-		const float half = SQUARE_HALF * frame.s;
-		const Vector2D corners[4] = { frame.centre + Vector2D(-half, -half), frame.centre + Vector2D(half, -half),
-			frame.centre + Vector2D(half, half), frame.centre + Vector2D(-half, half) };
-		for (int c = 0; c < 4; ++c)
-		{
-			NeoGhostStroke(frame.pen, corners[c], corners[(c + 1) % 4], NEO_GHOST_LIGHT);
-		}
 	}
 
 	// Aimed: the projected shooting space, behind the rest (stubbed for now, see neo_gunplay_tunnel.h).
@@ -318,6 +333,8 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		frame.alpha *= (gpGlobals->framecount & 1) ? 1.0f - 0.35f * frame.scramble : 1.0f;
 	}
 
+	// Behind the families: the spread ghost, calm and exact.
+	NeoGunplayPaintSpreadGhost(frame);
 	switch (NeoCrosshairFamilyOf(pWeapon))
 	{
 	case NEO_CROSSHAIR_SMG:		NeoCrosshairPaintSmg(frame); break;
@@ -328,5 +345,8 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	case NEO_CROSSHAIR_RIFLE:
 	default:					NeoCrosshairPaintRifle(frame); break;
 	}
+	// Layer 2, the impact marks, then layer 1 on top: the aim crosshair and the bridges to the spread view.
+	NeoGunplayPaintMarks(frame);
+	NeoGunplayPaintAim(frame);
 	NeoGhostFlush();
 }

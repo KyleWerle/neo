@@ -83,3 +83,35 @@ void NeoCrosshairPaintPistol(const NeoCrosshairFrame &frame)
 		}
 	}
 }
+
+// The aim crosshair: the family in small, two side ticks and a chevron below. Settled, the ticks run out to the side
+// ticks and the small chevron's tip to the big one's: nested chevrons joined at the tips.
+void NeoCrosshairAimPistol(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph)
+{
+	using namespace NeoCrosshairPistol;
+	const float s = frame.s;
+	const float gap = (bGlyph ? 2.5f : 1.0f) * s;
+	const float tick = 1.8f * s;
+	const float edge = frame.spread + GAP * s;
+	const Vector2D smallTip = at + Vector2D(0.0f, gap);
+	// Straight out from the aim crosshair, where the ticks and chevron sit once the layers have come together.
+	for (int side = -1; side <= 1; side += 2)
+	{
+		NeoCrosshairBridge(frame, at + Vector2D(side * gap, 0.0f), at + Vector2D(side * edge, 0.0f));
+	}
+	NeoCrosshairBridge(frame, smallTip, at + Vector2D(0.0f, edge + CHEVRON_GAP * s));
+	if (!bGlyph)
+	{
+		return;
+	}
+	// The brightest layer: full strength whatever the layer opacity (that one is the spread view's).
+	NeoGhostBegin(frame.color, frame.color.a());
+	for (int side = -1; side <= 1; side += 2)
+	{
+		const Vector2D centre = at + Vector2D(side * gap, 0.0f);
+		NeoGhostStroke(frame.pen, centre - Vector2D(0.0f, tick), centre + Vector2D(0.0f, tick), NEO_GHOST_HEAVY);
+	}
+	const float half = 1.6f * s, drop = 1.4f * s;
+	NeoGhostStroke(frame.pen, smallTip + Vector2D(-half, drop), smallTip, NEO_GHOST_MEDIUM);
+	NeoGhostStroke(frame.pen, smallTip, smallTip + Vector2D(half, drop), NEO_GHOST_MEDIUM);
+}

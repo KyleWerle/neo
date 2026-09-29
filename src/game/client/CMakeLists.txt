@@ -1667,6 +1667,12 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_crosshair.cpp
     neo/neo_gunplay_crosshair.h
     neo/neo_crosshair_family.h
+    neo/neo_gunplay_aim.cpp
+    neo/neo_gunplay_aim.h
+    neo/neo_gunplay_marks.cpp
+    neo/neo_gunplay_marks.h
+    neo/neo_gunplay_spread_ghost.cpp
+    neo/neo_gunplay_spread_ghost.h
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp
     neo/neo_crosshair_mg.cpp

@@ -650,7 +650,7 @@ void CHudCrosshair::Paint( void )
 	}
 	else if (!bHideCrosshair)
 	{
-		// With Enable Gunplay, the Default and Alt crosshairs give way to the layer's plain cross.
+		// With Enable Gunplay, the Default and Alt crosshairs give way to the layer (its aim crosshair).
 		const bool bGunplayCentre = NeoGunplayReplacesCrosshair(pWeapon, crh->iStyle);
 		if (showFriendlyFireCrosshair)
 		{

@@ -86,3 +86,29 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 	const float typed = clamp((frame.sinceBoot - TYPE_DELAY) / TYPE_TIME, 0.0f, 1.0f);
 	NeoCrosshairReadout(frame, near + Vector2D(half + READOUT_GAP * s, 0.0f), text, typed, 0.9f);
 }
+
+// The aim crosshair: four points, a rangefinder's. Settled, each runs out light on the diagonal to the frame's
+// corner.
+void NeoCrosshairAimScoped(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph)
+{
+	using namespace NeoCrosshairScoped;
+	const float s = frame.s;
+	const float inner = (bGlyph ? 2.5f : 1.0f) * s;
+	const float half = frame.spread + GAP * s;
+	static const Vector2D s_corners[4] = { Vector2D(-1, -1), Vector2D(1, -1), Vector2D(1, 1), Vector2D(-1, 1) };
+	// Straight out from the aim crosshair, to where the frame's corners sit once the layers have come together.
+	for (const Vector2D &corner : s_corners)
+	{
+		NeoCrosshairBridge(frame, at + corner * inner, at + corner * half, NEO_GHOST_LIGHT);
+	}
+	if (!bGlyph)
+	{
+		return;
+	}
+	// The brightest layer: full strength whatever the layer opacity (that one is the spread view's).
+	NeoGhostBegin(frame.color, frame.color.a());
+	for (const Vector2D &corner : s_corners)
+	{
+		NeoCrosshairDot(frame, at + corner * inner, NEO_GHOST_HEAVY);
+	}
+}

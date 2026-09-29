@@ -182,7 +182,7 @@ struct NeoSettings
 		bool bPreviewDynamicAccuracy;
 		// The gunplay crosshair layer (neo_gunplay_crosshair.h)
 		bool bGunplayLayer;
-		int iGunplayCentre;
+		bool bGunplayAim;
 		float flGunplayLayerAlpha;
 		float flGunplayOutline;
 
@@ -287,7 +287,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_neo_ironsight_sight_ghost);
 		CONVARREF_DEF(cl_neo_hud_boot);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair);
-		CONVARREF_DEF(cl_neo_gunplay_crosshair_centre);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_aim);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_alpha);
 		CONVARREF_DEF(cl_neo_gunplay_outline);
 		CONVARREF_DEF(cl_neo_lean_automatic);

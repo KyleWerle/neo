@@ -678,7 +678,7 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pCrosshair->bInaccuracyInScope = cvr->cl_neo_crosshair_scope_inaccuracy.GetBool();
 		pCrosshair->bFriendlyFireWarning = cvr->cl_neo_crosshair_friendly_fire_warning.GetBool();
 		pCrosshair->bGunplayLayer = cvr->cl_neo_gunplay_crosshair.GetBool();
-		pCrosshair->iGunplayCentre = cvr->cl_neo_gunplay_crosshair_centre.GetInt();
+		pCrosshair->bGunplayAim = cvr->cl_neo_gunplay_crosshair_aim.GetBool();
 		pCrosshair->flGunplayLayerAlpha = cvr->cl_neo_gunplay_crosshair_alpha.GetFloat();
 		pCrosshair->flGunplayOutline = cvr->cl_neo_gunplay_outline.GetFloat();
 	}
@@ -960,7 +960,7 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_crosshair_scope_inaccuracy.SetValue(pCrosshair->bInaccuracyInScope);
 		cvr->cl_neo_crosshair_friendly_fire_warning.SetValue(pCrosshair->bFriendlyFireWarning);
 		cvr->cl_neo_gunplay_crosshair.SetValue(pCrosshair->bGunplayLayer);
-		cvr->cl_neo_gunplay_crosshair_centre.SetValue(pCrosshair->iGunplayCentre);
+		cvr->cl_neo_gunplay_crosshair_aim.SetValue(pCrosshair->bGunplayAim);
 		cvr->cl_neo_gunplay_crosshair_alpha.SetValue(pCrosshair->flGunplayLayerAlpha);
 		cvr->cl_neo_gunplay_outline.SetValue(pCrosshair->flGunplayOutline);
 	}
@@ -1399,7 +1399,6 @@ void NeoSettings_Video(NeoSettings *ns)
 	NeoUI::RingBox(L"HDR", HDR_LABELS, ARRAYSIZE(HDR_LABELS), &pVideo->iHDR);
 }
 
-static const wchar_t *GUNPLAY_CENTRE_LABELS[] = { L"None", L"Tiny square", L"Small cross" };
 
 void NeoSettings_Crosshair(NeoSettings *ns)
 {
@@ -1672,7 +1671,7 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		// The gunplay layer around the crosshair (with Enable Gunplay, Settings > Gunplay): a family per gun.
 		NeoUI::Divider(L"GUNPLAY LAYER");
 		NeoUI::RingBoxBool(L"Animated layer", &pCrosshair->bGunplayLayer);
-		NeoUI::RingBox(L"Centre mark (Default, Alt)", GUNPLAY_CENTRE_LABELS, ARRAYSIZE(GUNPLAY_CENTRE_LABELS), &pCrosshair->iGunplayCentre);
+		NeoUI::RingBoxBool(L"Aim crosshair", &pCrosshair->bGunplayAim);
 		NeoUI::Slider(L"Layer opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
 		NeoUI::Slider(L"Dark outline", &pCrosshair->flGunplayOutline, 0.0f, 1.0f, 2, 0.05f);
 	}

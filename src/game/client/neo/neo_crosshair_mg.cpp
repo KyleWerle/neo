@@ -22,7 +22,8 @@ static constexpr float STRAIN_PER_SHOT = 0.07f;
 static constexpr float STRAIN_COOL = 0.4f;		// per second
 static constexpr float STRAIN_SINK = 2.5f;		// pixels the rails sink at full strain
 static constexpr float RAIL_PARALLAX = 1.4f;	// the rails ride the knock more than the other families' parts
-static constexpr float STRAIN_GAP = 3.0f;		// the strain bar under the right rail
+static constexpr float STRAIN_GAP = 3.0f;
+static constexpr float STRAIN_SETTLED = 0.1f;	// the channel's bridges wait for the strain to cool below this		// the strain bar under the right rail
 
 static struct
 {
@@ -89,5 +90,42 @@ void NeoCrosshairPaintMg(const NeoCrosshairFrame &frame)
 		const NeoGhostWeight weight = (s_mg.strain > 0.7f) ? NEO_GHOST_HEAVY : (s_mg.strain > 0.35f) ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT;
 		NeoGhostBegin(frame.color, frame.Alpha(0.75f + 0.25f * s_mg.strain));
 		NeoGhostStroke(frame.pen, start, start + Vector2D(rail * s_mg.strain, 0.0f), weight);
+	}
+}
+
+// The aim crosshair: a pair of small brackets, the belt's channel. Settled, the brackets' top and bottom run out to
+// the rails' inner ends, two lines a side, a channel the belt feeds through.
+void NeoCrosshairAimMg(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph)
+{
+	using namespace NeoCrosshairMg;
+	const float s = frame.s;
+	const float gap = (bGlyph ? 2.5f : 1.0f) * s;
+	const float height = TICK_HEIGHT * s;
+	const float edge = frame.spread + GAP * s;
+	// Straight out from the aim crosshair, where the rails sit once the layers have come together; and only once the
+	// strain has cooled (the rails sink under it, and the channel ran at a slant to them), fading in as it does.
+	NeoCrosshairFrame linked = frame;
+	linked.link *= 1.0f - NeoSmoothStep(s_mg.strain / STRAIN_SETTLED);
+	for (int side = -1; side <= 1; side += 2)
+	{
+		for (int edgeSide = -1; edgeSide <= 1; edgeSide += 2)
+		{
+			NeoCrosshairBridge(linked, at + Vector2D(side * gap, edgeSide * height),
+				at + Vector2D(side * edge, edgeSide * height), NEO_GHOST_LIGHT);
+		}
+	}
+	if (!bGlyph)
+	{
+		return;
+	}
+	// The brightest layer: full strength whatever the layer opacity (that one is the spread view's).
+	NeoGhostBegin(frame.color, frame.color.a());
+	const float foot = 1.2f * s;
+	for (int side = -1; side <= 1; side += 2)
+	{
+		const Vector2D top = at + Vector2D(side * gap, -height), bottom = at + Vector2D(side * gap, height);
+		NeoGhostStroke(frame.pen, top, bottom, NEO_GHOST_HEAVY);
+		NeoGhostStroke(frame.pen, top, top - Vector2D(side * foot, 0.0f), NEO_GHOST_MEDIUM);
+		NeoGhostStroke(frame.pen, bottom, bottom - Vector2D(side * foot, 0.0f), NEO_GHOST_MEDIUM);
 	}
 }

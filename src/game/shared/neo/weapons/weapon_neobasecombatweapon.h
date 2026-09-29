@@ -244,6 +244,12 @@ public:
 	virtual const Vector& GetBulletSpread(void) override;
 	virtual const WeaponSpreadInfo_t& GetSpreadInfo(void);
 	const WeaponHandlingInfo_t &GetWeaponHandling() const { return m_weaponHandling; }
+	// 0 settled to 1 at its worst: the bloom's share of its range (the gunplay crosshair's link).
+	float GetAccuracyPenaltyFraction() const
+	{
+		const float flMax = GetMaxAccuracyPenalty();
+		return (flMax > 0.0f) ? clamp(m_flAccuracyPenalty / flMax, 0.0f, 1.0f) : 0.0f;
+	}
 	virtual void AddViewKick(void) override;
 
 	virtual bool CanBePickedUpByClass(int classId);

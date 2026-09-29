@@ -57,7 +57,7 @@ ConVar cl_neo_viewmodel_recoil_heavy_damping("cl_neo_viewmodel_recoil_heavy_damp
 	"Heavy guns: how damped the nose is, in place of cl_neo_viewmodel_recoil_damping (1 = no overshoot: it eases"
 	" back in one go). The kick is sized for it, so the peak doesn't shrink.", true, 0.1f, true, 1);
 ConVar cl_neo_viewmodel_recoil_pellet_side("cl_neo_viewmodel_recoil_pellet_side", "0.5", FCVAR_ARCHIVE,
-	"Shotguns (their random knock): how much of the sideways turn and tilt they get.", true, 0, true, 1);
+	"Shotguns: how much of the sideways turn and tilt they get.", true, 0, true, 1);
 static constexpr float LIGHT_CYCLE = 0.1f;
 static constexpr float MAX_STRENGTH = 3.0f;
 static constexpr float MAX_SIDEWAYS_STRENGTH = 1.0f;	// the turn and tilt were tuned on the automatics (about 0.9)
@@ -222,12 +222,9 @@ static void RandomKnock(C_NEOBaseCombatWeapon *pWeapon, bool bPellets)
 	KnockShot(pWeapon, Vector2D(cosf(angle) * distance, sinf(angle) * distance), bPellets);
 }
 
-void NeoViewmodelRecoilRandomShot(C_NEOBaseCombatWeapon *pWeapon)
+void NeoViewmodelRecoilPelletShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &conePosition)
 {
-	if (prediction->IsFirstTimePredicted())
-	{
-		RandomKnock(pWeapon, true);
-	}
+	KnockShot(pWeapon, conePosition, true);
 }
 
 // A player watched in first person: their shots aren't predicted here, and their seed isn't known, so each shot

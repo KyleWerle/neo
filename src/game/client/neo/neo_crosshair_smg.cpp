@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_crosshair_family.h"
 #include "neo_ironsights.h"
+#include "neo_gunplay_spread_ghost.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -23,6 +24,10 @@ static constexpr float RUN_EASE = 0.35f;		// seconds the run takes to slow to a 
 static constexpr int MAX_MAG_DOTS = 15;		// more rounds than this: a dot stands for a group
 static constexpr float MAG_STEP = 2.4f;
 static constexpr float MAG_GAP = 5.0f;			// under the box
+// The aim crosshair: a small box of corner brackets, its corners bridging out to the spread ghost's on the
+// diagonals when settled (a box in a box, a tunnel, the dotted box framing it).
+static constexpr float AIM_HALF = 3.0f;
+static constexpr float AIM_BRACKET = 1.8f;
 
 static struct
 {
@@ -95,5 +100,35 @@ void NeoCrosshairPaintSmg(const NeoCrosshairFrame &frame)
 		{
 			NeoCrosshairDot(frame, row + Vector2D(i * MAG_STEP * s, 0.0f), NEO_GHOST_LIGHT);
 		}
+	}
+}
+
+void NeoCrosshairAimSmg(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph)
+{
+	using namespace NeoCrosshairSmg;
+	const float s = frame.s;
+	const float inner = (bGlyph ? AIM_HALF : 1.0f) * s;
+	// The spread ghost's corners, around the same point as the aim crosshair: from the dotted box's they swung with
+	// its knock (Kyle: started from the grid, looked weird).
+	const float ghost = NeoGunplaySpreadGhostEdge();
+	static const Vector2D s_corners[4] = { Vector2D(-1, -1), Vector2D(1, -1), Vector2D(1, 1), Vector2D(-1, 1) };
+
+	// Settled: each small corner runs out on the diagonal to the spread ghost's.
+	for (int c = 0; ghost > inner && c < 4; ++c)
+	{
+		NeoCrosshairBridge(frame, at + s_corners[c] * inner, at + s_corners[c] * ghost);
+	}
+	if (!bGlyph)
+	{
+		return;
+	}
+	// The brightest layer: full strength whatever the layer opacity (that one is the spread view's).
+	NeoGhostBegin(frame.color, frame.color.a());
+	const float bracket = AIM_BRACKET * s;
+	for (int c = 0; c < 4; ++c)
+	{
+		const Vector2D corner = at + s_corners[c] * inner;
+		NeoGhostStroke(frame.pen, corner, corner - Vector2D(s_corners[c].x * bracket, 0.0f), NEO_GHOST_MEDIUM);
+		NeoGhostStroke(frame.pen, corner, corner - Vector2D(0.0f, s_corners[c].y * bracket), NEO_GHOST_MEDIUM);
 	}
 }

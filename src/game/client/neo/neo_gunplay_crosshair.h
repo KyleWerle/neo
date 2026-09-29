@@ -10,14 +10,15 @@
 class C_NEOBaseCombatWeapon;
 class Color;
 
-// Whether the layer draws the centre itself: a player on the crosshair editor's Default or Alt style gets a small
-// plain cross in its place (those original shapes are what the layer echoes around it); a Custom one stays.
+// Whether the player's crosshair gives way to the layer: the crosshair editor's Default and Alt styles (those
+// original shapes are what the layer echoes); a Custom one stays, dead centre. The aim crosshair
+// (cl_neo_gunplay_crosshair_aim, neo_gunplay_aim.h) is the player's choice with either.
 bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairStyle);
 
 // Whether the layer draws for this weapon at all (Enable Gunplay, cl_neo_gunplay_crosshair, a firearm).
 bool NeoGunplayCrosshairLayerOn(C_NEOBaseCombatWeapon *pWeapon);
 
-// Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the small
-// cross too (see NeoGunplayReplacesCrosshair). spreadScale: the spread as seen through a zoom (the MPN45's window).
+// Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the
+// player's crosshair gave way to it (see NeoGunplayReplacesCrosshair). spreadScale: the spread as seen through a zoom (the MPN45's window).
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
 	float spreadScale = 1.0f);

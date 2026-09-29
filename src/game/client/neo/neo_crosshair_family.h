@@ -35,8 +35,13 @@ struct NeoCrosshairFrame
 	float s;				// pen.scale, for sizes given at 1080p
 	Vector2D centre;		// the aim point, steady
 	Vector2D deviation;		// the gun's turn from the aim (recoil knock, spread pivot), for the parts near the gun
+	Vector2D aimOffset;		// the aim crosshair's damped, capped offset from the centre (neo_gunplay_aim.h)
+	float link;				// 0 to 1: how locked together the layers are (close, spread recovered, gun ready), eased
+	float sinceLock;		// seconds since the layers locked (-1 while not locked)
+	float pixelsPerTangent;	// screen pixels per tangent off the aim (the view's field of view, a window's zoom)
 	Vector2D jitter;		// this frame's shot scramble
-	float spread;			// the spread cone's edge, eased
+	float spread;			// the spread cone's edge, eased (and popped by each shot)
+	float spreadExact;		// the spread cone's edge as it is, in pixels (the spread ghost's)
 	float aim;				// 0 hip to 1 aimed, eased
 	float alpha;			// the layer's opacity, 0 to 1 (the scramble's flicker included)
 	float sinceBoot;		// seconds since the layer came online (a weapon switch, or it was hidden)
@@ -51,6 +56,21 @@ struct NeoCrosshairFrame
 
 	int Alpha(float opacity) const;	// 0-255, of the layer's opacity
 };
+
+// A critically damped spring's step toward target (omega: 1 over its time constant), in substeps: stepped once a
+// frame, a stiff spring runs away on long frames (alt-tabbed, the engine sleeps each frame) and the linework flew
+// off and vanished.
+template <typename T>
+inline void NeoCrosshairSpring(T &value, T &velocity, const T &target, float omega, float dt)
+{
+	constexpr float STEP = 1.0f / 240.0f;
+	for (float left = dt; left > 0.0f; left -= STEP)
+	{
+		const float step = Min(left, STEP);
+		velocity += ((target - value) * (omega * omega) - velocity * (2.0f * omega)) * step;
+		value += velocity * step;
+	}
+}
 
 // A dot: a stroke about its own width long.
 inline void NeoCrosshairDot(const NeoCrosshairFrame &frame, const Vector2D &at, NeoGhostWeight weight)
@@ -72,3 +92,24 @@ void NeoCrosshairPaintMg(const NeoCrosshairFrame &frame);
 void NeoCrosshairPaintShotgun(const NeoCrosshairFrame &frame);
 void NeoCrosshairPaintPistol(const NeoCrosshairFrame &frame);
 void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame);
+
+// The settled form (GUNPLAY-PLAN.md, three layers): a family's aim crosshair (layer 1) at `at`, and the bridges
+// from its docking points to the spread view's (layer 3). bGlyph false: the aim crosshair is off, and the spread
+// view locks onto the centre (the bridges still draw, from just off it). Each family's is in its own file.
+void NeoCrosshairAimRifle(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+void NeoCrosshairAimSmg(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+void NeoCrosshairAimMg(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+void NeoCrosshairAimShotgun(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+void NeoCrosshairAimPistol(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+void NeoCrosshairAimScoped(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+
+// A bridge between a docking point on the aim crosshair and one on the spread view: traced in from both ends as
+// the layers link, meeting in the middle when locked; heavy for a moment when they lock.
+void NeoCrosshairBridge(const NeoCrosshairFrame &frame, const Vector2D &inner, const Vector2D &outer,
+	NeoGhostWeight weight = NEO_GHOST_MEDIUM);
+
+// Where the spread view's parts near the gun sit this frame (the centre, the gun's turn, the shot's scramble).
+inline Vector2D NeoCrosshairNear(const NeoCrosshairFrame &frame)
+{
+	return frame.centre + frame.deviation + frame.jitter;
+}
