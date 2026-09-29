@@ -760,6 +760,7 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 	}
 	// Turned toward where its bullets go (cl_neo_spread_pivot), and knocked by each shot
 	// (cl_neo_viewmodel_recoil).
+	m_angUnkicked = newAng;
 	NeoSpreadPivotApply(weapon, pOwner, newAng);
 	NeoViewmodelRecoilApply(pOwner, eyeAngles, m_flIronsightBlend, newPos, newAng);
 	m_angUnswayed = newAng;

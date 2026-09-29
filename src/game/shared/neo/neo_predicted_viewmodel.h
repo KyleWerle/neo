@@ -80,6 +80,8 @@ public:
 	// This frame's angles before the base class adds bob, sway lag and view shake: the gun as its shots
 	// turn it (pose, spread pivot, recoil knock), without the motion the bullets don't share.
 	const QAngle &GetUnswayedAngles() const { return m_angUnswayed; }
+	// The same before the spread pivot and recoil knock: the gun at rest in its pose.
+	const QAngle &GetUnkickedAngles() const { return m_angUnkicked; }
 #endif
 
 private:
@@ -89,6 +91,7 @@ private:
 	NeoIronsightRestPose m_ironsightSettled;	// current fire animation's last frame
 	NeoViewmodelAnimBlend m_animBlend;			// crossfade between animations
 	QAngle m_angUnswayed = QAngle(0.0f, 0.0f, 0.0f);
+	QAngle m_angUnkicked = QAngle(0.0f, 0.0f, 0.0f);
 	void DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask);
 #endif
 	float m_flStartAimingChange;

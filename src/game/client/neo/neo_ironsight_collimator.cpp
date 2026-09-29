@@ -16,16 +16,19 @@ static constexpr int COLLIMATOR_SEGMENTS = 32;	// around the dot, for the art's 
 static constexpr int COLLIMATOR_RINGS = 4;		// from the hole out to the area's outline
 static constexpr int DOT_RINGS = 3;			// the dot patch and the hole's fill
 static constexpr float DOT_SOFT_EDGE = 0.6f;		// the dot patch fades out from this fraction of its radius
+static constexpr float DOT_HARD_EDGE = 0.97f;		// the same for additive art (no tint to hide; the M41's chevron
+												// fills its patch right to the edge)
 
-// The glass's own frame, as if the gun had no bob, sway lag or view shake (the base viewmodel adds those after
-// our own offsets; the bullets share none of them): right along its u, the normal away from the eye, and up
-// completing them.
+// The glass's own frame (right along its u, the normal away from the eye, up completing them), turned from the
+// gun's drawn angles to others: the unswayed ones (no bob, sway lag or view shake, which the base viewmodel
+// adds after our own offsets and the bullets share none of), or the unkicked ones (no spread pivot or recoil
+// knock either).
 struct GlassFrame
 {
 	Vector right, up, normal;
 };
 
-static GlassFrame FrameOf(C_BaseAnimating *pViewModel, const NeoLensPane &pane, const Vector &eye)
+static GlassFrame FrameOf(C_BaseAnimating *pViewModel, const NeoLensPane &pane, const Vector &eye, bool bUnkicked)
 {
 	GlassFrame frame;
 	frame.right = pane.u;
@@ -41,7 +44,7 @@ static GlassFrame FrameOf(C_BaseAnimating *pViewModel, const NeoLensPane &pane, 
 	{
 		// Turn back from the drawn angles to the unswayed ones.
 		matrix3x4_t unswayed, drawn, drawnInverse, unsway;
-		AngleMatrix(pNeoViewModel->GetUnswayedAngles(), unswayed);
+		AngleMatrix(bUnkicked ? pNeoViewModel->GetUnkickedAngles() : pNeoViewModel->GetUnswayedAngles(), unswayed);
 		AngleMatrix(pNeoViewModel->GetAbsAngles(), drawn);
 		MatrixInvert(drawn, drawnInverse);
 		ConcatTransforms(unswayed, drawnInverse, unsway);
@@ -54,36 +57,38 @@ static GlassFrame FrameOf(C_BaseAnimating *pViewModel, const NeoLensPane &pane, 
 	return frame;
 }
 
-// The sight's axis in the glass's frame (right, up, normal), set from the eye's forward the first time the gun
-// settles on the sights, for this player and weapon; until then, the glass's normal.
+// The sight's axis in the glass's frame (right, up, normal): the eye's forward, measured against the unkicked
+// glass every frame the gun sits on the sights between shots (aimed, idle), so the dot rests exactly on the aim
+// (the idle's own sway included) and only the shots' kick moves it; kept from the last such frame through the
+// fire animation and at the hip; until the first, the glass's normal. Measured once, it could keep a small
+// offset from whatever the pivot or knock were doing then (the dots sat a little up and right).
 static struct
 {
-	bool calibrated = false;
 	int player = 0;
 	const CNEOWeaponInfo *pData = nullptr;
 	Vector axis = Vector(0.0f, 0.0f, 1.0f);
 } s_axis;
 
-static Vector SightAxis(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, const GlassFrame &frame)
+static Vector SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, const Vector &eye,
+	const CNEOWeaponInfo &data, const GlassFrame &frame)
 {
 	auto *pNeoViewModel = dynamic_cast<C_NEOPredictedViewModel *>(pViewModel);
 	auto *pPlayer = pNeoViewModel ? dynamic_cast<C_NEO_Player *>(pNeoViewModel->GetOwner()) : nullptr;
 	const int player = pPlayer ? pPlayer->entindex() : 0;
 	if (player != s_axis.player || &data != s_axis.pData)
 	{
-		s_axis.calibrated = false;
 		s_axis.player = player;
 		s_axis.pData = &data;
 		s_axis.axis.Init(0.0f, 0.0f, 1.0f);
 	}
-	if (!s_axis.calibrated && pPlayer && pPlayer->IsInAim() && pNeoViewModel->GetIronsightBlend() >= 0.999f)
+	if (pPlayer && pPlayer->IsInAim() && pNeoViewModel->GetIronsightBlend() >= 0.999f)
 	{
 		const int activity = pNeoViewModel->GetSequenceActivity(pNeoViewModel->GetSequence());
 		if (activity == ACT_VM_IDLE || activity == ACT_VM_IDLE_EMPTY)
 		{
+			const GlassFrame rest = FrameOf(pViewModel, pane, eye, true);
 			const Vector &forward = CurrentViewForward();
-			s_axis.axis.Init(DotProduct(forward, frame.right), DotProduct(forward, frame.up), DotProduct(forward, frame.normal));
-			s_axis.calibrated = true;
+			s_axis.axis.Init(DotProduct(forward, rest.right), DotProduct(forward, rest.up), DotProduct(forward, rest.normal));
 		}
 	}
 	return frame.right * s_axis.axis.x + frame.up * s_axis.axis.y + frame.normal * s_axis.axis.z;
@@ -183,8 +188,8 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 
 	// Where the dot floats: the sight's axis from the eye, through the glass. The axis turns with the gun as its
 	// shots turn it (fire animation, spread pivot, recoil knock), not with its bob, sway lag or view shake.
-	const GlassFrame frame = FrameOf(pViewModel, pane, eye);
-	const Vector axis = SightAxis(pViewModel, data, frame);
+	const GlassFrame frame = FrameOf(pViewModel, pane, eye, false);
+	const Vector axis = SightAxis(pViewModel, pane, eye, data, frame);
 	const Vector &normal = frame.normal;
 	const float facing = DotProduct(normal, axis);
 	float dotAlpha = 0.0f;
@@ -206,8 +211,11 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 	const int artIndices = COLLIMATOR_SEGMENTS * COLLIMATOR_RINGS * 6;
 	const int discIndices = COLLIMATOR_SEGMENTS * DOT_RINGS * 6;
 	const bool bDot = dotAlpha > 0.0f;
-	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, artVertices + discVertices * (bDot ? 2 : 1),
-		artIndices + discIndices * (bDot ? 2 : 1));
+	// Additive art (the M41's) adds light where it has any and nothing elsewhere: its hole needs no filling (it is
+	// clear glass), and it fades by darkening rather than by alpha, which its material doesn't use.
+	const bool bAdditive = pArt->GetMaterialVarFlag(MATERIAL_VAR_ADDITIVE);
+	const int discs = (bDot ? 1 : 0) + (bAdditive ? 0 : 1);
+	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, artVertices + discVertices * discs, artIndices + discIndices * discs);
 	int base = 0;
 	const auto vertex = [&](const Vector2D &at, const Vector2D &tex, float a) {
 		const Vector world = pane.At(at.x, at.y);
@@ -215,7 +223,15 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 		Vector lift = eye - world;
 		VectorNormalize(lift);
 		const Vector position = world + lift * 0.01f;
-		meshBuilder.Color4ub(255, 255, 255, static_cast<unsigned char>(255.0f * clamp(a, 0.0f, 1.0f)));
+		const unsigned char level = static_cast<unsigned char>(255.0f * clamp(a, 0.0f, 1.0f));
+		if (bAdditive)
+		{
+			meshBuilder.Color4ub(level, level, level, 255);
+		}
+		else
+		{
+			meshBuilder.Color4ub(255, 255, 255, level);
+		}
 		meshBuilder.TexCoord2f(0, tex.x, tex.y);
 		meshBuilder.Position3fv(position.Base());
 		meshBuilder.AdvanceVertex();
@@ -250,16 +266,19 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 	rings(COLLIMATOR_RINGS);
 
 	// The hole, filled with the art just around it, mirrored in its rim (the tint and any lines carry on).
-	for (int ring = 0; ring <= DOT_RINGS; ++ring)
+	if (!bAdditive)
 	{
-		const float r = Max(static_cast<float>(ring) / DOT_RINGS, 0.02f);
-		for (int seg = 0; seg < COLLIMATOR_SEGMENTS; ++seg)
+		for (int ring = 0; ring <= DOT_RINGS; ++ring)
 		{
-			const float angle = 2.0f * M_PI_F * seg / COLLIMATOR_SEGMENTS;
-			vertex(dot + offset(angle, radius * r), dot + offset(angle, radius * (2.0f - r)), alpha);
+			const float r = Max(static_cast<float>(ring) / DOT_RINGS, 0.02f);
+			for (int seg = 0; seg < COLLIMATOR_SEGMENTS; ++seg)
+			{
+				const float angle = 2.0f * M_PI_F * seg / COLLIMATOR_SEGMENTS;
+				vertex(dot + offset(angle, radius * r), dot + offset(angle, radius * (2.0f - r)), alpha);
+			}
 		}
+		rings(DOT_RINGS);
 	}
-	rings(DOT_RINGS);
 
 	// The dot, at its floating place, softened at its edge so its patch of tint doesn't show.
 	if (bDot)
@@ -267,7 +286,8 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 		for (int ring = 0; ring <= DOT_RINGS; ++ring)
 		{
 			const float r = Max(static_cast<float>(ring) / DOT_RINGS, 0.02f);
-			const float soft = 1.0f - NeoSmoothStep((r - DOT_SOFT_EDGE) / (1.0f - DOT_SOFT_EDGE));
+			const float edge = bAdditive ? DOT_HARD_EDGE : DOT_SOFT_EDGE;
+			const float soft = 1.0f - NeoSmoothStep((r - edge) / (1.0f - edge));
 			for (int seg = 0; seg < COLLIMATOR_SEGMENTS; ++seg)
 			{
 				const Vector2D step = offset(2.0f * M_PI_F * seg / COLLIMATOR_SEGMENTS, radius * r);
