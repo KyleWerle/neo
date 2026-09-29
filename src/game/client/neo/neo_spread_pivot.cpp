@@ -36,7 +36,7 @@ static struct
 	const C_NEOBaseCombatWeapon *pWeapon = nullptr;
 	bool bKnowsCommands = false;
 	int commandMinusTick = 0;	// a command's number minus the tick it runs on (they advance together)
-	Vector2D lastShot;			// the last shot's spread offset, in tangents along the eye's right and up
+	Vector lastShot;			// the last shot's direction in the world (aim plus spread)
 	float lastShotTime = -1.0f;
 	Vector2D current;			// this frame's offset, on a critically damped spring toward the target
 	Vector2D velocity;
@@ -67,7 +67,8 @@ static Vector2D SpreadOffset(int randomSeed, int shot, const Vector &spread)
 	return Vector2D(x * spread.x, y * spread.y);
 }
 
-void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &spread, int shots)
+void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &aim, const Vector &spread,
+	int shots)
 {
 	if (cl_neo_spread_pivot_debug.GetBool())
 	{
@@ -83,11 +84,15 @@ void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, con
 	s_pivot.pWeapon = pWeapon;
 	s_pivot.bKnowsCommands = true;
 	s_pivot.commandMinusTick = cmd.command_number - TIME_TO_TICKS(gpGlobals->curtime);
-	s_pivot.lastShot = SpreadOffset(cmd.random_seed, shots - 1, spread);
+	// Kept as a world direction, as ApplySpread builds it: the recoil that follows the shot moves the view, and the
+	// gun should stay on where the bullet went, not on the same offset from the raised view.
+	const Vector2D offset = SpreadOffset(cmd.random_seed, shots - 1, spread);
+	Vector right, up;
+	VectorVectors(aim, right, up);
+	s_pivot.lastShot = aim + right * offset.x + up * offset.y;
 	s_pivot.lastShotTime = gpGlobals->curtime;
 	// The same shot knocks the arms (cl_neo_viewmodel_recoil), toward where it went within its cone.
-	NeoViewmodelRecoilShot(pWeapon, Vector2D(s_pivot.lastShot.x / Max(spread.x, 0.0001f),
-		s_pivot.lastShot.y / Max(spread.y, 0.0001f)));
+	NeoViewmodelRecoilShot(pWeapon, Vector2D(offset.x / Max(spread.x, 0.0001f), offset.y / Max(spread.y, 0.0001f)));
 }
 
 // Where the gun should point now, as a spread offset.
@@ -99,9 +104,21 @@ static Vector2D PivotTarget(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner
 	}
 	if (cl_neo_spread_pivot.GetInt() == 2)
 	{
-		// Follow: toward the last shot, held for about a shot's time, then back.
+		// Follow: toward the last shot, held for about a shot's time, then back. Measured from the view as it is
+		// now, so the gun stays on the shot while the recoil lifts the view.
 		const float hold = Max(pWeapon->GetFireRate() * 1.5f, 0.1f);
-		return (gpGlobals->curtime - s_pivot.lastShotTime < hold) ? s_pivot.lastShot : Vector2D(0.0f, 0.0f);
+		if (gpGlobals->curtime - s_pivot.lastShotTime >= hold)
+		{
+			return Vector2D(0.0f, 0.0f);
+		}
+		Vector forward, right, up;
+		AngleVectors(pOwner->EyeAngles() + pOwner->GetPunchAngle(), &forward, &right, &up);
+		const float ahead = s_pivot.lastShot.Dot(forward);
+		if (ahead <= 0.1f)
+		{
+			return Vector2D(0.0f, 0.0f);
+		}
+		return Vector2D(s_pivot.lastShot.Dot(right) / ahead, s_pivot.lastShot.Dot(up) / ahead);
 	}
 
 	// Lead: while an automatic's trigger is held, the next shot fires on the first tick at or after its next

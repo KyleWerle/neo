@@ -1085,7 +1085,7 @@ void CNEOBaseCombatWeapon::PrimaryAttack(void)
 #ifdef CLIENT_DLL
 	if (const CUserCmd *pCmd = pPlayer->GetCurrentUserCommand())
 	{
-		NeoSpreadPivotShot(this, *pCmd, info.m_vecSpread, info.m_iShots);
+		NeoSpreadPivotShot(this, *pCmd, info.m_vecDirShooting, info.m_vecSpread, info.m_iShots);
 	}
 #endif // CLIENT_DLL
 

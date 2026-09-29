@@ -12,9 +12,11 @@ class CUserCmd;
 class QAngle;
 class Vector;
 
-// A shot the local player's weapon fired: its command, the spread cone it used, and how many bullets the
-// command fired. Called from the weapon's primary attack; only the first prediction of a command counts.
-void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &spread, int shots);
+// A shot the local player's weapon fired: its command, the direction it was aimed (before spread), the spread
+// cone it used, and how many bullets the command fired. Called from the weapon's primary attack; only the
+// first prediction of a command counts.
+void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &aim, const Vector &spread,
+	int shots);
 
 // Turns the viewmodel's angles (eye angles plus its own offsets) toward this frame's pivot, in eye space.
 void NeoSpreadPivotApply(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, QAngle &angles);
