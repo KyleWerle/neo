@@ -5,7 +5,6 @@
 #include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
-#include "checksum_md5.h"
 #include "usercmd.h"
 #include "prediction.h"
 #include "iviewrender.h"
@@ -16,10 +15,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_spread_pivot("cl_neo_spread_pivot", "2", FCVAR_ARCHIVE,
-	"With Enable Gunplay: the gun turns toward where its bullets go. 0 = off; 1 = lead: while the trigger is held, it"
-	" points at where the next shot will go; 2 = follow: each shot kicks it toward where that shot went.",
-	true, 0, true, 2);
+// Follow only: each shot turns the gun toward where that shot went. The lead mode (pointing at where the next shot
+// would go, from its seed) is gone: it revealed the next shot, and could be abused (Kyle, 2026-09-29).
+ConVar cl_neo_spread_pivot("cl_neo_spread_pivot", "1", FCVAR_ARCHIVE,
+	"With Enable Gunplay: each shot turns the gun toward where that shot went. 0 = off.", true, 0, true, 1);
 ConVar cl_neo_spread_pivot_scale("cl_neo_spread_pivot_scale", "1", FCVAR_ARCHIVE,
 	"How far the gun turns: 1 = the barrel points exactly where the bullet goes, more exaggerates.",
 	true, 0, true, 4);
@@ -29,17 +28,15 @@ ConVar cl_neo_spread_pivot_return("cl_neo_spread_pivot_return", "0.2", FCVAR_ARC
 	"How slowly the gun eases back to centre once the shooting stops (or the mag runs dry), in seconds.",
 	true, 0.005f, true, 2);
 ConVar cl_neo_spread_pivot_turn_hold("cl_neo_spread_pivot_turn_hold", "0", FCVAR_ARCHIVE,
-	"Follow: how far, in degrees, turning away after a shot can leave the gun behind on where it went, eased in"
+	"How far, in degrees, turning away after a shot can leave the gun behind on where it went, eased in"
 	" and never past this (0 = the gun turns with the view at once).", true, 0, true, 45);
 ConVar cl_neo_spread_pivot_debug("cl_neo_spread_pivot_debug", "0", FCVAR_CHEAT,
-	"Debug: mark in the world where the gun is turning to (lead: where the next shot will land, to check against"
-	" its bullet hole).");
+	"Debug: mark in the world where the gun is turning to (where the last shot went, to check against its bullet"
+	" hole).");
 
 static struct
 {
 	const C_NEOBaseCombatWeapon *pWeapon = nullptr;
-	bool bKnowsCommands = false;
-	int commandMinusTick = 0;	// a command's number minus the tick it runs on (they advance together)
 	Vector lastShot;			// the last shot's direction in the world (aim plus spread)
 	QAngle lastShotEyes;		// the eye angles it was fired from (without the recoil's punch)
 	float lastShotTime = -1.0f;
@@ -87,8 +84,6 @@ void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, con
 		return;
 	}
 	s_pivot.pWeapon = pWeapon;
-	s_pivot.bKnowsCommands = true;
-	s_pivot.commandMinusTick = cmd.command_number - TIME_TO_TICKS(gpGlobals->curtime);
 	// Kept as a world direction, as ApplySpread builds it: the recoil that follows the shot moves the view, and the
 	// gun should stay on where the bullet went, not on the same offset from the raised view.
 	const Vector2D offset = SpreadOffset(cmd.random_seed, shots - 1, spread);
@@ -109,58 +104,42 @@ static Vector2D PivotTarget(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner
 	{
 		return Vector2D(0.0f, 0.0f);
 	}
-	if (cl_neo_spread_pivot.GetInt() == 2)
-	{
-		// Follow: toward the last shot, held for about a shot's time, then back. Measured from the eyes it was
-		// fired from with the recoil's punch as it is now, so the gun stays on the shot while the recoil lifts the
-		// view (the punch). Turning away since (the eyes) leaves it behind on where the shot went only up to
-		// cl_neo_spread_pivot_turn_hold, eased in: measured from the eyes as they are now, a fast turn left the gun,
-		// and a collimated dot riding it, stuck on the shot.
-		const float hold = Max(pWeapon->GetFireRate() * 1.5f, 0.1f);
-		if (gpGlobals->curtime - s_pivot.lastShotTime >= hold)
-		{
-			return Vector2D(0.0f, 0.0f);
-		}
-		// The shot as a spread offset from the view at angles.
-		const auto offsetFrom = [&](const QAngle &angles, Vector2D &offset) {
-			Vector forward, right, up;
-			AngleVectors(angles, &forward, &right, &up);
-			const float ahead = s_pivot.lastShot.Dot(forward);
-			offset.Init(s_pivot.lastShot.Dot(right) / Max(ahead, 0.1f), s_pivot.lastShot.Dot(up) / Max(ahead, 0.1f));
-			return ahead > 0.1f;
-		};
-		Vector2D fromShot, fromNow;
-		if (!offsetFrom(s_pivot.lastShotEyes + pOwner->GetPunchAngle(), fromShot))
-		{
-			return Vector2D(0.0f, 0.0f);
-		}
-		if (!offsetFrom(pOwner->EyeAngles() + pOwner->GetPunchAngle(), fromNow))
-		{
-			return fromShot;
-		}
-		// The turn's pull, saturating smoothly at the hold: tanh eases in and never reaches past it.
-		const float turnHold = tanf(DEG2RAD(cl_neo_spread_pivot_turn_hold.GetFloat()));
-		const Vector2D pull = fromNow - fromShot;
-		const float length = pull.Length();
-		if (turnHold <= 0.0f || length < 1e-6f)
-		{
-			return fromShot;
-		}
-		return fromShot + pull * (turnHold * tanhf(length / turnHold) / length);
-	}
-
-	// Lead: while an automatic's trigger is held, the next shot fires on the first tick at or after its next
-	// attack time; that tick's command number gives its seed.
-	const bool bFiring = s_pivot.bKnowsCommands && (pOwner->m_nButtons & IN_ATTACK) && !pWeapon->IsSemiAuto()
-		&& pWeapon->Clip1() > 0 && !pWeapon->m_bInReload;
-	if (!bFiring)
+	// Toward the last shot, held for about a shot's time, then back. Measured from the eyes it was
+	// fired from with the recoil's punch as it is now, so the gun stays on the shot while the recoil lifts the
+	// view (the punch). Turning away since (the eyes) leaves it behind on where the shot went only up to
+	// cl_neo_spread_pivot_turn_hold, eased in: measured from the eyes as they are now, a fast turn left the gun,
+	// and a collimated dot riding it, stuck on the shot.
+	const float hold = Max(pWeapon->GetFireRate() * 1.5f, 0.1f);
+	if (gpGlobals->curtime - s_pivot.lastShotTime >= hold)
 	{
 		return Vector2D(0.0f, 0.0f);
 	}
-	const int tick = static_cast<int>(ceilf(pWeapon->m_flNextPrimaryAttack / TICK_INTERVAL - 0.01f));
-	const int command = tick + s_pivot.commandMinusTick;
-	const int seed = MD5_PseudoRandom(command) & 0x7fffffff;
-	return SpreadOffset(seed, 0, pWeapon->GetBulletSpread());
+	// The shot as a spread offset from the view at angles.
+	const auto offsetFrom = [&](const QAngle &angles, Vector2D &offset) {
+		Vector forward, right, up;
+		AngleVectors(angles, &forward, &right, &up);
+		const float ahead = s_pivot.lastShot.Dot(forward);
+		offset.Init(s_pivot.lastShot.Dot(right) / Max(ahead, 0.1f), s_pivot.lastShot.Dot(up) / Max(ahead, 0.1f));
+		return ahead > 0.1f;
+	};
+	Vector2D fromShot, fromNow;
+	if (!offsetFrom(s_pivot.lastShotEyes + pOwner->GetPunchAngle(), fromShot))
+	{
+		return Vector2D(0.0f, 0.0f);
+	}
+	if (!offsetFrom(pOwner->EyeAngles() + pOwner->GetPunchAngle(), fromNow))
+	{
+		return fromShot;
+	}
+	// The turn's pull, saturating smoothly at the hold: tanh eases in and never reaches past it.
+	const float turnHold = tanf(DEG2RAD(cl_neo_spread_pivot_turn_hold.GetFloat()));
+	const Vector2D pull = fromNow - fromShot;
+	const float length = pull.Length();
+	if (turnHold <= 0.0f || length < 1e-6f)
+	{
+		return fromShot;
+	}
+	return fromShot + pull * (turnHold * tanhf(length / turnHold) / length);
 }
 
 static void DrawDebugMarker(C_BasePlayer *pOwner, const Vector2D &offset)
