@@ -131,3 +131,7 @@ int CNEOHud_ChildElement::GetMargin()
 	return cl_neo_hud_margin.GetInt();
 }
 
+void CNEOHud_ChildElement::PaintNeoHudBoot()
+{
+	NeoHudBootPaint(dynamic_cast<vgui::Panel *>(this), m_hudBoot);
+}

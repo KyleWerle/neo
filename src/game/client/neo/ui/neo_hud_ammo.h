@@ -23,6 +23,7 @@ public:
 protected:
 	virtual void UpdateStateForNeoHudElementDraw();
 	virtual void DrawNeoHudElement();
+	virtual bool UsesNeoHudBoot() const override { return true; }
 	virtual ConVar* GetUpdateFrequencyConVar() const;
 
 private:

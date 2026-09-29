@@ -1675,6 +1675,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_crosshair_scoped.cpp
     neo/neo_gunplay_tunnel.cpp
     neo/neo_gunplay_tunnel.h
+    neo/neo_hud_boot.cpp
+    neo/neo_hud_boot.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_lens.cpp

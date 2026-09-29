@@ -5,6 +5,7 @@
 #endif
 
 #include "neo_gamerules.h"
+#include "neo_hud_boot.h"
 
 class C_NEO_Player;
 
@@ -52,6 +53,8 @@ protected:
 	virtual void UpdateStateForNeoHudElementDraw() = 0;
 	virtual void DrawNeoHudElement() = 0;
 	virtual ConVar* GetUpdateFrequencyConVar() const = 0;
+	// Boxed panels opt in to the gunplay HUD boot (neo_hud_boot.h); full-screen overlays must not.
+	virtual bool UsesNeoHudBoot() const { return false; }
 
 	void PaintNeoElement()
 	{
@@ -63,8 +66,13 @@ protected:
 			}
 
 			DrawNeoHudElement();
+			if (UsesNeoHudBoot())
+			{
+				PaintNeoHudBoot();
+			}
 		}
 	}
+	void PaintNeoHudBoot();
 
 	bool ShouldUpdateYet()
 	{
@@ -103,6 +111,7 @@ private:
 	int m_rounded_width, m_rounded_height;
 
 	float m_flLastUpdateTime;
+	NeoHudBootState m_hudBoot;
 };
 
 #endif // NEO_HUD_CHILDELEMENT_H
