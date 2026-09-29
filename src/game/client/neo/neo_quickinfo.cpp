@@ -27,7 +27,9 @@ ConVar cl_neo_hud_quickinfo_sway("cl_neo_hud_quickinfo_sway", "1", FCVAR_ARCHIVE
 namespace NeoQuickInfo
 {
 static constexpr float BOOT_TIME = 0.55f;		// the band's reveal on spawn
-static constexpr float BUSY_HOLD = 2.2f;		// full for this long after any change
+static constexpr float BUSY_HOLD = 2.2f;		// a part stays full this long after it changes
+static constexpr float BOOT_HOLD = 3.4f;		// everything stays full this long after a boot (the labels read)
+static constexpr float FADE_UP = 0.06f, FADE_DOWN = 0.6f;	// a part's rise and settle, seconds
 static constexpr float SWAY_MAX = 4.0f;			// pixels at 1080p
 static constexpr float SWAY_GAIN = 0.022f;		// pixels per degree a second of turning (180 deg/s reaches the cap)
 static constexpr float STEP = 1.0f / 240.0f;	// spring substeps
@@ -48,8 +50,9 @@ static struct
 	float bootTime = -100.0f;
 	float viewChanged = -100.0f;
 	int neoClass = -1;
-	float fade = 0.0f;
-	float lastChange = -100.0f;
+	float chassis = 1.0f;			// the steady parts' fade (full only while booting)
+	float fade[PART__COUNT] = {};
+	float changed[PART__COUNT] = { -100.0f, -100.0f, -100.0f, -100.0f, -100.0f };
 	float hp = 1.0f, hpRaw = 1.0f, cloak = 1.0f, aux = 100.0f, auxRaw = 100.0f;
 	int hpNumber = 0;
 	bool bCloaked = false, bSprinting = false, bVision = false;
@@ -133,7 +136,7 @@ static void Sway(C_NEO_Player *pPlayer, float dt, float now, bool bBoot)
 }
 
 // The values, eased, and what changed: chips and the hitch on a hit, a jump cell locking or spent.
-static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool bBoot)
+static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool bBoot, bool bAmmoBusy)
 {
 	static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
 	const float hpRaw = clamp(static_cast<float>(pPlayer->GetHealth()) / Max(1, pPlayer->GetMaxHealth()), 0.0f, 1.0f);
@@ -167,7 +170,7 @@ static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool b
 		if (fabsf(hpRaw - s_qi.hpRaw) > 0.001f)
 		{
 			s_qi.hpChangeTime = now;
-			s_qi.lastChange = now;
+			s_qi.changed[PART_INTEGRITY] = now;
 		}
 		if (kind == KIND_RECON)
 		{
@@ -177,19 +180,23 @@ static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool b
 				if (s_qi.auxRaw < edge && auxRaw >= edge)
 				{
 					s_qi.jumpReady[i] = now;
-					s_qi.lastChange = now;
+					s_qi.changed[PART_RIGHT] = now;
 				}
 			}
 			// A super jump spends a cell at once: the upper full cell is the one that goes.
 			if (s_qi.auxRaw - auxRaw >= JUMP_COST * 0.9f)
 			{
 				s_qi.jumpSpent[(s_qi.auxRaw >= JUMP_COST * 2.0f) ? 1 : 0] = now;
-				s_qi.lastChange = now;
+				s_qi.changed[PART_RIGHT] = now;
 			}
 		}
-		if (bCloaked != s_qi.bCloaked || bSprinting != s_qi.bSprinting || bVision != s_qi.bVision)
+		if (bCloaked != s_qi.bCloaked)
 		{
-			s_qi.lastChange = now;
+			s_qi.changed[PART_LEFT] = now;	// the therm-optic (recon, assault)
+		}
+		if (bVision != s_qi.bVision)
+		{
+			s_qi.changed[PART_VISION] = now;
 		}
 	}
 	s_qi.hpRaw = hpRaw;
@@ -211,12 +218,33 @@ static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool b
 	}
 	s_qi.chipCount = kept;
 
-	// Full on any change, a low value or an active mode; otherwise down to the floor, never out.
-	const bool bBusy = hpRaw <= 0.5f || bCloaked || bSprinting || bVision || now - s_qi.bootTime < 3.4f
-		|| (kind == KIND_RECON && auxRaw < JUMP_COST * 2.0f) || ((kind == KIND_ASSAULT || kind == KIND_JUGGERNAUT) && auxRaw < 99.5f)
-		|| now - s_qi.lastChange < BUSY_HOLD;
-	const float target = bBusy ? 1.0f : cl_neo_hud_quickinfo_floor.GetFloat();
-	s_qi.fade = bBoot ? 1.0f : Approach(target, s_qi.fade, dt / ((target > s_qi.fade) ? 0.06f : 0.6f));
+	// Each part: full while it's used, changing, low or active, and a moment after; otherwise down to the floor, never
+	// out. Everything is full for a while after a boot, then settles part by part.
+	const bool bBooting = now - s_qi.bootTime < BOOT_HOLD;
+	const auto held = [&](Part part) { return bBooting || now - s_qi.changed[part] < BUSY_HOLD; };
+	bool busy[PART__COUNT];
+	busy[PART_INTEGRITY] = held(PART_INTEGRITY) || hpRaw <= 0.5f;
+	const bool bCloakBusy = bCloaked || cloakRaw < 0.995f;	// cloaked, or recharging after
+	const bool bSprintBusy = bSprinting || auxRaw < 99.5f;	// sprinting, or recovering after
+	switch (kind)
+	{
+	case KIND_RECON:		busy[PART_LEFT] = bCloakBusy; busy[PART_RIGHT] = auxRaw < JUMP_COST * 2.0f; break;
+	case KIND_ASSAULT:		busy[PART_LEFT] = bCloakBusy; busy[PART_RIGHT] = bSprintBusy; break;
+	case KIND_SUPPORT:		busy[PART_LEFT] = busy[PART_RIGHT] = busy[PART_INTEGRITY]; break;	// the wings are armour
+	case KIND_JUGGERNAUT:	busy[PART_LEFT] = busy[PART_RIGHT] = bSprintBusy; break;
+	}
+	busy[PART_LEFT] = busy[PART_LEFT] || held(PART_LEFT);
+	busy[PART_RIGHT] = busy[PART_RIGHT] || held(PART_RIGHT);
+	busy[PART_AMMO] = held(PART_AMMO) || bAmmoBusy;
+	busy[PART_VISION] = held(PART_VISION) || bVision;
+	const float floor = cl_neo_hud_quickinfo_floor.GetFloat();
+	for (int i = 0; i < PART__COUNT; ++i)
+	{
+		const float target = busy[i] ? 1.0f : floor;
+		s_qi.fade[i] = bBoot ? 1.0f : Approach(target, s_qi.fade[i], dt / ((target > s_qi.fade[i]) ? FADE_UP : FADE_DOWN));
+	}
+	const float chassis = bBooting ? 1.0f : floor;
+	s_qi.chassis = bBoot ? 1.0f : Approach(chassis, s_qi.chassis, dt / FADE_DOWN);
 }
 } // namespace NeoQuickInfo
 
@@ -266,9 +294,7 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 	}
 	s_qi.lastTime = now;
 	s_qi.lastFrame = gpGlobals->framecount;
-	Update(pPlayer, kind, dt, now, bBoot);
-	Sway(pPlayer, dt, now, bBoot);
-	// The ammo: a shot, a reload or a switch brings the band up to full too.
+	// The ammo: a shot, a reload or a switch brings its part up; so does a low magazine or a hot BALC.
 	Ammo ammo;
 	ReadAmmo(pPlayer, ammo);
 	wchar_t key[ARRAYSIZE(s_qi.ammoKey)];
@@ -276,9 +302,12 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 		ammo.pMode ? ammo.pMode : L"");
 	if (!bBoot && V_wcscmp(key, s_qi.ammoKey) != 0)
 	{
-		s_qi.lastChange = now;
+		s_qi.changed[PART_AMMO] = now;
 	}
 	V_wcsncpy(s_qi.ammoKey, key, sizeof(s_qi.ammoKey));
+	const bool bAmmoBusy = (ammo.maxRounds > 1 && ammo.rounds <= ammo.maxRounds / 5) || (ammo.bHeat && ammo.heat > 0.05f);
+	Update(pPlayer, kind, dt, now, bBoot, bAmmoBusy);
+	Sway(pPlayer, dt, now, bBoot);
 
 	int wide, tall;
 	vgui::surface()->GetScreenSize(wide, tall);
@@ -296,7 +325,11 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 		frame.sway[i] = s_qi.layers[i].offset;
 	}
 	frame.reveal = NeoSmoothStep(Min(1.0f, boot * 1.4f)) * visible;
-	frame.alpha = s_qi.fade * frame.reveal;
+	frame.alpha = s_qi.chassis * frame.reveal;
+	for (int i = 0; i < PART__COUNT; ++i)
+	{
+		frame.parts[i] = s_qi.fade[i] * frame.reveal;
+	}
 	frame.now = now;
 	frame.bDetail = cl_neo_hud_quickinfo_detail.GetBool();
 	frame.hp = s_qi.hp;
@@ -320,7 +353,7 @@ void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 	frame.labels = now - s_qi.bootTime;
 	frame.ammo = ammo;
 	PaintBand(frame);
-	PaintAmmo(frame);
+	PaintAmmo(WithAlpha(frame, frame.parts[PART_AMMO]));
 	PaintSpeed(frame, pPlayer, dt, bBoot, cl_neo_hud_quickinfo_floor.GetFloat());
 	// The labels read at full strength whatever the fade.
 	frame.alpha = frame.reveal;

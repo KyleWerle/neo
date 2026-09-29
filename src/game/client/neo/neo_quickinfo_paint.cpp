@@ -97,6 +97,13 @@ float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, fl
 	return wide / f.s;
 }
 
+QuickFrame WithAlpha(const QuickFrame &f, float alpha)
+{
+	QuickFrame part = f;
+	part.alpha = alpha;
+	return part;
+}
+
 void Cross(const QuickFrame &f, Layer layer, float x, float y, float a)
 {
 	Line(f, layer, x - MARK, y, x + MARK, y, NEO_GHOST_LIGHT, f.color, a);

@@ -17,6 +17,7 @@ static const Color ECHO(90, 220, 255, 255);	// the failing signal's cyan echo
 constexpr float DASH = 4.0f, DASH_GAP = 3.0f;	// the cloak's dashes, fitted per run
 constexpr float ETCHED = 0.75f;				// the channel codes' opacity: faint lines, but text you can read
 constexpr float ETCHED_FLOOR = 0.5f;			// and they fade only this far at rest (the band goes to its floor)
+constexpr float WING_FRAME_SHARE = 0.7f;		// a wing's frame rises with its fill this much
 constexpr float CELL = 0.48f;					// a recon's jump cell, of the wing's length (the rest is the gap)
 
 // A frame line: solid, or while cloaked a whole number of dashes fitted to the run, starting and ending on its
@@ -266,47 +267,48 @@ static void PaintDetail(const QuickFrame &f)
 
 void PaintBand(const QuickFrame &f)
 {
+	// The chassis (frames, rail, codes) at its steady fade; each part at its own. A wing's frame brightens a little
+	// with its fill, so a lit wing isn't a bright bar in a dim outline.
 	if (f.bDetail)
 	{
 		PaintDetail(f);
 	}
+	const QuickFrame wings[2] = { WithAlpha(f, f.parts[PART_LEFT]), WithAlpha(f, f.parts[PART_RIGHT]) };
 	for (int sd = -1; sd <= 1; sd += 2)
 	{
-		PaintWingFrame(f, sd);
+		PaintWingFrame(WithAlpha(f, Max(f.alpha, WING_FRAME_SHARE * wings[(sd < 0) ? 0 : 1].alpha)), sd);
 	}
+	const QuickFrame &left = wings[0], &right = wings[1];
 	switch (f.kind)
 	{
 	case KIND_RECON:
-		PaintFill(f, -1, f.cloak, (f.cloak < 0.2f) ? WARN : f.color, f.bCloaked);
-		PaintJumpCells(f, 1);
+		PaintFill(left, -1, f.cloak, (f.cloak < 0.2f) ? WARN : f.color, f.bCloaked);
+		PaintJumpCells(right, 1);
 		break;
 	case KIND_ASSAULT:
-		PaintFill(f, -1, f.cloak, (f.cloak < 0.2f) ? WARN : f.color, f.bCloaked);
-		PaintSprint(f, 1);
+		PaintFill(left, -1, f.cloak, (f.cloak < 0.2f) ? WARN : f.color, f.bCloaked);
+		PaintSprint(right, 1);
 		break;
 	case KIND_SUPPORT:
-		for (int sd = -1; sd <= 1; sd += 2)
-		{
-			PaintFill(f, sd, SupportSide(f.hp), HpColor(f), false);
-		}
+		PaintFill(left, -1, SupportSide(f.hp), HpColor(f), false);
+		PaintFill(right, 1, SupportSide(f.hp), HpColor(f), false);
 		break;
 	case KIND_JUGGERNAUT:
-		for (int sd = -1; sd <= 1; sd += 2)
-		{
-			PaintSprint(f, sd);
-		}
+		PaintSprint(left, -1);
+		PaintSprint(right, 1);
 		break;
 	}
-	PaintBar(f);
+	PaintBar(WithAlpha(f, f.parts[PART_INTEGRITY]));
 	// Vision: four static dots either side of integrity's number, lit while the mode is on (no drain, so nothing moves).
 	if (f.bHasVision)
 	{
+		const QuickFrame dots = WithAlpha(f, f.parts[PART_VISION]);
 		const float r = f.bVision ? 1.5f : 1.0f;
 		for (int sd = -1; sd <= 1; sd += 2)
 		{
 			for (const float x : { DOT_NEAR, DOT_FAR })
 			{
-				Box(f, LAYER_DOTS, sd * x - r, NUMBER_Y - r, sd * x + r, NUMBER_Y + r, f.color, f.bVision ? 1.0f : 0.3f);
+				Box(dots, LAYER_DOTS, sd * x - r, NUMBER_Y - r, sd * x + r, NUMBER_Y + r, f.color, f.bVision ? 1.0f : 0.3f);
 			}
 		}
 	}

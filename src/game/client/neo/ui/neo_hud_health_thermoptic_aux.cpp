@@ -92,7 +92,9 @@ void CNEOHud_HTA::DrawBuildInfo() const
 	surface()->GetTextSize(m_hFontBuildInfo, L"a", charWidth, charHeight);
 
 	const int x = xpos + 0.1f * charWidth;
-	const int y = ypos - charHeight;
+	// With the quick info band showing, this panel is gone and its corner holds the speed graph: the stamp sits just
+	// above the graph (its readout's top is 946 px down at 1080p), under the chat.
+	const int y = NeoQuickInfoShowing() ? RoundFloatToInt(m_resY * (940.0f / 1080.0f)) - charHeight : ypos - charHeight;
 
 	// DIY text shadow for contrast
 	surface()->DrawSetTextColor(COLOR_BLACK);

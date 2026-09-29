@@ -44,6 +44,10 @@ enum Layer { LAYER_DETAIL, LAYER_FRAME, LAYER_BAR, LAYER_LABELS, LAYER_DOTS, LAY
 // Juggernaut: sprint both sides.
 enum Kind { KIND_RECON, KIND_ASSAULT, KIND_SUPPORT, KIND_JUGGERNAUT };
 
+// The parts that fade on their own: each comes up when it's used or changes, holds, and settles back to the floor
+// on its own (the rest, the chassis: frames, rail, codes, graduations, crosses, stays steady at the floor).
+enum Part { PART_INTEGRITY, PART_LEFT, PART_RIGHT, PART_AMMO, PART_VISION, PART__COUNT };
+
 // The HUD's OCR faces, at 1080p: 17, 20 and 26 px tall.
 enum Font { FONT_SMALLER, FONT_SMALL, FONT_LARGE };
 
@@ -72,7 +76,8 @@ struct QuickFrame
 	NeoGhostPen pen;				// the boot's trace-in
 	Vector2D centre;				// the screen's
 	Vector2D sway[LAYER__COUNT];	// each layer's offset, pixels at 1080p
-	float alpha;					// the fade (floor to full) times the boot's reveal
+	float alpha;					// what's drawing now: the chassis's fade (or a part's) times the boot's reveal
+	float parts[PART__COUNT];		// each part's fade times the boot's reveal
 	float reveal;					// the boot's reveal alone
 	float now;
 	bool bDetail;
@@ -106,6 +111,8 @@ float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, fl
 	const Color &c, float a);
 // A registration mark: a small cross.
 void Cross(const QuickFrame &f, Layer layer, float x, float y, float a);
+// The frame drawing at another strength (a part's).
+QuickFrame WithAlpha(const QuickFrame &f, float alpha);
 
 extern const Color WARN;
 
