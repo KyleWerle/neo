@@ -32,6 +32,9 @@ ConVar cl_neo_gunplay_crosshair_family("cl_neo_gunplay_crosshair_family", "-1", 
 
 static constexpr float CROSS_ARM = 4.0f;			// the plain centre cross, each arm, at 1080p
 static constexpr float SQUARE_HALF = 1.5f;			// the tiny centre square
+static constexpr float PRECISION_SIZE = 2.0f;		// the precision dot, its side
+static constexpr float PRECISION_TIME = 0.05f;		// it comes and goes this quickly
+static constexpr float PRECISE_SPREAD = 1e-5f;		// a cone this narrow (a tangent) is no spread at all
 static constexpr float SPREAD_TIME = 0.04f;		// the spread's ease (a critically damped spring's time constant)
 static constexpr float SHOT_POP = 900.0f;			// each shot kicks the spread's spring outward, pixels/s at 1080p
 static constexpr float AIM_TIME = 0.15f;			// hip to aimed look
@@ -51,6 +54,7 @@ static struct
 	const C_NEOBaseCombatWeapon *pWeapon = nullptr;
 	int lastClip = -1;
 	float shotTime = -100.0f;
+	float precise = 0.0f;	// 0 to 1: the precision dot showing
 } s_layer;
 
 NeoCrosshairFamily NeoCrosshairFamilyOf(const C_NEOBaseCombatWeapon *pWeapon)
@@ -228,6 +232,18 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.dt = dt;
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
+
+	// The precision dot: the next shot is sure to go exactly where aimed (no spread at all: the precise guns, aimed
+	// and settled). Very small, at the aim point, whatever the centre mark.
+	const bool bPrecise = pWeapon->GetBulletSpread().x < PRECISE_SPREAD;
+	s_layer.precise = bBoot ? (bPrecise ? 1.0f : 0.0f) : Approach(bPrecise ? 1.0f : 0.0f, s_layer.precise, dt / PRECISION_TIME);
+	if (s_layer.precise > 0.0f)
+	{
+		const int size = Max(2, RoundFloatToInt(PRECISION_SIZE * frame.s));
+		const int x0 = x - size / 2, y0 = y - size / 2;
+		vgui::surface()->DrawSetColor(color.r(), color.g(), color.b(), RoundFloatToInt(color.a() * s_layer.precise));
+		vgui::surface()->DrawFilledRect(x0, y0, x0 + size, y0 + size);
+	}
 
 	// The centre mark in place of the Default or Alt crosshair (cl_neo_gunplay_crosshair_centre): steady, full strength, traced in with the rest.
 	const int centreStyle = cl_neo_gunplay_crosshair_centre.GetInt();
