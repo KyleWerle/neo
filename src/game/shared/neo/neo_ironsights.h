@@ -3,7 +3,7 @@
 // Optional ironsight presentation for the aim (ADS) state.
 // Gameplay aim (spread, camera FOV, speed) is unchanged; this only decides where the
 // viewmodel sits and how it moves while aiming. Weapons opt in with an "AimOffset" block
-// in their weapon script; without one, or with cl_neo_ironsights 0, the traditional
+// in their weapon script; without one, without Enable Gunplay or in its standard style, the traditional
 // NT "ZoomOffset" pose is used.
 
 #include "mathlib/vector.h"
@@ -17,7 +17,13 @@ struct NeoAimPose
 	float fov;
 };
 
-// True when this client should show the weapon's ironsight pose. Always false on the server.
+#ifdef CLIENT_DLL
+// Enable Gunplay (cl_neo_gunplay): without it every gunplay feature stands down and the game is exactly as stock.
+bool NeoGunplayEnabled();
+#endif
+
+// True when this client should show the weapon's ironsight pose (Enable Gunplay, ADS style). Always false on the
+// server.
 bool NeoIronsightsActive(const CNEOWeaponInfo &data);
 
 // The viewmodel pose to use at full aim: ironsight (possibly live-tuned) or traditional zoom.

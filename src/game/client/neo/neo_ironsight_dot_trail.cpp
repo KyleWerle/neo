@@ -145,7 +145,7 @@ void NeoIronsightPaintDotTrail()
 {
 	const float brightness = cl_neo_ironsight_dot_trail.GetFloat();
 	const CViewSetup *pView = view ? view->GetViewSetup() : nullptr;
-	if (brightness <= 0.0f || !pView || s_trail.count < 2)
+	if (brightness <= 0.0f || !pView || s_trail.count < 2 || !NeoGunplayEnabled())
 	{
 		return;
 	}

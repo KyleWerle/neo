@@ -2,14 +2,15 @@
 #include "neo_viewmodel_recoil.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
+#include "neo_ironsights.h"
 #include "prediction.h"
 #include "vstdlib/random.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_viewmodel_recoil("cl_neo_viewmodel_recoil", "0", FCVAR_ARCHIVE,
-	"Prototype: each shot knocks the gun like the arms taking it (cosmetic). Strength; 0 = off.", true, 0, true, 4);
+ConVar cl_neo_viewmodel_recoil("cl_neo_viewmodel_recoil", "1", FCVAR_ARCHIVE,
+	"With Enable Gunplay: each shot knocks the gun like the arms taking it (cosmetic). Strength; 0 = off.", true, 0, true, 4);
 ConVar cl_neo_viewmodel_recoil_freq("cl_neo_viewmodel_recoil_freq", "7", FCVAR_ARCHIVE,
 	"How fast the gun's nose springs back, in Hz (the whole gun follows at 60% of this).", true, 2, true, 30);
 ConVar cl_neo_viewmodel_recoil_damping("cl_neo_viewmodel_recoil_damping", "0.27", FCVAR_ARCHIVE,
@@ -148,7 +149,7 @@ static void NoseSpring(float heaviness, float &freq, float &zeta)
 
 static void KnockShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &conePosition, bool bPellets)
 {
-	const float scale = cl_neo_viewmodel_recoil.GetFloat();
+	const float scale = NeoGunplayEnabled() ? cl_neo_viewmodel_recoil.GetFloat() : 0.0f;
 	auto *pOwner = pWeapon ? ToNEOPlayer(pWeapon->GetOwner()) : nullptr;
 	if (scale <= 0.0f || !pOwner)
 	{

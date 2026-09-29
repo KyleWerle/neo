@@ -63,7 +63,7 @@ struct NeoSettings
 		bool bReloadEmpty;
 		bool bViewmodelRighthand;
 		bool bLeanViewmodelOnly;
-		bool bIronsights;
+		bool bGunplay;
 		int iLeanAutomatic;
 		int iEquipUtilityPriority;
 		bool bWeaponFastSwitch;
@@ -260,7 +260,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_autoreload_when_empty);
 		CONVARREF_DEF(cl_righthand);
 		CONVARREF_DEF(cl_neo_lean_viewmodel_only);
-		CONVARREF_DEF(cl_neo_ironsights);
+		CONVARREF_DEF(cl_neo_gunplay);
 		CONVARREF_DEF(cl_neo_lean_automatic);
 		CONVARREF_DEF(cl_neo_squad_hud_original);
 		CONVARREF_DEF(cl_neo_hud_health_mode);

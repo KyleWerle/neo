@@ -26,7 +26,7 @@ void NeoViewmodelAnimBlend::Apply(CStudioHdr *hdr, int sequence, Vector pos[], Q
 		m_bBlending = false;
 	}
 
-	const float duration = cl_neo_viewmodel_anim_blend.GetFloat();
+	const float duration = NeoGunplayEnabled() ? cl_neo_viewmodel_anim_blend.GetFloat() : 0.0f;
 	if (sequence != m_iSequence)
 	{
 		m_iSequence = sequence;

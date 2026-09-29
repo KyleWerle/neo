@@ -423,7 +423,7 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pGeneral->bReloadEmpty = cvr->cl_autoreload_when_empty.GetBool();
 		pGeneral->bViewmodelRighthand = cvr->cl_righthand.GetBool();
 		pGeneral->bLeanViewmodelOnly = cvr->cl_neo_lean_viewmodel_only.GetBool();
-		pGeneral->bIronsights = cvr->cl_neo_ironsights.GetBool();
+		pGeneral->bGunplay = cvr->cl_neo_gunplay.GetBool();
 		pGeneral->iLeanAutomatic = cvr->cl_neo_lean_automatic.GetInt();
 		pGeneral->iEquipUtilityPriority = cvr->cl_neo_equip_utility_priority.GetInt();
 		pGeneral->bWeaponFastSwitch = cvr->hud_fastswitch.GetBool();
@@ -792,7 +792,7 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_autoreload_when_empty.SetValue(pGeneral->bReloadEmpty);
 		cvr->cl_righthand.SetValue(pGeneral->bViewmodelRighthand);
 		cvr->cl_neo_lean_viewmodel_only.SetValue(pGeneral->bLeanViewmodelOnly);
-		cvr->cl_neo_ironsights.SetValue(pGeneral->bIronsights);
+		cvr->cl_neo_gunplay.SetValue(pGeneral->bGunplay);
 		cvr->cl_neo_lean_automatic.SetValue(pGeneral->iLeanAutomatic);
 		cvr->cl_neo_equip_utility_priority.SetValue(pGeneral->iEquipUtilityPriority);
 		cvr->hud_fastswitch.SetValue(pGeneral->bWeaponFastSwitch);
@@ -1107,8 +1107,8 @@ void NeoSettings_General(NeoSettings *ns)
 	NeoUI::Divider(L"GAMEPLAY");
 	NeoUI::RingBoxBool(L"Reload empty", &pGeneral->bReloadEmpty);
 	NeoUI::RingBoxBool(L"Right hand viewmodel", &pGeneral->bViewmodelRighthand);
-	// Aim down the weapon's own sights instead of the traditional NT aim (cl_neo_ironsights).
-	NeoUI::RingBoxBool(L"Enable ADS", &pGeneral->bIronsights);
+	// Everything of the gunplay work at once (cl_neo_gunplay); Z switches its ADS and standard styles.
+	NeoUI::RingBoxBool(L"Enable Gunplay", &pGeneral->bGunplay);
 	NeoUI::RingBoxBool(L"Lean viewmodel only", &pGeneral->bLeanViewmodelOnly);
 	NeoUI::RingBox(L"Automatic leaning", AUTOMATIC_LEAN_LABELS, ARRAYSIZE(AUTOMATIC_LEAN_LABELS), &pGeneral->iLeanAutomatic);
 	NeoUI::RingBox(L"Utility slot equip priority", EQUIP_UTILITY_PRIORITY_LABELS, NeoSettings::EquipUtilityPriorityType::EQUIP_UTILITY_PRIORITY__TOTAL, &pGeneral->iEquipUtilityPriority);

@@ -2,6 +2,7 @@
 #include "neo_spread_pivot.h"
 #include "neo_ironsight_lens.h"
 #include "neo_viewmodel_recoil.h"
+#include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
 #include "checksum_md5.h"
@@ -15,8 +16,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_spread_pivot("cl_neo_spread_pivot", "0", FCVAR_ARCHIVE,
-	"Prototype: the gun turns toward where its bullets go. 0 = off; 1 = lead: while the trigger is held, it"
+ConVar cl_neo_spread_pivot("cl_neo_spread_pivot", "2", FCVAR_ARCHIVE,
+	"With Enable Gunplay: the gun turns toward where its bullets go. 0 = off; 1 = lead: while the trigger is held, it"
 	" points at where the next shot will go; 2 = follow: each shot kicks it toward where that shot went.",
 	true, 0, true, 2);
 ConVar cl_neo_spread_pivot_scale("cl_neo_spread_pivot_scale", "1", FCVAR_ARCHIVE,
@@ -184,7 +185,8 @@ void NeoSpreadPivotApply(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, Q
 	if (s_pivot.updatedFrame != gpGlobals->framecount)
 	{
 		s_pivot.updatedFrame = gpGlobals->framecount;
-		const Vector2D target = cl_neo_spread_pivot.GetBool() ? PivotTarget(pWeapon, pOwner) : Vector2D(0.0f, 0.0f);
+		const Vector2D target = (NeoGunplayEnabled() && cl_neo_spread_pivot.GetBool()) ? PivotTarget(pWeapon, pOwner)
+			: Vector2D(0.0f, 0.0f);
 		// A critically damped spring starts from rest, so every move eases in; quick to each shot, slower home.
 		const bool bReturning = target.LengthSqr() < 1e-12f;
 		const float omega = 1.0f / (bReturning ? cl_neo_spread_pivot_return : cl_neo_spread_pivot_time).GetFloat();

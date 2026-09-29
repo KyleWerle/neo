@@ -17,18 +17,37 @@
 #include "tier0/memdbgon.h"
 
 #ifdef CLIENT_DLL
-ConVar cl_neo_ironsights("cl_neo_ironsights", "0", FCVAR_ARCHIVE,
-	"Aim down the weapon's sights instead of the traditional NT aim pose, for weapons that define one.", true, 0, true, 1);
-// Hip-fire and ADS players are on the same footing (the sights change only how the gun is shown), so switching
-// on the fly is just this setting; bindable in Settings > Keys ("Ironsights / ADS (toggle)", kb_act.lst).
-// Client-side only: no usercmd button bit needed.
-CON_COMMAND(cl_neo_ironsights_toggle, "Switch between aiming down the sights and the traditional NT aim.")
+// Enable Gunplay (Settings > General): everything of ours, on or off as one. Off, the game is exactly as stock:
+// the knock, the spread pivot, the animation crossfade and the sights all stand down, whatever their own settings.
+ConVar cl_neo_gunplay("cl_neo_gunplay", "0", FCVAR_ARCHIVE,
+	"Enable Gunplay: the gun moves with its shots (recoil knock, spread pivot, animation crossfade), and aims in the"
+	" style cl_neo_ironsights picks. 0 = the game's own aim and viewmodel, exactly as stock.", true, 0, true, 1);
+ConVar cl_neo_ironsights("cl_neo_ironsights", "1", FCVAR_ARCHIVE,
+	"With Enable Gunplay (cl_neo_gunplay): 1 = ADS style, aiming down the weapon's own sights (for weapons that define"
+	" them); 0 = standard style, the traditional NT aim, the gunplay's movement kept.", true, 0, true, 1);
+
+bool NeoGunplayEnabled()
 {
-	cl_neo_ironsights.SetValue(!cl_neo_ironsights.GetBool());
+	return cl_neo_gunplay.GetBool();
+}
+
+// Hip-fire and ADS players are on the same footing (the sights change only how the gun is shown), so switching
+// on the fly is just this setting; Z by default, bindable in Settings > Keys ("Gunplay: ADS / standard style
+// (toggle)", kb_act.lst). Client-side only: no usercmd button bit needed.
+CON_COMMAND(cl_neo_ironsights_toggle, "With Enable Gunplay: switch between the ADS style and the standard NT aim.")
+{
+	char text[64];
+	if (!cl_neo_gunplay.GetBool())
+	{
+		V_strncpy(text, "Enable Gunplay in Options first", sizeof(text));
+	}
+	else
+	{
+		cl_neo_ironsights.SetValue(!cl_neo_ironsights.GetBool());
+		V_strncpy(text, cl_neo_ironsights.GetBool() ? "Gunplay: ADS" : "Gunplay: Standard", sizeof(text));
+	}
 	if (internalCenterPrint)
 	{
-		char text[32];
-		V_strncpy(text, cl_neo_ironsights.GetBool() ? "Aim down sights" : "Traditional aim", sizeof(text));
 		internalCenterPrint->Print(text);
 	}
 }
@@ -166,7 +185,7 @@ CON_COMMAND(cl_neo_ironsight_save, "Append the tuned pose for the active weapon 
 bool NeoIronsightsActive(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
-	return cl_neo_ironsights.GetBool() && (data.m_bHasIronsight || cl_neo_ironsight_tune.GetBool());
+	return cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool() && (data.m_bHasIronsight || cl_neo_ironsight_tune.GetBool());
 #else
 	return false;
 #endif
@@ -175,7 +194,7 @@ bool NeoIronsightsActive(const CNEOWeaponInfo &data)
 NeoAimPose NeoGetAimPose(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
-	if (cl_neo_ironsights.GetBool() && cl_neo_ironsight_tune.GetBool())
+	if (cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool() && cl_neo_ironsight_tune.GetBool())
 	{
 		if (V_strcmp(data.szClassName, s_szTunedWeapon) != 0)
 		{

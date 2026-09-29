@@ -31,7 +31,7 @@ static const CNEOWeaponInfo *AugmentData(C_BaseCombatWeapon *pActive)
 {
 	static ConVarRef cl_neo_ironsights("cl_neo_ironsights");
 	auto *pWeapon = dynamic_cast<CNEOBaseCombatWeapon *>(pActive);
-	if (!pWeapon || !cl_neo_ironsights.GetBool())
+	if (!pWeapon || !NeoGunplayEnabled() || !cl_neo_ironsights.GetBool())
 	{
 		return nullptr;
 	}

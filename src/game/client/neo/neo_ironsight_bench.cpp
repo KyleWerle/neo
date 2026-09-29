@@ -105,6 +105,7 @@ private:
 
 	// What to put back afterwards.
 	char m_savedIronsights[16] = "";
+	char m_savedGunplay[16] = "";
 	char m_savedFpsMax[16] = "";
 	char m_savedCheats[16] = "";
 	char m_savedInfiniteCloak[16] = "";
@@ -141,6 +142,7 @@ void CNeoIronsightBench::Start(float measureSeconds, float settleSeconds)
 		V_strncpy(pszOut, var.IsValid() ? var.GetString() : "", size);
 	};
 	save("cl_neo_ironsights", m_savedIronsights, sizeof(m_savedIronsights));
+	save("cl_neo_gunplay", m_savedGunplay, sizeof(m_savedGunplay));
 	save("fps_max", m_savedFpsMax, sizeof(m_savedFpsMax));
 	save("sv_cheats", m_savedCheats, sizeof(m_savedCheats));
 	save("sv_neo_infinite_cloak", m_savedInfiniteCloak, sizeof(m_savedInfiniteCloak));
@@ -173,7 +175,7 @@ void CNeoIronsightBench::BeginRun()
 {
 	const BenchScenario &scenario = s_scenarios[m_run / 2];
 	const bool bIronsights = (m_run % 2) == 1;
-	Command("-aim; cl_neo_ironsights %d; neo_ironsight_bench_class %s; neo_ironsight_bench_equip %s",
+	Command("-aim; cl_neo_gunplay %d; cl_neo_ironsights 1; neo_ironsight_bench_class %s; neo_ironsight_bench_equip %s",
 		bIronsights ? 1 : 0, scenario.playerClass, scenario.weapon);
 	if (scenario.aim)
 	{
@@ -380,8 +382,8 @@ void CNeoIronsightBench::FinishRestore()
 	{
 		Command("neo_ironsight_bench_equip %s", m_savedActive);
 	}
-	Command("cl_neo_ironsights %s; fps_max %s; sv_neo_infinite_cloak %s; sv_cheats %s", m_savedIronsights, m_savedFpsMax,
-		m_savedInfiniteCloak, m_savedCheats);
+	Command("cl_neo_gunplay %s; cl_neo_ironsights %s; fps_max %s; sv_neo_infinite_cloak %s; sv_cheats %s", m_savedGunplay,
+		m_savedIronsights, m_savedFpsMax, m_savedInfiniteCloak, m_savedCheats);
 }
 
 void CNeoIronsightBench::Report()
