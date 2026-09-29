@@ -76,7 +76,7 @@ void NeoCrosshairPaintSmg(const NeoCrosshairFrame &frame)
 				float distance = fabsf(place - s_smg.phase);
 				distance = Min(distance, 1.0f - distance);
 				const float bright = run * Max(0.0f, 1.0f - distance / RUN_WIDTH);
-				NeoGhostBegin(frame.color, frame.Alpha(0.55f + 0.45f * bright));
+				NeoGhostBegin(frame.color, frame.Alpha(0.8f + 0.2f * bright));
 				NeoCrosshairDot(frame, at, (bright > 0.5f) ? NEO_GHOST_HEAVY : NEO_GHOST_MEDIUM);
 			}
 		}
@@ -90,7 +90,7 @@ void NeoCrosshairPaintSmg(const NeoCrosshairFrame &frame)
 		const int slots = (frame.maxClip + perDot - 1) / perDot;
 		const float width = (slots - 1) * MAG_STEP * s;
 		const Vector2D row = frame.centre + frame.deviation * 0.5f + frame.jitter + Vector2D(-width * 0.5f, half + MAG_GAP * s);
-		NeoGhostBegin(frame.color, frame.Alpha(aim * 0.8f));
+		NeoGhostBegin(frame.color, frame.Alpha(aim * 0.9f));
 		for (int i = 0; i < dots; ++i)
 		{
 			NeoCrosshairDot(frame, row + Vector2D(i * MAG_STEP * s, 0.0f), NEO_GHOST_LIGHT);

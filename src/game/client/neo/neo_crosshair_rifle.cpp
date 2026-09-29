@@ -74,13 +74,13 @@ void NeoCrosshairPaintRifle(const NeoCrosshairFrame &frame)
 	wchar_t text[16];
 	V_snwprintf(text, ARRAYSIZE(text) - 1, L"%.1f", RAD2DEG(2.0f * atanf(frame.pWeapon->GetBulletSpread().x)));
 	const float typed = Min(aim, clamp((frame.sinceBoot - TYPE_DELAY) / TYPE_TIME, 0.0f, 1.0f));
-	NeoCrosshairReadout(frame, readoutAt, text, typed, aim * 0.7f);
+	NeoCrosshairReadout(frame, readoutAt, text, typed, aim * 0.9f);
 
 	// Slow guns: a ready bar under it, filling as the gun cycles to its next shot.
 	if (frame.cycle >= READY_CYCLE)
 	{
 		const Vector2D bar = readoutAt + Vector2D(0.0f, NeoCrosshairReadoutTall() * 0.5f + 2.0f * s);
-		NeoGhostBegin(frame.color, frame.Alpha(aim * (frame.ready >= 1.0f ? 1.0f : 0.5f)));
+		NeoGhostBegin(frame.color, frame.Alpha(aim * (frame.ready >= 1.0f ? 1.0f : 0.75f)));
 		NeoGhostStroke(frame.pen, bar, bar + Vector2D(READY_WIDTH * s * frame.ready, 0.0f), NEO_GHOST_MEDIUM);
 	}
 }

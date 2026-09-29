@@ -51,7 +51,7 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 	const Vector2D near = frame.centre + frame.deviation + frame.jitter;
 	const float half = frame.spread + GAP * s;
 	const float arm = ARM * s;
-	NeoGhostBegin(frame.color, frame.Alpha(0.7f));
+	NeoGhostBegin(frame.color, frame.Alpha(0.9f));
 	static const Vector2D s_corners[4] = { Vector2D(-1, -1), Vector2D(1, -1), Vector2D(1, 1), Vector2D(-1, 1) };
 	for (const Vector2D &corner : s_corners)
 	{
@@ -62,11 +62,11 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 
 	// The bolt: its marker out and home again over the cycle, home when ready.
 	const Vector2D bar = near + Vector2D(-BOLT_WIDTH * 0.5f * s, half + BOLT_GAP * s);
-	NeoGhostBegin(frame.color, frame.Alpha(0.5f));
+	NeoGhostBegin(frame.color, frame.Alpha(0.75f));
 	NeoGhostStroke(frame.pen, bar, bar + Vector2D(BOLT_WIDTH * s, 0.0f), NEO_GHOST_LIGHT);
 	const float travel = sinf(M_PI_F * frame.ready) * (BOLT_WIDTH - BOLT_MARK) * s;
 	const Vector2D mark = bar + Vector2D(travel, 0.0f);
-	NeoGhostBegin(frame.color, frame.Alpha(frame.ready >= 1.0f ? 1.0f : 0.8f));
+	NeoGhostBegin(frame.color, frame.Alpha(frame.ready >= 1.0f ? 1.0f : 0.9f));
 	NeoGhostStroke(frame.pen, mark, mark + Vector2D(BOLT_MARK * s, 0.0f), NEO_GHOST_HEAVY);
 
 	// The range, beside the frame's right edge.
@@ -80,5 +80,5 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 		V_wcsncpy(text, L"---", sizeof(text));
 	}
 	const float typed = clamp((frame.sinceBoot - TYPE_DELAY) / TYPE_TIME, 0.0f, 1.0f);
-	NeoCrosshairReadout(frame, near + Vector2D(half + READOUT_GAP * s, 0.0f), text, typed, 0.7f);
+	NeoCrosshairReadout(frame, near + Vector2D(half + READOUT_GAP * s, 0.0f), text, typed, 0.9f);
 }

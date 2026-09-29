@@ -20,7 +20,7 @@ static constexpr float BURST_TIME = 0.14f;		// seconds the burst takes to fall b
 static constexpr float AWAY = 1.3f;			// where the dots not yet home wait, of the ring's radius
 static constexpr float SLUG_MIN = 5.0f;		// the slug's diamond's smallest radius
 static constexpr float MORPH_TIME = 0.15f;		// ring to diamond and back
-static constexpr float HIP_SIZE = 0.85f;		// the ring's dots are lighter at the hip
+static constexpr float HIP_SIZE = 0.9f;		// the ring's dots are lighter at the hip
 
 static struct
 {
@@ -65,13 +65,13 @@ void NeoCrosshairPaintShotgun(const NeoCrosshairFrame &frame)
 		// The same direction's point on the slug's diamond (|x| + |y| = its radius).
 		const float onDiamond = diamond / Max(fabsf(direction.x) + fabsf(direction.y), 0.001f);
 		const Vector2D at = near + direction * Lerp(morph, ringRadius, onDiamond);
-		NeoGhostBegin(frame.color, frame.Alpha((bHome ? 1.0f : 0.3f) * Lerp(frame.aim, HIP_SIZE, 1.0f)));
+		NeoGhostBegin(frame.color, frame.Alpha((bHome ? 1.0f : 0.6f) * Lerp(frame.aim, HIP_SIZE, 1.0f)));
 		NeoCrosshairDot(frame, at, weight);
 	}
 	// The diamond's edges as the slug comes in.
 	if (morph > 0.0f)
 	{
-		NeoGhostBegin(frame.color, frame.Alpha(morph * 0.8f));
+		NeoGhostBegin(frame.color, frame.Alpha(morph * 0.9f));
 		const Vector2D corners[4] = { near + Vector2D(0.0f, -diamond), near + Vector2D(diamond, 0.0f),
 			near + Vector2D(0.0f, diamond), near + Vector2D(-diamond, 0.0f) };
 		for (int c = 0; c < 4; ++c)

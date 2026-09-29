@@ -77,7 +77,7 @@ void NeoCrosshairPaintPistol(const NeoCrosshairFrame &frame)
 			// Chamber 0 is up next; the ones after it follow clockwise, and the spent ones are the last.
 			const float angle = -0.5f * M_PI_F + i * step + offset;
 			const bool bLoaded = i < frame.clip;
-			NeoGhostBegin(frame.color, frame.Alpha((bLoaded ? 1.0f : 0.3f) * Max(frame.aim, 0.5f)));
+			NeoGhostBegin(frame.color, frame.Alpha((bLoaded ? 1.0f : 0.55f) * Max(frame.aim, 0.8f)));
 			NeoCrosshairDot(frame, centre + Vector2D(cosf(angle), sinf(angle)) * (CYLINDER_RADIUS * s),
 				bLoaded ? NEO_GHOST_HEAVY : NEO_GHOST_LIGHT);
 		}

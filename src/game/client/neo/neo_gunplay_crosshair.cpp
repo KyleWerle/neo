@@ -18,7 +18,7 @@
 ConVar cl_neo_gunplay_crosshair("cl_neo_gunplay_crosshair", "1", FCVAR_ARCHIVE,
 	"With Enable Gunplay: ghost linework around your crosshair, riding the spread (0 = your crosshair alone).",
 	true, 0, true, 1);
-ConVar cl_neo_gunplay_crosshair_alpha("cl_neo_gunplay_crosshair_alpha", "0.8", FCVAR_ARCHIVE,
+ConVar cl_neo_gunplay_crosshair_alpha("cl_neo_gunplay_crosshair_alpha", "1", FCVAR_ARCHIVE,
 	"Opacity of the crosshair layer.", true, 0, true, 1);
 ConVar cl_neo_gunplay_crosshair_parallax("cl_neo_gunplay_crosshair_parallax", "1", FCVAR_ARCHIVE,
 	"How much the layer's parts near the gun move with its knock and pivot against your crosshair.",
@@ -264,7 +264,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	{
 		frame.jitter.Init(random->RandomFloat(-2.0f, 2.0f) * frame.scramble * frame.s,
 			random->RandomFloat(-2.0f, 2.0f) * frame.scramble * frame.s);
-		frame.alpha *= (gpGlobals->framecount & 1) ? 1.0f - 0.65f * frame.scramble : 1.0f;
+		frame.alpha *= (gpGlobals->framecount & 1) ? 1.0f - 0.35f * frame.scramble : 1.0f;
 	}
 
 	switch (NeoCrosshairFamilyOf(pWeapon))

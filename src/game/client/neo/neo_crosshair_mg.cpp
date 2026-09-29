@@ -72,7 +72,7 @@ void NeoCrosshairPaintMg(const NeoCrosshairFrame &frame)
 		for (float along = scroll; along <= rail; along += step)
 		{
 			const float t = along / rail;
-			const float fade = NeoSmoothStep(t / 0.2f) * (1.0f - NeoSmoothStep((t - 0.75f) / 0.25f));
+			const float fade = 0.6f + 0.4f * NeoSmoothStep(t / 0.2f) * (1.0f - NeoSmoothStep((t - 0.75f) / 0.25f));
 			NeoGhostBegin(frame.color, frame.Alpha(fade));
 			const Vector2D at = inner + Vector2D(side * along, 0.0f);
 			NeoGhostStroke(frame.pen, at - Vector2D(0.0f, TICK_HEIGHT * s), at + Vector2D(0.0f, TICK_HEIGHT * s), NEO_GHOST_LIGHT);
@@ -87,7 +87,7 @@ void NeoCrosshairPaintMg(const NeoCrosshairFrame &frame)
 	{
 		const Vector2D start = near + Vector2D(edge, TICK_HEIGHT * s + STRAIN_GAP * s);
 		const NeoGhostWeight weight = (s_mg.strain > 0.7f) ? NEO_GHOST_HEAVY : (s_mg.strain > 0.35f) ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT;
-		NeoGhostBegin(frame.color, frame.Alpha(0.5f + 0.5f * s_mg.strain));
+		NeoGhostBegin(frame.color, frame.Alpha(0.75f + 0.25f * s_mg.strain));
 		NeoGhostStroke(frame.pen, start, start + Vector2D(rail * s_mg.strain, 0.0f), weight);
 	}
 }
