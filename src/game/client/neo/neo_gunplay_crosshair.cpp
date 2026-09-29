@@ -29,6 +29,7 @@ ConVar cl_neo_gunplay_crosshair_family("cl_neo_gunplay_crosshair_family", "-1", 
 
 static constexpr float CROSS_ARM = 4.0f;			// the plain centre cross, each arm, at 1080p
 static constexpr float SPREAD_TIME = 0.04f;		// the spread's ease (a critically damped spring's time constant)
+static constexpr float SHOT_POP = 900.0f;			// each shot kicks the spread's spring outward, pixels/s at 1080p
 static constexpr float AIM_TIME = 0.15f;			// hip to aimed look
 static constexpr float TRACE_TIME = 0.11f;			// coming online, as the sight ghost does
 static constexpr float TUNNEL_OPACITY = 0.6f;		// of the layer's
@@ -145,7 +146,7 @@ static bool LayerShown(C_NEOBaseCombatWeapon *pWeapon)
 
 bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairStyle)
 {
-	return LayerShown(pWeapon) && crosshairStyle == CROSSHAIR_STYLE_DEFAULT;
+	return LayerShown(pWeapon) && (crosshairStyle == CROSSHAIR_STYLE_DEFAULT || crosshairStyle == CROSSHAIR_STYLE_ALT_B);
 }
 
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre)
@@ -184,6 +185,11 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 
 	// The spread's edge, eased (it steps shot to shot), and the hip-to-aimed look.
 	const float target = static_cast<float>(HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2));
+	// Each shot pops it out past the spread a moment, springing back: the layer shifts with every shot.
+	if (bShot)
+	{
+		s_layer.spreadVelocity += SHOT_POP * (tall / 1080.0f);
+	}
 	const float omega = 1.0f / SPREAD_TIME;
 	s_layer.spreadVelocity += ((target - s_layer.spread) * omega * omega - 2.0f * omega * s_layer.spreadVelocity) * dt;
 	s_layer.spread = Max(0.0f, s_layer.spread + s_layer.spreadVelocity * dt);
@@ -213,7 +219,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
 
-	// The plain centre cross in place of the Default crosshair: steady, full strength, traced in with the rest.
+	// The plain centre cross in place of the Default or Alt crosshair: steady, full strength, traced in with the rest.
 	if (bCentre)
 	{
 		NeoGhostBegin(color, color.a());

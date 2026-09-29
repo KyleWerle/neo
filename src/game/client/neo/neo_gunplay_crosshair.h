@@ -10,8 +10,8 @@
 class C_NEOBaseCombatWeapon;
 class Color;
 
-// Whether the layer draws the centre itself: a player on the crosshair editor's Default style gets a small plain
-// cross in its place (the Default's own heavy shape is what the layer echoes around it); any other style stays.
+// Whether the layer draws the centre itself: a player on the crosshair editor's Default or Alt style gets a small
+// plain cross in its place (those original shapes are what the layer echoes around it); a Custom one stays.
 bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairStyle);
 
 // Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the small
