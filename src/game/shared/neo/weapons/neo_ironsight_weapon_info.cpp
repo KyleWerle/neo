@@ -77,6 +77,10 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 	m_bIronOpticReticleInLens = pOptic && pOptic->GetBool("reticle_in_lens");
+	// (The reticle name is read at the end, so look it up here.)
+	m_bIronOpticCollimated = m_bIronOpticWindow && m_szIronOpticLens[0] && pOptic->GetString("reticle", "")[0]
+		&& sscanf(pOptic->GetString("collimated_dot", ""), "%f %f %f", &m_vecIronOpticDot.x, &m_vecIronOpticDot.y,
+			&m_vecIronOpticDot.z) == 3 && m_vecIronOpticDot.z > 0.0f;
 
 	KeyValues* pAugment = pKeyValuesData->FindKey("IronsightAugment");
 	m_flIronAugmentMagnification = pAugment ? pAugment->GetFloat("magnification", 1.5f) : 0.f;

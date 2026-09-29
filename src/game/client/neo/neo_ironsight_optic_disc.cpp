@@ -3,6 +3,7 @@
 #include "neo_ironsight_profile.h"
 #include "neo_ironsight_lens.h"
 #include "neo_ironsight_optic.h"
+#include "neo_ironsight_collimator.h"
 #include "neo_ironsights.h"
 #include "c_neo_player.h"
 #include "weapon_neobasecombatweapon.h"
@@ -244,10 +245,10 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 		state.fadeStart = bCloaked ? cl_neo_ironsight_optic_cloak_fade.GetFloat() : 1.0f;
 		state.bLiveView = state.centreAlpha > 0.0f;
 	}
-	// One-pane glass (hidden on the gun while ironsights apply) shows its reticle whatever happens to the
-	// view behind it.
+	// Glass hidden on the gun while ironsights apply (one pane, a collimated dot) shows its art whatever
+	// happens to the view behind it.
 	state.bReticle = state.pReticle && (state.bLiveView
-		|| (data.m_bIronOpticOnePane && NeoIronsightsActive(data)));
+		|| ((data.m_bIronOpticOnePane || data.m_bIronOpticCollimated) && NeoIronsightsActive(data)));
 	if (cl_neo_ironsight_optic_debug.GetBool() && gpGlobals->realtime >= s_flNextDebugPrint)
 	{
 		s_flNextDebugPrint = gpGlobals->realtime + 1.0f;
@@ -300,13 +301,23 @@ void NeoIronsightDrawOpticDisc(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	}
 	if (bReticle)
 	{
-		// Sight glass: its own art over the whole glass, as it is on the gun, unless its frame is dark (the view
-		// then shows clear past a soft edge around the lens circle).
-		const bool bWholeGlass = data.m_bIronOpticWindow && !data.m_bIronOpticReticleInLens;
+		// Sight glass: its own art over the whole glass, as it is on the gun, unless its frame is dark and the
+		// clear view is up (it then shows clear past a soft edge around the lens circle).
+		const bool bWholeGlass = data.m_bIronOpticWindow && !(data.m_bIronOpticReticleInLens && state.bLiveView);
 		const bool bFaded = state.bLiveView && !bWholeGlass;
 		const float fadeStart = data.m_bIronOpticReticleInLens ? RETICLE_IN_LENS_FADE : state.fadeStart;
-		DrawLensShape(state.pReticle, pane, data, LensAreaOf(data, bWholeGlass),
-			bFaded ? state.centreAlpha : 1.0f, bFaded ? fadeStart : 1.0f, false);
+		const LensArea area = LensAreaOf(data, bWholeGlass);
+		Vector2D outline[LENS_SEGMENTS];
+		const int points = Min(area.points, LENS_SEGMENTS);
+		for (int i = 0; i < points; ++i)
+		{
+			outline[i].Init(area.centreU + area.scaleU * area.pOutline[i].x, area.centreV + area.scaleV * area.pOutline[i].y);
+		}
+		if (!data.m_bIronOpticCollimated || !NeoIronsightDrawCollimatedArt(pViewModel, state.pReticle, pane, data, outline,
+			points, bFaded ? state.centreAlpha : 1.0f, bFaded ? fadeStart : 1.0f))
+		{
+			DrawLensShape(state.pReticle, pane, data, area, bFaded ? state.centreAlpha : 1.0f, bFaded ? fadeStart : 1.0f, false);
+		}
 	}
 	if (cl_neo_ironsight_optic_debug.GetInt() >= 2 && part != NEO_LENS_VIEW)
 	{

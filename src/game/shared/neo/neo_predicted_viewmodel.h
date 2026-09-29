@@ -76,6 +76,11 @@ public:
 
 	// 0 at the hip, 1 fully on the sights (eased); stays 0 while ironsights are off.
 	float GetIronsightBlend() const { return m_flIronsightBlend; }
+#ifdef CLIENT_DLL
+	// This frame's angles before the base class adds bob, sway lag and view shake: the gun as its shots
+	// turn it (pose, spread pivot, recoil knock), without the motion the bullets don't share.
+	const QAngle &GetUnswayedAngles() const { return m_angUnswayed; }
+#endif
 
 private:
 	float m_flIronsightBlend = 0.f;
@@ -83,6 +88,7 @@ private:
 	NeoIronsightRestPose m_ironsightRest;		// idle first frame
 	NeoIronsightRestPose m_ironsightSettled;	// current fire animation's last frame
 	NeoViewmodelAnimBlend m_animBlend;			// crossfade between animations
+	QAngle m_angUnswayed = QAngle(0.0f, 0.0f, 0.0f);
 	void DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask);
 #endif
 	float m_flStartAimingChange;

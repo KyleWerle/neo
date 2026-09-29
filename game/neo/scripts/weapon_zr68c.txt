@@ -85,6 +85,10 @@ WeaponData
 		"window_glass"	"0 0.103  0 0.897  1 0.103  1 0.897"
 		// Its art is dark round the edge: drawn only in the clear circle, softened.
 		"reticle_in_lens"	"1"
+		// Collimated: the red dot (u v radius in the art) floats at infinity, where the sight points, and
+		// slides off the glass seen from off axis. The glass material is hidden and its art drawn by us.
+		"lens"		"models/weapons/zr68_reddot"
+		"collimated_dot"	"0.495 0.505 0.02"
 		"lens_shape"	"4"
 	}
 

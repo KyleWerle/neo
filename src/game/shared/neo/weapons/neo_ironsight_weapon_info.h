@@ -99,6 +99,13 @@ public:
 	// "reticle_in_lens": sight glass whose art has a dark frame (ZR68 red dot) draws its reticle only in the
 	// clear part ("lens_circle"), softened at the edge, rather than over the whole glass.
 	bool	m_bIronOpticReticleInLens = false;
+	// "collimated_dot" "u v radius": sight glass whose dot is projected at infinity, as on a real red dot. The
+	// dot (at u, v in the glass art, radius in u) is lifted out of the art and drawn where a line from the eye
+	// along the sight's axis crosses the glass, so it marks where the gun points and slides off the glass when
+	// seen from off axis. The glass material ("lens") is hidden and its art drawn by us in every state. See
+	// neo_ironsight_collimator.h.
+	bool	m_bIronOpticCollimated = false;
+	Vector	m_vecIronOpticDot = Vector(0.5f, 0.5f, 0.02f);
 	char	m_szIronOpticOverlay[MAX_WEAPON_STRING] = "";	// full-screen scope texture when the live view is off
 	char	m_szIronOpticReticle[MAX_WEAPON_STRING] = "";	// reticle material over the live view
 

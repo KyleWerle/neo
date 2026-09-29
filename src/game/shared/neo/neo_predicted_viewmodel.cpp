@@ -762,6 +762,7 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 	// (cl_neo_viewmodel_recoil).
 	NeoSpreadPivotApply(weapon, pOwner, newAng);
 	NeoViewmodelRecoilApply(pOwner, eyeAngles, m_flIronsightBlend, newPos, newAng);
+	m_angUnswayed = newAng;
 #endif
 
 	BaseClass::CalcViewModelView(pOwner, newPos, newAng);

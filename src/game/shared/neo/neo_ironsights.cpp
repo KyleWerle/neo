@@ -448,8 +448,8 @@ NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *p
 		return;
 	}
 	FindHiddenMaterials(*pData);
-	// Glass drawn as one pane by the optic (neo_ironsight_optic_disc.cpp) is always hidden.
-	if (pData->m_bIronOpticOnePane)
+	// Glass whose art the optic draws itself (one pane, a collimated dot) is always hidden.
+	if (pData->m_bIronOpticOnePane || pData->m_bIronOpticCollimated)
 	{
 		Hide(s_hidden.pLens);
 	}
