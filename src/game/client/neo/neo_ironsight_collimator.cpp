@@ -60,27 +60,53 @@ static GlassFrame FrameOf(C_BaseAnimating *pViewModel, const NeoLensPane &pane, 
 // The sight's axis in the glass's frame (right, up, normal): the eye's forward, measured against the unkicked
 // glass every frame the gun sits on the sights between shots (aimed, idle), so the dot rests exactly on the aim
 // (the idle's own sway included) and only the shots' kick moves it; kept from the last such frame through the
-// fire animation and at the hip; until the first, the glass's normal. Measured once, it could keep a small
-// offset from whatever the pivot or knock were doing then (the dots sat a little up and right).
-static struct
+// fire animation and at the hip. Measured once, it could keep a small offset from whatever the pivot or knock
+// were doing then (the dots sat a little up and right). Remembered per gun, so switching back to one keeps its
+// dot; a gun not yet held on the sights has none, and shows no dot: the glass's normal stood in before, and
+// after a weapon switch put the dot visibly low.
+static constexpr int AXIS_MEMORY = 16;
+static struct SightAxisMemory
 {
 	int player = 0;
 	const CNEOWeaponInfo *pData = nullptr;
 	Vector axis = Vector(0.0f, 0.0f, 1.0f);
-} s_axis;
+	int used = 0;	// when last used, to replace the stalest
+} s_axes[AXIS_MEMORY];
+static int s_axisUse = 0;
 
-static Vector SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, const Vector &eye,
-	const CNEOWeaponInfo &data, const GlassFrame &frame)
+// The remembered axis of this player's gun, or a slot for it (the stalest, cleared). bKnown: already measured.
+static SightAxisMemory &AxisMemoryOf(int player, const CNEOWeaponInfo &data, bool &bKnown)
+{
+	SightAxisMemory *pStalest = &s_axes[0];
+	for (SightAxisMemory &memory : s_axes)
+	{
+		if (memory.pData == &data && memory.player == player)
+		{
+			memory.used = ++s_axisUse;
+			bKnown = true;
+			return memory;
+		}
+		if (memory.used < pStalest->used)
+		{
+			pStalest = &memory;
+		}
+	}
+	*pStalest = SightAxisMemory();
+	pStalest->player = player;
+	pStalest->pData = &data;
+	pStalest->used = ++s_axisUse;
+	bKnown = false;
+	return *pStalest;
+}
+
+// The sight's axis in world space; false if this gun hasn't been on the sights yet (no dot to show).
+static bool SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, const Vector &eye,
+	const CNEOWeaponInfo &data, const GlassFrame &frame, Vector &axis)
 {
 	auto *pNeoViewModel = dynamic_cast<C_NEOPredictedViewModel *>(pViewModel);
 	auto *pPlayer = pNeoViewModel ? dynamic_cast<C_NEO_Player *>(pNeoViewModel->GetOwner()) : nullptr;
-	const int player = pPlayer ? pPlayer->entindex() : 0;
-	if (player != s_axis.player || &data != s_axis.pData)
-	{
-		s_axis.player = player;
-		s_axis.pData = &data;
-		s_axis.axis.Init(0.0f, 0.0f, 1.0f);
-	}
+	bool bKnown = false;
+	SightAxisMemory &memory = AxisMemoryOf(pPlayer ? pPlayer->entindex() : 0, data, bKnown);
 	if (pPlayer && pPlayer->IsInAim() && pNeoViewModel->GetIronsightBlend() >= 0.999f)
 	{
 		const int activity = pNeoViewModel->GetSequenceActivity(pNeoViewModel->GetSequence());
@@ -88,10 +114,20 @@ static Vector SightAxis(C_BaseAnimating *pViewModel, const NeoLensPane &pane, co
 		{
 			const GlassFrame rest = FrameOf(pViewModel, pane, eye, true);
 			const Vector &forward = CurrentViewForward();
-			s_axis.axis.Init(DotProduct(forward, rest.right), DotProduct(forward, rest.up), DotProduct(forward, rest.normal));
+			memory.axis.Init(DotProduct(forward, rest.right), DotProduct(forward, rest.up), DotProduct(forward, rest.normal));
+			bKnown = true;
 		}
 	}
-	return frame.right * s_axis.axis.x + frame.up * s_axis.axis.y + frame.normal * s_axis.axis.z;
+	if (!bKnown)
+	{
+		// Not measured yet: the new slot is freed again, and left the stalest so it is the one reused (it mustn't push
+		// out other guns' memories frame after frame).
+		memory.pData = nullptr;
+		memory.used = 0;
+		return false;
+	}
+	axis = frame.right * memory.axis.x + frame.up * memory.axis.y + frame.normal * memory.axis.z;
+	return true;
 }
 
 // A point of the pane in its UV, from a point on its plane.
@@ -189,9 +225,10 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 	// Where the dot floats: the sight's axis from the eye, through the glass. The axis turns with the gun as its
 	// shots turn it (fire animation, spread pivot, recoil knock), not with its bob, sway lag or view shake.
 	const GlassFrame frame = FrameOf(pViewModel, pane, eye, false);
-	const Vector axis = SightAxis(pViewModel, pane, eye, data, frame);
+	Vector axis;
+	const bool bAxis = SightAxis(pViewModel, pane, eye, data, frame, axis);
 	const Vector &normal = frame.normal;
-	const float facing = DotProduct(normal, axis);
+	const float facing = bAxis ? DotProduct(normal, axis) : 0.0f;
 	float dotAlpha = 0.0f;
 	Vector2D floating = dot;
 	if (facing > 0.01f)
