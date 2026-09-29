@@ -682,6 +682,10 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pCrosshair->flGunplayLayerAlpha = cvr->cl_neo_gunplay_crosshair_alpha.GetFloat();
 		pCrosshair->flGunplayMarks = cvr->cl_neo_gunplay_crosshair_marks.GetFloat();
 		pCrosshair->flGunplayGhost = cvr->cl_neo_gunplay_crosshair_ghost.GetFloat();
+		pCrosshair->flGunplayAimShare = cvr->cl_neo_gunplay_crosshair_aim_share.GetFloat();
+		pCrosshair->flGunplayParallax = cvr->cl_neo_gunplay_crosshair_parallax.GetFloat();
+		pCrosshair->flGunplayGhostPop = cvr->cl_neo_gunplay_crosshair_ghost_pop.GetFloat();
+		pCrosshair->flGunplayScramble = cvr->cl_neo_gunplay_crosshair_scramble.GetFloat();
 		pCrosshair->flGunplayOutline = cvr->cl_neo_gunplay_outline.GetFloat();
 	}
 	{
@@ -693,12 +697,12 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pGunplay->flAnimBlend = cvr->cl_neo_viewmodel_anim_blend.GetFloat();
 		pGunplay->flDotTrail = cvr->cl_neo_ironsight_dot_trail.GetFloat();
 		pGunplay->iSightGhost = cvr->cl_neo_ironsight_sight_ghost.GetInt();
-		pGunplay->bHudBoot = cvr->cl_neo_hud_boot.GetBool();
 	}
 	{
 		NeoSettings::HUD *pHUD = &ns->hud;
 		
 		pHUD->bShowSquadList = cvr->cl_neo_squad_hud_original.GetBool();
+		pHUD->bHudBoot = cvr->cl_neo_hud_boot.GetBool();
 		pHUD->iHealthMode = cvr->cl_neo_hud_health_mode.GetInt();
 		pHUD->iObjVerbosity = cvr->cl_neo_hud_worldpos_verbose.GetInt();
 		pHUD->bShowHints = cvr->cl_neo_showhints.GetBool();
@@ -966,6 +970,10 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_gunplay_crosshair_alpha.SetValue(pCrosshair->flGunplayLayerAlpha);
 		cvr->cl_neo_gunplay_crosshair_marks.SetValue(pCrosshair->flGunplayMarks);
 		cvr->cl_neo_gunplay_crosshair_ghost.SetValue(pCrosshair->flGunplayGhost);
+		cvr->cl_neo_gunplay_crosshair_aim_share.SetValue(pCrosshair->flGunplayAimShare);
+		cvr->cl_neo_gunplay_crosshair_parallax.SetValue(pCrosshair->flGunplayParallax);
+		cvr->cl_neo_gunplay_crosshair_ghost_pop.SetValue(pCrosshair->flGunplayGhostPop);
+		cvr->cl_neo_gunplay_crosshair_scramble.SetValue(pCrosshair->flGunplayScramble);
 		cvr->cl_neo_gunplay_outline.SetValue(pCrosshair->flGunplayOutline);
 	}
 	{
@@ -977,12 +985,12 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_viewmodel_anim_blend.SetValue(pGunplay->flAnimBlend);
 		cvr->cl_neo_ironsight_dot_trail.SetValue(pGunplay->flDotTrail);
 		cvr->cl_neo_ironsight_sight_ghost.SetValue(pGunplay->iSightGhost);
-		cvr->cl_neo_hud_boot.SetValue(pGunplay->bHudBoot);
 	}
 	{
 		const NeoSettings::HUD *pHUD = &ns->hud;
 		
 		cvr->cl_neo_squad_hud_original.SetValue(pHUD->bShowSquadList);
+		cvr->cl_neo_hud_boot.SetValue(pHUD->bHudBoot);
 		cvr->cl_neo_hud_health_mode.SetValue(pHUD->iHealthMode);
 		cvr->cl_neo_hud_worldpos_verbose.SetValue(pHUD->iObjVerbosity);
 		cvr->cl_neo_showhints.SetValue(pHUD->bShowHints);
@@ -1404,33 +1412,50 @@ void NeoSettings_Video(NeoSettings *ns)
 }
 
 
+// Menus hold presets, not tuning (Kyle: presets are 95% of players; the rest tune in their config): each preset
+// sets a handful of console values, and the row reads Custom when they match none. Picking Custom changes nothing.
+static bool NeoSettingsNear(float a, float b)
+{
+	return fabsf(a - b) < 0.01f;
+}
+
 // The gunplay crosshair's presets (GUNPLAY-PLAN.md, three layers): Feel, all of it lively; Comp, the player's own
-// crosshair centred (no aim crosshair), the spread view a whisper, the spread ghost the readout.
+// crosshair centred (no aim crosshair), the spread view a whisper, the spread ghost the readout; Calm, nothing thrown
+// about (Zwiadowca: the hip-fire crosshair's static centre was partly an accessibility feature, against nausea;
+// kinoko: too hectic even so): a still aim crosshair, the spread view breathing with the spread but not riding the
+// knock, no scramble or pop.
 enum
 {
 	GUNPLAY_PRESET_CUSTOM,
 	GUNPLAY_PRESET_FEEL,
 	GUNPLAY_PRESET_COMP,
+	GUNPLAY_PRESET_CALM,
 };
-static const wchar_t *GUNPLAY_PRESET_LABELS[] = { L"Custom", L"Feel", L"Comp" };
+static const wchar_t *GUNPLAY_PRESET_LABELS[] = { L"Custom", L"Feel", L"Comp", L"Calm" };
 struct GunplayCrosshairPreset
 {
 	bool bAim;
 	float flSpreadView, flMarks, flGhost;
+	float flAimShare, flParallax, flGhostPop, flScramble;	// the motion
 };
 static constexpr GunplayCrosshairPreset GUNPLAY_PRESETS[] = {
-	{ true, 1.0f, 0.7f, 0.35f },	// Feel
-	{ false, 0.35f, 0.5f, 0.8f },	// Comp
+	{ true, 1.0f, 0.7f, 0.35f, 0.3f, 1.0f, 3.0f, 1.0f },	// Feel
+	{ false, 0.35f, 0.5f, 0.8f, 0.3f, 1.0f, 3.0f, 1.0f },	// Comp
+	{ true, 0.5f, 0.6f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f },	// Calm
 };
 
 static int NeoGunplayCrosshairPresetOf(const NeoSettings::Crosshair *pCrosshair)
 {
-	const auto near = [](float a, float b) { return fabsf(a - b) < 0.01f; };
 	for (int i = 0; i < ARRAYSIZE(GUNPLAY_PRESETS); ++i)
 	{
 		const GunplayCrosshairPreset &preset = GUNPLAY_PRESETS[i];
-		if (pCrosshair->bGunplayAim == preset.bAim && near(pCrosshair->flGunplayLayerAlpha, preset.flSpreadView)
-			&& near(pCrosshair->flGunplayMarks, preset.flMarks) && near(pCrosshair->flGunplayGhost, preset.flGhost))
+		if (pCrosshair->bGunplayAim == preset.bAim && NeoSettingsNear(pCrosshair->flGunplayLayerAlpha, preset.flSpreadView)
+			&& NeoSettingsNear(pCrosshair->flGunplayMarks, preset.flMarks)
+			&& NeoSettingsNear(pCrosshair->flGunplayGhost, preset.flGhost)
+			&& NeoSettingsNear(pCrosshair->flGunplayAimShare, preset.flAimShare)
+			&& NeoSettingsNear(pCrosshair->flGunplayParallax, preset.flParallax)
+			&& NeoSettingsNear(pCrosshair->flGunplayGhostPop, preset.flGhostPop)
+			&& NeoSettingsNear(pCrosshair->flGunplayScramble, preset.flScramble))
 		{
 			return GUNPLAY_PRESET_FEEL + i;
 		}
@@ -1445,12 +1470,49 @@ static void NeoGunplayCrosshairApplyPreset(NeoSettings::Crosshair *pCrosshair, i
 	pCrosshair->flGunplayLayerAlpha = preset.flSpreadView;
 	pCrosshair->flGunplayMarks = preset.flMarks;
 	pCrosshair->flGunplayGhost = preset.flGhost;
+	pCrosshair->flGunplayAimShare = preset.flAimShare;
+	pCrosshair->flGunplayParallax = preset.flParallax;
+	pCrosshair->flGunplayGhostPop = preset.flGhostPop;
+	pCrosshair->flGunplayScramble = preset.flScramble;
+}
+
+// The gun's motion presets (Settings > Gunplay): Full, the knock and the turn toward each shot; Subtle, half the
+// knock and no turn; Off, the gun still (the animation crossfade stays: it only smooths the model's own cuts).
+enum
+{
+	GUNPLAY_MOTION_CUSTOM,
+	GUNPLAY_MOTION_FULL,
+	GUNPLAY_MOTION_SUBTLE,
+	GUNPLAY_MOTION_OFF,
+};
+static const wchar_t *GUNPLAY_MOTION_LABELS[] = { L"Custom", L"Full", L"Subtle", L"Off" };
+struct GunplayMotionPreset
+{
+	float flKnock;
+	bool bPivot;
+};
+static constexpr GunplayMotionPreset GUNPLAY_MOTIONS[] = {
+	{ 1.0f, true },		// Full
+	{ 0.5f, false },	// Subtle
+	{ 0.0f, false },	// Off
+};
+
+static int NeoGunplayMotionPresetOf(const NeoSettings::Gunplay *pGunplay)
+{
+	for (int i = 0; i < ARRAYSIZE(GUNPLAY_MOTIONS); ++i)
+	{
+		if (NeoSettingsNear(pGunplay->flKnock, GUNPLAY_MOTIONS[i].flKnock) && pGunplay->bSpreadPivot == GUNPLAY_MOTIONS[i].bPivot)
+		{
+			return GUNPLAY_MOTION_FULL + i;
+		}
+	}
+	return GUNPLAY_MOTION_CUSTOM;
 }
 
 void NeoSettings_Crosshair(NeoSettings *ns)
 {
 	static constexpr int IVIEW_ROWS = 5;
-	static constexpr int IMISC_ROWS = 12;
+	static constexpr int IMISC_ROWS = 8;
 	NeoSettings::Crosshair *pCrosshair = &ns->crosshair;
 
 	g_uiCtx.dPanel.y += g_uiCtx.dPanel.tall;
@@ -1718,7 +1780,6 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		// The gunplay layer around the crosshair (with Enable Gunplay, Settings > Gunplay): a family per gun.
 		NeoUI::Divider(L"GUNPLAY LAYER");
 		NeoUI::RingBoxBool(L"Animated layer", &pCrosshair->bGunplayLayer);
-		// A preset sets the four below it; it reads Custom when they match neither.
 		int iPreset = NeoGunplayCrosshairPresetOf(pCrosshair);
 		const int iPrevPreset = iPreset;
 		NeoUI::RingBox(L"Preset", GUNPLAY_PRESET_LABELS, ARRAYSIZE(GUNPLAY_PRESET_LABELS), &iPreset);
@@ -1726,10 +1787,6 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		{
 			NeoGunplayCrosshairApplyPreset(pCrosshair, iPreset);
 		}
-		NeoUI::RingBoxBool(L"Aim crosshair", &pCrosshair->bGunplayAim);
-		NeoUI::Slider(L"Spread view opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
-		NeoUI::Slider(L"Impact marks", &pCrosshair->flGunplayMarks, 0.0f, 1.0f, 2, 0.05f);
-		NeoUI::Slider(L"Spread ghost", &pCrosshair->flGunplayGhost, 0.0f, 1.0f, 2, 0.05f);
 		NeoUI::Slider(L"Dark outline", &pCrosshair->flGunplayOutline, 0.0f, 1.0f, 2, 0.05f);
 	}
 	NeoUI::EndSection();
@@ -1748,14 +1805,17 @@ void NeoSettings_Gunplay(NeoSettings *ns)
 	NeoUI::RingBoxBool(L"Enable Gunplay", &pGunplay->bEnabled);
 	NeoUI::RingBox(L"Aim style (toggle key: Z)", GUNPLAY_AIM_STYLE_LABELS, ARRAYSIZE(GUNPLAY_AIM_STYLE_LABELS), &pGunplay->iAimStyle);
 	NeoUI::Divider(L"MOVEMENT");
-	NeoUI::Slider(L"Recoil knock", &pGunplay->flKnock, 0.0f, 2.0f, 1, 0.1f);
-	NeoUI::RingBoxBool(L"Gun turns toward its shots", &pGunplay->bSpreadPivot);
-	NeoUI::Slider(L"Animation crossfade (s)", &pGunplay->flAnimBlend, 0.0f, 1.0f, 2, 0.05f);
+	int iMotion = NeoGunplayMotionPresetOf(pGunplay);
+	const int iPrevMotion = iMotion;
+	NeoUI::RingBox(L"Gun motion", GUNPLAY_MOTION_LABELS, ARRAYSIZE(GUNPLAY_MOTION_LABELS), &iMotion);
+	if (iMotion != iPrevMotion && iMotion != GUNPLAY_MOTION_CUSTOM)
+	{
+		pGunplay->flKnock = GUNPLAY_MOTIONS[iMotion - GUNPLAY_MOTION_FULL].flKnock;
+		pGunplay->bSpreadPivot = GUNPLAY_MOTIONS[iMotion - GUNPLAY_MOTION_FULL].bPivot;
+	}
 	NeoUI::Divider(L"SIGHTS");
 	NeoUI::Slider(L"Red dot afterimage", &pGunplay->flDotTrail, 0.0f, 1.0f, 2, 0.05f);
 	NeoUI::RingBox(L"Sight ghost", GUNPLAY_SIGHT_GHOST_LABELS, ARRAYSIZE(GUNPLAY_SIGHT_GHOST_LABELS), &pGunplay->iSightGhost);
-	NeoUI::Divider(L"HUD");
-	NeoUI::RingBoxBool(L"HUD boot animation", &pGunplay->bHudBoot);
 }
 
 static const wchar_t *IFF_LABELS[] = {
@@ -1786,6 +1846,7 @@ void NeoSettings_HUD(NeoSettings *ns)
 	NeoSettings::HUD *pHud = &ns->hud;
 	NeoUI::Divider(L"MISCELLANEOUS");
 	NeoUI::RingBoxBool(L"Classic squad list", &pHud->bShowSquadList);
+	NeoUI::RingBoxBool(L"HUD boot animation", &pHud->bHudBoot);
 	NeoUI::RingBox(L"Health display mode", HEALTHMODE_LABELS, pHud->iHealthMode >= 2 ? ARRAYSIZE(HEALTHMODE_LABELS) : 2, &pHud->iHealthMode);
 	NeoUI::RingBox(L"Objective verbosity", OBJVERBOSITY_LABELS, ARRAYSIZE(OBJVERBOSITY_LABELS), &pHud->iObjVerbosity);
 	NeoUI::RingBoxBool(L"Show hints", &pHud->bShowHints);

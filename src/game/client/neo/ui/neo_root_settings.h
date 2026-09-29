@@ -186,6 +186,11 @@ struct NeoSettings
 		float flGunplayLayerAlpha;
 		float flGunplayMarks;
 		float flGunplayGhost;
+		// The crosshair's motion: set by its presets, not menu rows.
+		float flGunplayAimShare;
+		float flGunplayParallax;
+		float flGunplayGhostPop;
+		float flGunplayScramble;
 		float flGunplayOutline;
 
 		// Textures
@@ -208,13 +213,13 @@ struct NeoSettings
 		float flAnimBlend;
 		float flDotTrail;
 		int iSightGhost;
-		bool bHudBoot;
 	};
 
 	struct HUD
 	{
 		// Miscellaneous
 		bool bShowSquadList;
+		bool bHudBoot;			// neo_hud_boot.h: its own thing, not part of Enable Gunplay
 		int iHealthMode;
 		int iIFFVerbosity;
 		bool bIFFHealthbars;
@@ -293,6 +298,10 @@ struct NeoSettings
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_alpha);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_marks);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_ghost);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_aim_share);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_parallax);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_ghost_pop);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_scramble);
 		CONVARREF_DEF(cl_neo_gunplay_outline);
 		CONVARREF_DEF(cl_neo_lean_automatic);
 		CONVARREF_DEF(cl_neo_squad_hud_original);

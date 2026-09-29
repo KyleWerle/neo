@@ -12,8 +12,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_hud_boot("cl_neo_hud_boot", "1", FCVAR_ARCHIVE,
-	"With Enable Gunplay: HUD panels boot when they come up (a scan reveals them, a loading ring, a tech line, a"
+ConVar cl_neo_hud_boot("cl_neo_hud_boot", "0", FCVAR_ARCHIVE,
+	"HUD panels boot when they come up (a scan reveals them, a loading ring, a tech line, a"
 	" cellular automaton), then clear.", true, 0, true, 1);
 ConVar cl_neo_hud_boot_time("cl_neo_hud_boot_time", "0.8", FCVAR_ARCHIVE,
 	"Seconds a HUD panel's boot takes.", true, 0.2f, true, 3);
@@ -112,7 +112,8 @@ void NeoHudBootPaint(vgui::Panel *pPanel, NeoHudBootState &state)
 {
 	const float now = gpGlobals->realtime;
 	WatchSpawn(now);
-	if (!pPanel || !NeoGunplayEnabled() || !cl_neo_hud_boot.GetBool())
+	// Its own opt-in, apart from Enable Gunplay (Kyle: a separate update path).
+	if (!pPanel || !cl_neo_hud_boot.GetBool())
 	{
 		state.lastPaint = now;
 		return;

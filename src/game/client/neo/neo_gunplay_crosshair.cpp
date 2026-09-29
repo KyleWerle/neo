@@ -30,6 +30,8 @@ ConVar cl_neo_gunplay_crosshair_alpha("cl_neo_gunplay_crosshair_alpha", "1", FCV
 ConVar cl_neo_gunplay_crosshair_parallax("cl_neo_gunplay_crosshair_parallax", "1", FCVAR_ARCHIVE,
 	"How much the layer's parts near the gun move with its knock and pivot against your crosshair.",
 	true, 0, true, 3);
+ConVar cl_neo_gunplay_crosshair_scramble("cl_neo_gunplay_crosshair_scramble", "1", FCVAR_ARCHIVE,
+	"How much each shot scrambles the layer (a jitter and a flicker); 0 = none (the Calm preset).", true, 0, true, 1);
 ConVar cl_neo_gunplay_crosshair_debug("cl_neo_gunplay_crosshair_debug", "0", FCVAR_NONE,
 	"Debug: on each shot, print the time since the last one and how ready the layer showed the gun just before it"
 	" (1.00 when the layer's readiness matches the gun).");
@@ -324,7 +326,8 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 
 	// A shot scrambles it: a jitter and a flicker, as the sight ghost's; less on fast guns, whose shots come too
 	// often for it to be anything but noise.
-	frame.scramble = Max(0.0f, 1.0f - frame.sinceShot / SHOT_TIME) * Min(1.0f, frame.cycle / SCRAMBLE_CYCLE);
+	frame.scramble = Max(0.0f, 1.0f - frame.sinceShot / SHOT_TIME) * Min(1.0f, frame.cycle / SCRAMBLE_CYCLE)
+		* cl_neo_gunplay_crosshair_scramble.GetFloat();
 	frame.jitter.Init(0.0f, 0.0f);
 	if (frame.scramble > 0.0f)
 	{
