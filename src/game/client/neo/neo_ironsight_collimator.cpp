@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_collimator.h"
 #include "neo_ironsight_lens.h"
+#include "neo_ironsight_dot_trail.h"
 #include "neo_ironsights.h"
 #include "neo_predicted_viewmodel.h"
 #include "c_neo_player.h"
@@ -237,6 +238,10 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 		floating = PaneUV(pane, crossing);
 		// Fading out as it reaches the edge of the area, gone past it.
 		dotAlpha = alpha * NeoSmoothStep(InsideBy(floating, pOutline, points, lengthU, lengthV) / radius);
+		if (dotAlpha > 0.0f)
+		{
+			NeoIronsightRecordDotTrail(axis, radius / Max(crossing.DistTo(eye), 0.001f), dotAlpha);
+		}
 	}
 
 	CMatRenderContextPtr pRenderContext(materials);

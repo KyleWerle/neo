@@ -35,6 +35,7 @@
 #include "neo_ironsights.h"
 #include "neo/neo_ironsight_augment.h"
 #include "neo/neo_ironsight_sight_ghost.h"
+#include "neo/neo_ironsight_dot_trail.h"
 
 #endif
 
@@ -587,6 +588,7 @@ void CHudCrosshair::Paint( void )
 	if (!bCrosshairHiddenByRules)
 	{
 		NeoIronsightPaintSightGhost(crh->color);
+		NeoIronsightPaintDotTrail();
 	}
 
 	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.

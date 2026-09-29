@@ -1660,6 +1660,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_ironsight_augment.h
     neo/neo_ironsight_collimator.cpp
     neo/neo_ironsight_collimator.h
+    neo/neo_ironsight_dot_trail.cpp
+    neo/neo_ironsight_dot_trail.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_lens.cpp
