@@ -14,6 +14,10 @@ class Color;
 // plain cross in its place (those original shapes are what the layer echoes around it); a Custom one stays.
 bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairStyle);
 
+// Whether the layer draws for this weapon at all (Enable Gunplay, cl_neo_gunplay_crosshair, a firearm).
+bool NeoGunplayCrosshairLayerOn(C_NEOBaseCombatWeapon *pWeapon);
+
 // Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the small
-// cross too (see NeoGunplayReplacesCrosshair).
-void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre);
+// cross too (see NeoGunplayReplacesCrosshair). spreadScale: the spread as seen through a zoom (the MPN45's window).
+void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
+	float spreadScale = 1.0f);

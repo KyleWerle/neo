@@ -3,6 +3,7 @@
 #include "neo_ironsight_profile.h"
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
+#include "neo_gunplay_crosshair.h"
 #include "neo_crosshair.h"
 #include "c_neo_player.h"
 #include "neo_player_shared.h"
@@ -263,7 +264,15 @@ bool NeoIronsightPaintAugment(C_NEOBaseCombatWeapon *pWeapon, const Color &color
 		vgui::surface()->DrawPrintText(text, V_wcslen(text));
 	}
 
-	// The crosshair: a clear centre dot, and a dotted ring for the spread as seen at the window's zoom.
+	// The crosshair: the gunplay layer's (the SMG family's box, a small cross at the centre), the spread as seen at
+	// the window's zoom. Faded in with the window.
+	if (NeoGunplayCrosshairLayerOn(pWeapon))
+	{
+		const Color faded(color.r(), color.g(), color.b(), RoundFloatToInt(color.a() * fade));
+		NeoGunplayPaintCrosshairLayer(pWeapon, faded, x, y, true, pData->m_flIronAugmentMagnification);
+		return true;
+	}
+	// Without the layer: a clear centre dot, and a dotted ring for the spread.
 	const float ring = Max(3.0f, HalfInaccuracyConeInScreenPixels(pWeapon, screenWide / 2) * pData->m_flIronAugmentMagnification);
 	constexpr int RING_DOTS = 48;
 	vgui::IntRect dots[RING_DOTS];

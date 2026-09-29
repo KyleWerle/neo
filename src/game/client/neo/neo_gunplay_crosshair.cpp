@@ -23,11 +23,15 @@ ConVar cl_neo_gunplay_crosshair_alpha("cl_neo_gunplay_crosshair_alpha", "0.8", F
 ConVar cl_neo_gunplay_crosshair_parallax("cl_neo_gunplay_crosshair_parallax", "1", FCVAR_ARCHIVE,
 	"How much the layer's parts near the gun move with its knock and pivot against your crosshair.",
 	true, 0, true, 3);
+ConVar cl_neo_gunplay_crosshair_centre("cl_neo_gunplay_crosshair_centre", "0", FCVAR_ARCHIVE,
+	"What marks the centre in place of the Default or Alt crosshair: 0 = nothing (the layer's moving parts show the"
+	" aim), 1 = a tiny square, 2 = a small cross. A Custom crosshair is always drawn as it is.", true, 0, true, 2);
 ConVar cl_neo_gunplay_crosshair_family("cl_neo_gunplay_crosshair_family", "-1", FCVAR_NONE,
 	"Debug: draw every gun's crosshair as this family (0 rifle, 1 SMG, 2 MG, 3 shotgun, 4 pistol, 5 scoped;"
 	" -1 = each gun its own).", true, -1, true, NEO_CROSSHAIR_FAMILY__TOTAL - 1);
 
 static constexpr float CROSS_ARM = 4.0f;			// the plain centre cross, each arm, at 1080p
+static constexpr float SQUARE_HALF = 1.5f;			// the tiny centre square
 static constexpr float SPREAD_TIME = 0.04f;		// the spread's ease (a critically damped spring's time constant)
 static constexpr float SHOT_POP = 900.0f;			// each shot kicks the spread's spring outward, pixels/s at 1080p
 static constexpr float AIM_TIME = 0.15f;			// hip to aimed look
@@ -144,12 +148,18 @@ static bool LayerShown(C_NEOBaseCombatWeapon *pWeapon)
 	return NeoGunplayEnabled() && cl_neo_gunplay_crosshair.GetBool() && pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_FIREARM);
 }
 
+bool NeoGunplayCrosshairLayerOn(C_NEOBaseCombatWeapon *pWeapon)
+{
+	return LayerShown(pWeapon);
+}
+
 bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairStyle)
 {
 	return LayerShown(pWeapon) && (crosshairStyle == CROSSHAIR_STYLE_DEFAULT || crosshairStyle == CROSSHAIR_STYLE_ALT_B);
 }
 
-void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre)
+void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
+	float spreadScale)
 {
 	auto *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
 	if (!LayerShown(pWeapon) || !pPlayer)
@@ -168,7 +178,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	{
 		dt = 0.0f;
 		s_layer.bootStart = now;
-		s_layer.spread = static_cast<float>(HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2));
+		s_layer.spread = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2) * spreadScale;
 		s_layer.spreadVelocity = 0.0f;
 		s_layer.aim = pPlayer->IsInAim() ? 1.0f : 0.0f;
 		s_layer.pWeapon = pWeapon;
@@ -184,7 +194,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	s_layer.lastFrame = gpGlobals->framecount;
 
 	// The spread's edge, eased (it steps shot to shot), and the hip-to-aimed look.
-	const float target = static_cast<float>(HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2));
+	const float target = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2) * spreadScale;
 	// Each shot pops it out past the spread a moment, springing back: the layer shifts with every shot.
 	if (bShot)
 	{
@@ -219,13 +229,25 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.bBoot = bBoot;
 	frame.bShot = bShot;
 
-	// The plain centre cross in place of the Default or Alt crosshair: steady, full strength, traced in with the rest.
-	if (bCentre)
+	// The centre mark in place of the Default or Alt crosshair (cl_neo_gunplay_crosshair_centre): steady, full strength, traced in with the rest.
+	const int centreStyle = cl_neo_gunplay_crosshair_centre.GetInt();
+	if (bCentre && centreStyle == 2)
 	{
 		NeoGhostBegin(color, color.a());
 		const float arm = CROSS_ARM * frame.s;
 		NeoGhostStroke(frame.pen, frame.centre - Vector2D(arm, 0.0f), frame.centre + Vector2D(arm, 0.0f), NEO_GHOST_MEDIUM);
 		NeoGhostStroke(frame.pen, frame.centre - Vector2D(0.0f, arm), frame.centre + Vector2D(0.0f, arm), NEO_GHOST_MEDIUM);
+	}
+	else if (bCentre && centreStyle == 1)
+	{
+		NeoGhostBegin(color, color.a());
+		const float half = SQUARE_HALF * frame.s;
+		const Vector2D corners[4] = { frame.centre + Vector2D(-half, -half), frame.centre + Vector2D(half, -half),
+			frame.centre + Vector2D(half, half), frame.centre + Vector2D(-half, half) };
+		for (int c = 0; c < 4; ++c)
+		{
+			NeoGhostStroke(frame.pen, corners[c], corners[(c + 1) % 4], NEO_GHOST_LIGHT);
+		}
 	}
 
 	// Aimed: the projected shooting space, behind the rest (stubbed for now, see neo_gunplay_tunnel.h).
