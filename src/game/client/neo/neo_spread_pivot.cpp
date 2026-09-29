@@ -3,6 +3,7 @@
 #include "neo_ironsight_lens.h"
 #include "neo_viewmodel_recoil.h"
 #include "neo_gunplay_marks.h"
+#include "neo_gunplay_shots.h"
 #include "neo_ironsights.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
@@ -98,6 +99,14 @@ void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, con
 	s_pivot.lastShotEyes = pOwner ? pOwner->EyeAngles() : QAngle(0.0f, 0.0f, 0.0f);
 	// The same shot knocks the arms (cl_neo_viewmodel_recoil), toward where it went within its cone.
 	NeoViewmodelRecoilShot(pWeapon, Vector2D(offset.x / Max(spread.x, 0.0001f), offset.y / Max(spread.y, 0.0001f)));
+}
+
+void NeoSpreadPivotWatchedShot(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, const Vector &direction)
+{
+	s_pivot.pWeapon = pWeapon;
+	s_pivot.lastShot = direction;
+	s_pivot.lastShotTime = gpGlobals->curtime;
+	s_pivot.lastShotEyes = pOwner->EyeAngles();
 }
 
 static NeoSpreadPattern s_pattern;
@@ -212,7 +221,8 @@ static void DrawDebugMarker(C_BasePlayer *pOwner, const Vector2D &offset)
 
 void NeoSpreadPivotApply(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, QAngle &angles)
 {
-	if (!pWeapon || !pOwner || !pOwner->IsLocalPlayer())
+	// The local player's gun, or a watched player's in first person (their shots from their impacts).
+	if (!pWeapon || !pOwner || pOwner != NeoGunplayWatchShots().pPlayer)
 	{
 		return;
 	}

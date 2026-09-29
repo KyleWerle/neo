@@ -1673,6 +1673,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_marks.h
     neo/neo_gunplay_spread_ghost.cpp
     neo/neo_gunplay_spread_ghost.h
+    neo/neo_gunplay_spectator_hits.cpp
+    neo/neo_gunplay_spectator_hits.h
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp
     neo/neo_crosshair_mg.cpp

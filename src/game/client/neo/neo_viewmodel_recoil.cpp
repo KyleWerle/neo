@@ -5,6 +5,8 @@
 #include "neo_ironsights.h"
 #include "neo_ironsight_optic.h"
 #include "neo_gunplay_shots.h"
+#include "neo_gunplay_spectator_hits.h"
+#include "neo_spread_pivot.h"
 #include "prediction.h"
 #include "vstdlib/random.h"
 
@@ -227,30 +229,104 @@ void NeoViewmodelRecoilPelletShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D
 	KnockShot(pWeapon, conePosition, true);
 }
 
-// A player watched in first person: their shots aren't predicted here, and their seed isn't known, so each shot
-// (the shot watcher, by their muzzle flash) knocks toward a random point of the cone; a new view player starts
-// still.
+// A watched shot's knock and turn toward where it went: its hits' directions (one, or a shotgun's pellets), from
+// the watched player's aim. The pellets' centre is scaled up by the square root of their count, as the local
+// player's (NeoSpreadPivotPellets).
+static void KnockToward(C_NEO_Player *pOwner, C_NEOBaseCombatWeapon *pWeapon, const Vector *pDirections, int count,
+	bool bPellets)
+{
+	Vector forward, right, up;
+	AngleVectors(pOwner->EyeAngles(), &forward, &right, &up);
+	const Vector &spread = pWeapon->GetBulletSpread();
+	Vector2D centre(0.0f, 0.0f);
+	Vector mean(0.0f, 0.0f, 0.0f);
+	for (int i = 0; i < count; ++i)
+	{
+		const float ahead = Max(pDirections[i].Dot(forward), 0.1f);
+		centre += Vector2D(pDirections[i].Dot(right) / ahead, pDirections[i].Dot(up) / ahead) / count;
+		mean += pDirections[i] / count;
+	}
+	Vector2D knock(centre.x / Max(spread.x, 0.0001f), centre.y / Max(spread.y, 0.0001f));
+	if (bPellets)
+	{
+		knock *= sqrtf(static_cast<float>(count));
+	}
+	const float length = knock.Length();
+	if (length > 1.0f)
+	{
+		knock /= length;
+	}
+	KnockShot(pWeapon, knock, bPellets);
+	NeoSpreadPivotWatchedShot(pWeapon, pOwner, mean.Normalized());
+}
+
+// A player watched in first person: their shots aren't predicted here and their seed isn't known, but the server's
+// impacts show where they hit (neo_gunplay_spectator_hits.h). Each shot (the shot watcher, by their muzzle flash)
+// waits a moment for its hits and knocks toward them; one that hit nothing (the sky) knocks toward a random point
+// of the cone. A new view player starts still.
 static void WatchSpectatedShots()
 {
+	static constexpr float HIT_WAIT = 0.08f;	// seconds a shot waits for its impacts
+	static constexpr int MAX_PENDING = 3;
 	static int s_iCount = 0;
+	static int s_iPending = 0;
+	static float s_flPendingSince = 0.0f;
 	static float s_flViewChanged = -1.0f;
 	const NeoGunplayShots &shots = NeoGunplayWatchShots();
 	if (shots.viewChanged != s_flViewChanged)
 	{
 		s_flViewChanged = shots.viewChanged;
 		s_iCount = shots.count;
+		s_iPending = 0;
 		s_recoil.rotation = s_recoil.tilt = s_recoil.linear = Spring3();
 		return;
 	}
-	if (shots.bSpectating && shots.pWeapon && shots.count != s_iCount)
+	if (!shots.bSpectating || !shots.pWeapon || !shots.pPlayer)
 	{
-		const bool bPellets = (shots.pWeapon->GetNeoWepBits() & (NEO_WEP_SUPA7 | NEO_WEP_AA13)) != 0;
-		for (int i = s_iCount; i != shots.count && i - s_iCount < 3; ++i)
+		s_iCount = shots.count;
+		s_iPending = 0;
+		return;
+	}
+	if (shots.count != s_iCount)
+	{
+		if (s_iPending == 0)
+		{
+			s_flPendingSince = gpGlobals->realtime;
+		}
+		s_iPending = Min(s_iPending + (shots.count - s_iCount), MAX_PENDING);
+		s_iCount = shots.count;
+	}
+	if (s_iPending <= 0)
+	{
+		return;
+	}
+	const bool bPellets = (shots.pWeapon->GetNeoWepBits() & (NEO_WEP_SUPA7 | NEO_WEP_AA13)) != 0;
+	Vector directions[NeoSpreadPattern::MAX_PELLETS];
+	const int hits = NeoGunplayTakeSpectatorHits(directions, ARRAYSIZE(directions));
+	if (hits > 0)
+	{
+		if (bPellets)
+		{
+			KnockToward(shots.pPlayer, shots.pWeapon, directions, hits, true);
+		}
+		else
+		{
+			// A hit a shot, oldest first (the rest of the pending shots hit nothing we heard).
+			for (int i = 0; i < Min(hits, s_iPending); ++i)
+			{
+				KnockToward(shots.pPlayer, shots.pWeapon, &directions[i], 1, false);
+			}
+		}
+		s_iPending = 0;
+	}
+	else if (gpGlobals->realtime - s_flPendingSince > HIT_WAIT)
+	{
+		for (int i = 0; i < s_iPending; ++i)
 		{
 			RandomKnock(shots.pWeapon, bPellets);
 		}
+		s_iPending = 0;
 	}
-	s_iCount = shots.count;
 }
 
 void NeoViewmodelRecoilApply(C_BasePlayer *pOwner, const QAngle &eyeAngles, float ironsightBlend, Vector &origin,

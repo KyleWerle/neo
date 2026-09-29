@@ -11,6 +11,9 @@
 #include "fx_sparks.h"
 
 #include "tier0/vprof.h"
+#ifdef NEO
+#include "neo/neo_gunplay_spectator_hits.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -92,6 +95,10 @@ void ImpactCallback( const CEffectData &data )
 	int iMaterial, iDamageType, iHitbox;
 	short nSurfaceProp;
 	C_BaseEntity *pEntity = ParseImpactData( data, &vecOrigin, &vecStart, &vecShotDir, nSurfaceProp, iMaterial, iDamageType, iHitbox );
+#ifdef NEO
+	// Gunplay, spectating in first person: the watched player's hits (walls and players), for their marks and knock.
+	NeoGunplaySpectatorImpact( vecStart, vecOrigin );
+#endif
 
 	if ( !pEntity )
 	{

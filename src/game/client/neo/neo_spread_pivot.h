@@ -26,6 +26,10 @@ void NeoSpreadPivotShot(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, con
 void NeoSpreadPivotPellets(C_NEOBaseCombatWeapon *pWeapon, const CUserCmd &cmd, const Vector &aim, const Vector &spread,
 	int pellets);
 
+// A watched player's shot (spectating in first person): where it went, as a direction from where it left (their
+// impacts, neo_gunplay_spectator_hits.h). Their gun turns toward it as the local player's does.
+void NeoSpreadPivotWatchedShot(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, const Vector &direction);
+
 // The last shotgun shot's pattern, for the crosshair's ring: each pellet's place in the cone (about -1..1 each way).
 struct NeoSpreadPattern
 {

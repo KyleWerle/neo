@@ -209,6 +209,11 @@ void NeoGunplayMarkPellets(C_NEOBaseCombatWeapon *pWeapon, const Vector *pDirect
 	}
 }
 
+void NeoGunplayMarkHit(C_NEOBaseCombatWeapon *pWeapon, const Vector &point)
+{
+	NeoGunplayMarks::AddMark(point, NeoCrosshairFamilyOf(pWeapon), false);
+}
+
 void NeoGunplayPaintMarks(const NeoCrosshairFrame &frame)
 {
 	using namespace NeoGunplayMarks;
@@ -220,7 +225,7 @@ void NeoGunplayPaintMarks(const NeoCrosshairFrame &frame)
 		s_viewChanged = shots.viewChanged;
 		s_iCount = 0;
 	}
-	if (opacity <= 0.0f || s_iCount == 0 || shots.bSpectating)
+	if (opacity <= 0.0f || s_iCount == 0)
 	{
 		return;
 	}
