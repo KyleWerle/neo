@@ -16,6 +16,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// The server's say (Kyle, 2026-09-29): everything is presentation, so players on one server play the same game
+// whatever they pick, but a server can lock it down, and a few readouts show what stock doesn't (the range).
+ConVar sv_neo_gunplay("sv_neo_gunplay", "2", FCVAR_REPLICATED | FCVAR_NOTIFY,
+	"Gunplay on this server: 0 = off for everyone; 1 = players choose, without the readouts stock doesn't have (the"
+	" range); 2 = players choose (Enable Gunplay); 3 = on for everyone.", true, 0, true, 3);
+
 #ifdef CLIENT_DLL
 // Enable Gunplay (Settings > General): everything of ours, on or off as one. Off, the game is exactly as stock:
 // the knock, the spread pivot, the animation crossfade and the sights all stand down, whatever their own settings.
@@ -28,7 +34,22 @@ ConVar cl_neo_ironsights("cl_neo_ironsights", "1", FCVAR_ARCHIVE,
 
 bool NeoGunplayEnabled()
 {
-	return cl_neo_gunplay.GetBool();
+	switch (sv_neo_gunplay.GetInt())
+	{
+	case 0:		return false;
+	case 3:		return true;
+	default:	return cl_neo_gunplay.GetBool();
+	}
+}
+
+bool NeoGunplayReadoutsAllowed()
+{
+	return sv_neo_gunplay.GetInt() != 1;
+}
+
+int NeoGunplayServerMode()
+{
+	return sv_neo_gunplay.GetInt();
 }
 
 ConVar cl_neo_gunplay_style_time("cl_neo_gunplay_style_time", "0.35", FCVAR_ARCHIVE,
@@ -43,7 +64,7 @@ static struct
 float NeoIronsightStyleBlend()
 {
 #ifdef CLIENT_DLL
-	const float target = (cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool()) ? 1.0f : 0.0f;
+	const float target = (NeoGunplayEnabled() && cl_neo_ironsights.GetBool()) ? 1.0f : 0.0f;
 	const float now = gpGlobals->realtime;
 	if (s_style.progress < 0.0f)
 	{
@@ -70,7 +91,11 @@ float NeoIronsightStyleBlend()
 CON_COMMAND(cl_neo_ironsights_toggle, "With Enable Gunplay: switch between the ADS style and the standard NT aim.")
 {
 	char text[64];
-	if (!cl_neo_gunplay.GetBool())
+	if (sv_neo_gunplay.GetInt() == 0)
+	{
+		V_strncpy(text, "Gunplay is off on this server", sizeof(text));
+	}
+	else if (!NeoGunplayEnabled())
 	{
 		V_strncpy(text, "Enable Gunplay in Options first", sizeof(text));
 	}

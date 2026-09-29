@@ -18,8 +18,13 @@ struct NeoAimPose
 };
 
 #ifdef CLIENT_DLL
-// Enable Gunplay (cl_neo_gunplay): without it every gunplay feature stands down and the game is exactly as stock.
+// Enable Gunplay (cl_neo_gunplay), as the server allows (sv_neo_gunplay: 0 off for everyone, 1 and 2 the player's
+// choice, 3 on for everyone): without it every gunplay feature stands down and the game is exactly as stock.
 bool NeoGunplayEnabled();
+// Whether the readouts stock doesn't have (the range) may show (sv_neo_gunplay isn't 1).
+bool NeoGunplayReadoutsAllowed();
+// sv_neo_gunplay, for the menu.
+int NeoGunplayServerMode();
 #endif
 
 // How far into the ADS style the gunplay is, 0 (standard, or no gunplay) to 1, eased over

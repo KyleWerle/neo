@@ -39,7 +39,7 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 	using namespace NeoCrosshairScoped;
 	const float s = frame.s;
 	const float now = gpGlobals->realtime;
-	if (frame.bBoot || now - s_scoped.lastTrace >= RANGE_INTERVAL)
+	if (NeoGunplayReadoutsAllowed() && (frame.bBoot || now - s_scoped.lastTrace >= RANGE_INTERVAL))
 	{
 		s_scoped.lastTrace = now;
 		trace_t trace;
@@ -69,7 +69,11 @@ void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame)
 	NeoGhostBegin(frame.color, frame.Alpha(frame.ready >= 1.0f ? 1.0f : 0.9f));
 	NeoGhostStroke(frame.pen, mark, mark + Vector2D(BOLT_MARK * s, 0.0f), NEO_GHOST_HEAVY);
 
-	// The range, beside the frame's right edge.
+	// The range, beside the frame's right edge (where the server allows readouts stock doesn't have).
+	if (!NeoGunplayReadoutsAllowed())
+	{
+		return;
+	}
 	wchar_t text[16];
 	if (s_scoped.range > 0.0f)
 	{

@@ -248,9 +248,14 @@ bool NeoIronsightPaintAugment(C_NEOBaseCombatWeapon *pWeapon, const Color &color
 	if (s_font != vgui::INVALID_FONT)
 	{
 		const float spread = (pWeapon->GetNeoWepBits() & NEO_WEP_FIREARM) ? pWeapon->GetBulletSpread().x : 0.0f;
-		const float range = RangeMetres(pPlayer);
+		// The range only where the server allows readouts stock doesn't have (sv_neo_gunplay).
+		const float range = NeoGunplayReadoutsAllowed() ? RangeMetres(pPlayer) : 0.0f;
 		wchar_t text[96];
-		if (range > 0.0f)
+		if (!NeoGunplayReadoutsAllowed())
+		{
+			V_snwprintf(text, ARRAYSIZE(text), L"AUG %.1fx   SPR %.2f°", pData->m_flIronAugmentMagnification, RAD2DEG(atanf(spread)));
+		}
+		else if (range > 0.0f)
 		{
 			V_snwprintf(text, ARRAYSIZE(text), L"AUG %.1fx   RNG %.1f m   SPR %.2f°", pData->m_flIronAugmentMagnification, range, RAD2DEG(atanf(spread)));
 		}
