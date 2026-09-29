@@ -115,3 +115,12 @@ void NeoCrosshairAimPistol(const NeoCrosshairFrame &frame, const Vector2D &at, b
 	NeoGhostStroke(frame.pen, smallTip + Vector2D(-half, drop), smallTip, NEO_GHOST_MEDIUM);
 	NeoGhostStroke(frame.pen, smallTip, smallTip + Vector2D(half, drop), NEO_GHOST_MEDIUM);
 }
+
+float NeoCrosshairReachPistol(const NeoCrosshairFrame &frame, float spread)
+{
+	using namespace NeoCrosshairPistol;
+	const float s = frame.s, edge = spread + GAP * s;
+	const float below = edge + (CHEVRON_GAP + CHEVRON_DROP) * s;
+	const float side = edge + ((frame.pWeapon->GetNeoWepBits() & NEO_WEP_KYLA) ? CYLINDER_GAP + 2.0f * CYLINDER_RADIUS : TICK) * s;
+	return Max(below, side);
+}

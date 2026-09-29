@@ -129,3 +129,9 @@ void NeoCrosshairAimMg(const NeoCrosshairFrame &frame, const Vector2D &at, bool 
 		NeoGhostStroke(frame.pen, bottom, bottom - Vector2D(side * foot, 0.0f), NEO_GHOST_MEDIUM);
 	}
 }
+
+float NeoCrosshairReachMg(const NeoCrosshairFrame &frame, float spread)
+{
+	using namespace NeoCrosshairMg;
+	return spread + (GAP + Lerp(frame.aim, HIP_RAIL, AIM_RAIL)) * frame.s;
+}

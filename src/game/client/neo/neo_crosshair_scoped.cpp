@@ -112,3 +112,12 @@ void NeoCrosshairAimScoped(const NeoCrosshairFrame &frame, const Vector2D &at, b
 		NeoCrosshairDot(frame, at + corner * inner, NEO_GHOST_HEAVY);
 	}
 }
+
+float NeoCrosshairReachScoped(const NeoCrosshairFrame &frame, float spread)
+{
+	using namespace NeoCrosshairScoped;
+	const float s = frame.s, half = spread + GAP * s;
+	// The frame's corners, the bolt bar under it, the range readout beside it (its text about 28 px wide).
+	const float readout = NeoGunplayReadoutsAllowed() ? half + (READOUT_GAP + 28.0f) * s : 0.0f;
+	return Max(Max(half * 1.41421356f, half + (BOLT_GAP + 2.0f) * s), readout);
+}

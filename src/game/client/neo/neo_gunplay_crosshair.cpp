@@ -4,6 +4,7 @@
 #include "neo_gunplay_aim.h"
 #include "neo_gunplay_marks.h"
 #include "neo_gunplay_spread_ghost.h"
+#include "neo_quickinfo.h"
 #include "neo_spread_pivot.h"
 #include "neo_gunplay_tunnel.h"
 #include "neo_gunplay_shots.h"
@@ -50,6 +51,80 @@ static constexpr float TUNNEL_OPACITY = 0.6f;		// of the layer's
 static constexpr float SHOT_TIME = 0.08f;			// a shot scrambles the layer this long
 static constexpr float FADE_HIDDEN = 0.05f;		// a screen fade darker than this hides the layer (it boots after)
 static constexpr float SCRAMBLE_CYCLE = 0.3f;		// fully on guns this slow; less on faster ones (no constant flicker)
+
+static constexpr float DEADZONE_KNOCK = 10.0f;	// with the quick info's deadzone, the knock's offset is capped here
+static constexpr float OVERFLOW_STEP = 3.0f;		// the overflow cue's dots, spaced out past the clamped parts
+
+// How far a family reaches for a spread, and how much it rides the gun's turn (the MG's rails, more).
+static float Reach(const NeoCrosshairFrame &frame, NeoCrosshairFamily family, float spread)
+{
+	switch (family)
+	{
+	case NEO_CROSSHAIR_SMG:		return NeoCrosshairReachSmg(frame, spread);
+	case NEO_CROSSHAIR_MG:		return NeoCrosshairReachMg(frame, spread);
+	case NEO_CROSSHAIR_SHOTGUN:	return NeoCrosshairReachShotgun(frame, spread);
+	case NEO_CROSSHAIR_PISTOL:	return NeoCrosshairReachPistol(frame, spread);
+	case NEO_CROSSHAIR_SCOPED:	return NeoCrosshairReachScoped(frame, spread);
+	default:					return NeoCrosshairReachRifle(frame, spread);
+	}
+}
+static float Parallax(NeoCrosshairFamily family)
+{
+	return (family == NEO_CROSSHAIR_MG) ? 1.4f : 1.0f;
+}
+
+// The quick info's deadzone: nothing of the layer leaves it. The knock's offset is capped, the spread view (and
+// its ghost) clamp to the largest spread whose parts still fit, and bOverflow marks a real spread bigger than that.
+static void ClampToDeadzone(NeoCrosshairFrame &frame, NeoCrosshairFamily family, float deadzone)
+{
+	const float parallax = Parallax(family);
+	float offset = frame.deviation.Length() * parallax;
+	const float maxOffset = DEADZONE_KNOCK * frame.s;
+	if (offset > maxOffset)
+	{
+		frame.deviation *= maxOffset / offset;
+		offset = maxOffset;
+	}
+	float lo = 0.0f, hi = deadzone;
+	for (int i = 0; i < 20; ++i)
+	{
+		const float mid = (lo + hi) * 0.5f;
+		((Reach(frame, family, mid) + offset <= deadzone) ? lo : hi) = mid;
+	}
+	frame.bOverflow = frame.spreadExact > lo + 0.5f;
+	frame.spread = Min(frame.spread, lo);
+	frame.spreadExact = Min(frame.spreadExact, deadzone - 2.0f * frame.s);
+	frame.reach = Reach(frame, family, frame.spread);
+}
+
+// Past the deadzone: two small warning dots outward beyond the clamped parts, on the family's own directions (the
+// SMG's box corners, the scoped frame's diagonals, the axes for the rest).
+static void PaintOverflow(const NeoCrosshairFrame &frame, NeoCrosshairFamily family)
+{
+	static const Color s_warn(255, 181, 71, 255);
+	const Vector2D near = frame.centre + frame.deviation * Parallax(family);
+	NeoGhostBegin(s_warn, frame.Alpha(1.0f));
+	for (int w = 0; w < 4; ++w)
+	{
+		Vector2D way;
+		if (family == NEO_CROSSHAIR_SMG || family == NEO_CROSSHAIR_SCOPED)
+		{
+			way.Init((w & 1) ? 1.0f : -1.0f, (w & 2) ? 1.0f : -1.0f);
+			if (family == NEO_CROSSHAIR_SCOPED)
+			{
+				way *= 0.70710678f;
+			}
+		}
+		else
+		{
+			way.Init((w == 0) ? -1.0f : (w == 1) ? 1.0f : 0.0f, (w == 2) ? -1.0f : (w == 3) ? 1.0f : 0.0f);
+		}
+		for (int k = 1; k <= 2; ++k)
+		{
+			NeoCrosshairDot(frame, near + way * (frame.reach + k * OVERFLOW_STEP * frame.s), NEO_GHOST_MEDIUM);
+		}
+	}
+}
 
 static struct
 {
@@ -267,6 +342,15 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.spread = s_layer.spread;
 	frame.spreadExact = target;
 	frame.aim = NeoSmoothStep(s_layer.aim);
+	frame.bOverflow = false;
+	frame.reach = 0.0f;
+	const NeoCrosshairFamily family = NeoCrosshairFamilyOf(pWeapon);
+	// With the quick info on (its own setting), nothing of the layer leaves its deadzone. Not in a zoomed window.
+	const float deadzone = (spreadScale == 1.0f) ? NeoQuickInfoDeadzone() * frame.s : 0.0f;
+	if (deadzone > 0.0f)
+	{
+		ClampToDeadzone(frame, family, deadzone);
+	}
 	frame.alpha = cl_neo_gunplay_crosshair_alpha.GetFloat() * visible;
 	frame.sinceBoot = now - s_layer.bootStart;
 	frame.sinceShot = now - s_layer.shotTime;
@@ -338,7 +422,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 
 	// Behind the families: the spread ghost, calm and exact.
 	NeoGunplayPaintSpreadGhost(frame);
-	switch (NeoCrosshairFamilyOf(pWeapon))
+	switch (family)
 	{
 	case NEO_CROSSHAIR_SMG:		NeoCrosshairPaintSmg(frame); break;
 	case NEO_CROSSHAIR_MG:		NeoCrosshairPaintMg(frame); break;
@@ -350,6 +434,10 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	}
 	// Layer 2, the impact marks, then layer 1 on top: the aim crosshair and the bridges to the spread view.
 	NeoGunplayPaintMarks(frame);
+	if (frame.bOverflow)
+	{
+		PaintOverflow(frame, family);
+	}
 	NeoGunplayPaintAim(frame);
 	NeoGhostFlush();
 }

@@ -187,3 +187,10 @@ void NeoCrosshairAimShotgun(const NeoCrosshairFrame &frame, const Vector2D &at, 
 		NeoGhostStroke(frame.pen, b, c, NEO_GHOST_MEDIUM);
 	}
 }
+
+float NeoCrosshairReachShotgun(const NeoCrosshairFrame &frame, float spread)
+{
+	using namespace NeoCrosshairShotgun;
+	// The ring thrown out by a shot's burst (or waiting out at AWAY), or the slug's diamond at its smallest.
+	return Max((spread + GAP * frame.s) * Max(1.0f + BURST_OUT, AWAY), SLUG_MIN * frame.s);
+}

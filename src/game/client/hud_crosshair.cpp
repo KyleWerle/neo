@@ -37,6 +37,7 @@
 #include "neo/neo_ironsight_sight_ghost.h"
 #include "neo/neo_ironsight_dot_trail.h"
 #include "neo/neo_gunplay_crosshair.h"
+#include "neo/neo_quickinfo.h"
 
 #endif
 
@@ -590,6 +591,8 @@ void CHudCrosshair::Paint( void )
 	{
 		NeoIronsightPaintSightGhost(crh->color);
 		NeoIronsightPaintDotTrail();
+		// Quick info around the crosshair (its own setting, Settings > HUD), on the sights too.
+		NeoQuickInfoPaint(pPlayer, crh->color, iX, iY);
 	}
 
 	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.

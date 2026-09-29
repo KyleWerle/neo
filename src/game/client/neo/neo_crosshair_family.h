@@ -39,6 +39,8 @@ struct NeoCrosshairFrame
 	float link;				// 0 to 1: how locked together the layers are (close, spread recovered, gun ready), eased
 	float sinceLock;		// seconds since the layers locked (-1 while not locked)
 	float pixelsPerTangent;	// screen pixels per tangent off the aim (the view's field of view, a window's zoom)
+	bool bOverflow;			// the quick info's deadzone clamped the spread view: the real spread is bigger
+	float reach;			// how far the spread view reaches from its centre, pixels (with the deadzone on)
 	Vector2D jitter;		// this frame's shot scramble
 	float spread;			// the spread cone's edge, eased (and popped by each shot)
 	float spreadExact;		// the spread cone's edge as it is, in pixels (the spread ghost's)
@@ -102,6 +104,16 @@ void NeoCrosshairAimMg(const NeoCrosshairFrame &frame, const Vector2D &at, bool 
 void NeoCrosshairAimShotgun(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
 void NeoCrosshairAimPistol(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
 void NeoCrosshairAimScoped(const NeoCrosshairFrame &frame, const Vector2D &at, bool bGlyph);
+
+// How far each family's spread view reaches from its centre for a spread radius (pixels), from its own sizes: the
+// quick info's deadzone (neo_quickinfo.h) clamps the spread to what fits. The SMG's is its box's half side (its
+// deadzone is a square), the others' a radius.
+float NeoCrosshairReachRifle(const NeoCrosshairFrame &frame, float spread);
+float NeoCrosshairReachSmg(const NeoCrosshairFrame &frame, float spread);
+float NeoCrosshairReachMg(const NeoCrosshairFrame &frame, float spread);
+float NeoCrosshairReachShotgun(const NeoCrosshairFrame &frame, float spread);
+float NeoCrosshairReachPistol(const NeoCrosshairFrame &frame, float spread);
+float NeoCrosshairReachScoped(const NeoCrosshairFrame &frame, float spread);
 
 // A bridge between a docking point on the aim crosshair and one on the spread view: traced in from both ends as
 // the layers link, meeting in the middle when locked; heavy for a moment when they lock.

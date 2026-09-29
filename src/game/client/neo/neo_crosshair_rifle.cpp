@@ -117,3 +117,14 @@ void NeoCrosshairPaintRifle(const NeoCrosshairFrame &frame)
 		NeoGhostStroke(frame.pen, bar, bar + Vector2D(READY_WIDTH * s * frame.ready, 0.0f), NEO_GHOST_MEDIUM);
 	}
 }
+
+float NeoCrosshairReachRifle(const NeoCrosshairFrame &frame, float spread)
+{
+	using namespace NeoCrosshairRifle;
+	const float s = frame.s, edge = spread + GAP * s;
+	const float cap = Lerp(frame.aim, HIP_CAP, AIM_CAP) * s, post = Lerp(frame.aim, HIP_POST, AIM_POST) * s;
+	// Aimed: the magazine ladder above, the readout beside the right cap (its text about 28 px wide).
+	const float ladder = edge + MAX_TICKS * TICK_STEP * s * frame.aim;
+	const float readout = edge + cap + (READOUT_GAP + 28.0f) * s * frame.aim;
+	return Max(Max(edge + Max(cap, post), ladder), readout);
+}

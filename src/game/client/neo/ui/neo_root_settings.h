@@ -220,6 +220,7 @@ struct NeoSettings
 		// Miscellaneous
 		bool bShowSquadList;
 		bool bHudBoot;			// neo_hud_boot.h: its own thing, not part of Enable Gunplay
+		bool bQuickInfo;		// neo_quickinfo.h: its own thing too; replaces the health / therm-optic / aux panel
 		int iHealthMode;
 		int iIFFVerbosity;
 		bool bIFFHealthbars;
@@ -293,6 +294,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_neo_ironsight_dot_trail);
 		CONVARREF_DEF(cl_neo_ironsight_sight_ghost);
 		CONVARREF_DEF(cl_neo_hud_boot);
+		CONVARREF_DEF(cl_neo_hud_quickinfo);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_aim);
 		CONVARREF_DEF(cl_neo_gunplay_crosshair_alpha);

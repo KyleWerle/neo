@@ -14,6 +14,7 @@
 #include "ienginevgui.h"
 
 #include "neo_version_info.h"
+#include "neo/neo_quickinfo.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -248,7 +249,8 @@ void CNEOHud_HTA::DrawNeoHudElement()
 		return;
 	}
 
-	if (cl_neo_hud_hta_enabled.GetBool())
+	// The quick info around the crosshair replaces this panel while it's on.
+	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoOn())
 	{
 		DrawHTA();
 	}
