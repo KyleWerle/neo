@@ -36,6 +36,7 @@
 #include "neo/neo_ironsight_augment.h"
 #include "neo/neo_ironsight_sight_ghost.h"
 #include "neo/neo_ironsight_dot_trail.h"
+#include "neo/neo_gunplay_crosshair.h"
 
 #endif
 
@@ -673,6 +674,8 @@ void CHudCrosshair::Paint( void )
 		{
 			PaintCrosshair(crh, HalfInaccuracyConeInScreenPixels(pWeapon, m_iHalfScreenWidth), iX, iY);
 		}
+		// With Enable Gunplay: ghost linework around the player's crosshair (neo_gunplay_crosshair.h).
+		NeoGunplayPaintCrosshairLayer(pWeapon, crh->color, iX, iY);
 	}
 
 	if (bIsScopedWep && pPlayer->m_bInAim)

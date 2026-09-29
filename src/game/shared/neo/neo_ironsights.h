@@ -22,8 +22,12 @@ struct NeoAimPose
 bool NeoGunplayEnabled();
 #endif
 
-// True when this client should show the weapon's ironsight pose (Enable Gunplay, ADS style). Always false on the
-// server.
+// How far into the ADS style the gunplay is, 0 (standard, or no gunplay) to 1, eased over
+// cl_neo_gunplay_style_time when Z switches it. Always 0 on the server.
+float NeoIronsightStyleBlend();
+
+// True when this client should show the weapon's ironsight pose (Enable Gunplay, ADS style, or easing out of it).
+// Always false on the server.
 bool NeoIronsightsActive(const CNEOWeaponInfo &data);
 
 // The viewmodel pose to use at full aim: ironsight (possibly live-tuned) or traditional zoom.

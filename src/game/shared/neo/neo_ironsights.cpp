@@ -31,6 +31,39 @@ bool NeoGunplayEnabled()
 	return cl_neo_gunplay.GetBool();
 }
 
+ConVar cl_neo_gunplay_style_time("cl_neo_gunplay_style_time", "0.35", FCVAR_ARCHIVE,
+	"Seconds the gun takes to ease between the ADS and standard styles (Z), aimed or not.", true, 0, true, 2);
+static struct
+{
+	float progress = -1.0f;	// 0 standard, 1 ADS, moving linearly toward the style asked for
+	float lastTime = 0.0f;
+} s_style;
+#endif // CLIENT_DLL
+
+float NeoIronsightStyleBlend()
+{
+#ifdef CLIENT_DLL
+	const float target = (cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool()) ? 1.0f : 0.0f;
+	const float now = gpGlobals->realtime;
+	if (s_style.progress < 0.0f)
+	{
+		s_style.progress = target;	// the first frame starts in the style asked for, nothing to ease from
+	}
+	else if (now > s_style.lastTime)
+	{
+		const float time = cl_neo_gunplay_style_time.GetFloat();
+		const float step = (time > 0.0f) ? (now - s_style.lastTime) / time : 1.0f;
+		s_style.progress = Approach(target, s_style.progress, step);
+	}
+	s_style.lastTime = now;
+	return NeoSmoothStep(s_style.progress);
+#else
+	return 0.0f;
+#endif
+}
+
+#ifdef CLIENT_DLL
+
 // Hip-fire and ADS players are on the same footing (the sights change only how the gun is shown), so switching
 // on the fly is just this setting; Z by default, bindable in Settings > Keys ("Gunplay: ADS / standard style
 // (toggle)", kb_act.lst). Client-side only: no usercmd button bit needed.
@@ -185,7 +218,8 @@ CON_COMMAND(cl_neo_ironsight_save, "Append the tuned pose for the active weapon 
 bool NeoIronsightsActive(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
-	return cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool() && (data.m_bHasIronsight || cl_neo_ironsight_tune.GetBool());
+	// Still partly in the ADS style while easing out of it (see NeoIronsightStyleBlend).
+	return (data.m_bHasIronsight || cl_neo_ironsight_tune.GetBool()) && NeoIronsightStyleBlend() > 0.0f;
 #else
 	return false;
 #endif
@@ -193,24 +227,32 @@ bool NeoIronsightsActive(const CNEOWeaponInfo &data)
 
 NeoAimPose NeoGetAimPose(const CNEOWeaponInfo &data)
 {
+	const NeoAimPose standard = { data.m_vecVMAimPosOffset, data.m_angVMAimAngOffset, data.m_flVMAimFov };
+	if (!NeoIronsightsActive(data))
+	{
+		return standard;
+	}
+	NeoAimPose sights = { data.m_vecVMIronPosOffset, data.m_angVMIronAngOffset, data.m_flVMIronFov };
 #ifdef CLIENT_DLL
-	if (cl_neo_gunplay.GetBool() && cl_neo_ironsights.GetBool() && cl_neo_ironsight_tune.GetBool())
+	if (cl_neo_ironsight_tune.GetBool())
 	{
 		if (V_strcmp(data.szClassName, s_szTunedWeapon) != 0)
 		{
 			LoadTuningFrom(data); // Switched weapons: start from this weapon's current pose.
 		}
-		return {
+		sights = {
 			Vector(cl_neo_ironsight_forward.GetFloat(), cl_neo_ironsight_right.GetFloat(), cl_neo_ironsight_up.GetFloat()),
 			QAngle(cl_neo_ironsight_pitch.GetFloat(), cl_neo_ironsight_yaw.GetFloat(), cl_neo_ironsight_roll.GetFloat()),
 			cl_neo_ironsight_fov.GetFloat() };
 	}
 #endif
-	if (NeoIronsightsActive(data))
+	// Between the styles (Z), eased from one pose to the other.
+	const float blend = NeoIronsightStyleBlend();
+	if (blend >= 1.0f)
 	{
-		return { data.m_vecVMIronPosOffset, data.m_angVMIronAngOffset, data.m_flVMIronFov };
+		return sights;
 	}
-	return { data.m_vecVMAimPosOffset, data.m_angVMAimAngOffset, data.m_flVMAimFov };
+	return { Lerp(blend, standard.pos, sights.pos), Lerp(blend, standard.ang, sights.ang), Lerp(blend, standard.fov, sights.fov) };
 }
 
 float NeoAimTransitionTime(const CNEOWeaponInfo &data)
@@ -434,7 +476,9 @@ CON_COMMAND(cl_neo_ironsight_restinfo, "Print the gun's position across the acti
 bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked)
 {
 	const bool bHasCloakedAimAid = data.m_bHasIronDots || data.m_flIronOpticFov > 0.0f;
-	return NeoIronsightsActive(data) && !cl_neo_ironsight_crosshair.GetBool() && !(bAiming && bCloaked && !bHasCloakedAimAid);
+	// Hidden from halfway into the ADS style (Z eases between them).
+	return NeoIronsightsActive(data) && NeoIronsightStyleBlend() >= 0.5f && !cl_neo_ironsight_crosshair.GetBool()
+		&& !(bAiming && bCloaked && !bHasCloakedAimAid);
 }
 
 // The weapon's materials to hide, found by name only when the weapon changes: its lens (for one-pane

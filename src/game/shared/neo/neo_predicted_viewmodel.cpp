@@ -670,13 +670,14 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 				percentage = NeoAimTransitionCurve(data, percentage);
 				vOffset = Lerp(percentage, aimPose.pos, data.m_vecVMPosOffset);
 				angOffset = Lerp(percentage, aimPose.ang, data.m_angVMAngOffset);
-				m_flIronsightBlend = NeoIronsightsActive(data) ? (1.0f - percentage) : 0.0f;
+				m_flIronsightBlend = NeoIronsightsActive(data) ? (1.0f - percentage) * NeoIronsightStyleBlend() : 0.0f;
 			}
 			else
 			{
 				vOffset = (playerAiming) ? aimPose.pos : data.m_vecVMPosOffset;
 				angOffset = (playerAiming) ? aimPose.ang : data.m_angVMAngOffset;
-				m_flIronsightBlend = (playerAiming && NeoIronsightsActive(data)) ? 1.0f : 0.0f;
+				// Between the styles (Z) the sights' own effects ease with the pose.
+				m_flIronsightBlend = (playerAiming && NeoIronsightsActive(data)) ? NeoIronsightStyleBlend() : 0.0f;
 			}
 
 #ifdef CLIENT_DLL
