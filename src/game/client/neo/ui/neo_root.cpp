@@ -1400,6 +1400,7 @@ void CNeoRoot::MainLoopSettings(const MainLoopParam param)
 	};
 	static constexpr NeoSettingsFunc P_FN[] = {
 		{NeoSettings_General, false},
+		{NeoSettings_Gunplay, false},
 		{NeoSettings_Keys, false},
 		{NeoSettings_MouseController, false},
 		{NeoSettings_Audio, false},
@@ -1408,7 +1409,7 @@ void CNeoRoot::MainLoopSettings(const MainLoopParam param)
 		{NeoSettings_HUD, false},
 	};
 	static const wchar_t *WSZ_TABS_LABELS[ARRAYSIZE(P_FN)] = {
-		L"General", L"Keybinds", L"Input", L"Audio", L"Video", L"Crosshair", L"HUD"
+		L"General", L"Gunplay", L"Keybinds", L"Input", L"Audio", L"Video", L"Crosshair", L"HUD"
 	};
 
 	m_ns.iNextBinding = -1;

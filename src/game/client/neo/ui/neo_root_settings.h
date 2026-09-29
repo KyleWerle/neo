@@ -63,7 +63,6 @@ struct NeoSettings
 		bool bReloadEmpty;
 		bool bViewmodelRighthand;
 		bool bLeanViewmodelOnly;
-		bool bGunplay;
 		int iLeanAutomatic;
 		int iEquipUtilityPriority;
 		bool bWeaponFastSwitch;
@@ -181,6 +180,10 @@ struct NeoSettings
 		bool bInaccuracyInScope;
 		bool bFriendlyFireWarning;
 		bool bPreviewDynamicAccuracy;
+		// The gunplay crosshair layer (neo_gunplay_crosshair.h)
+		bool bGunplayLayer;
+		int iGunplayCentre;
+		float flGunplayLayerAlpha;
 
 		// Textures
 		struct Texture
@@ -190,6 +193,19 @@ struct NeoSettings
 			int iTall;
 		};
 		Texture arTextures[CROSSHAIR_STYLE__TOTAL];
+	};
+
+	// The gunplay work, a la carte (GUNPLAY-PLAN.md); the crosshair layer's settings are on the Crosshair tab.
+	struct Gunplay
+	{
+		bool bEnabled;
+		int iAimStyle;			// 0 standard, 1 ADS
+		float flKnock;
+		bool bSpreadPivot;
+		float flAnimBlend;
+		float flDotTrail;
+		int iSightGhost;
+		bool bHudBoot;
 	};
 
 	struct HUD
@@ -235,6 +251,7 @@ struct NeoSettings
 	Audio audio;
 	Video video;
 	Crosshair crosshair;
+	Gunplay gunplay;
 	HUD hud;
 
 	KeyValues* backgrounds;
@@ -261,6 +278,16 @@ struct NeoSettings
 		CONVARREF_DEF(cl_righthand);
 		CONVARREF_DEF(cl_neo_lean_viewmodel_only);
 		CONVARREF_DEF(cl_neo_gunplay);
+		CONVARREF_DEF(cl_neo_ironsights);
+		CONVARREF_DEF(cl_neo_viewmodel_recoil);
+		CONVARREF_DEF(cl_neo_spread_pivot);
+		CONVARREF_DEF(cl_neo_viewmodel_anim_blend);
+		CONVARREF_DEF(cl_neo_ironsight_dot_trail);
+		CONVARREF_DEF(cl_neo_ironsight_sight_ghost);
+		CONVARREF_DEF(cl_neo_hud_boot);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_centre);
+		CONVARREF_DEF(cl_neo_gunplay_crosshair_alpha);
 		CONVARREF_DEF(cl_neo_lean_automatic);
 		CONVARREF_DEF(cl_neo_squad_hud_original);
 		CONVARREF_DEF(cl_neo_hud_health_mode);
@@ -382,4 +409,5 @@ void NeoSettings_MouseController(NeoSettings *ns);
 void NeoSettings_Audio(NeoSettings *ns);
 void NeoSettings_Video(NeoSettings *ns);
 void NeoSettings_Crosshair(NeoSettings *ns);
+void NeoSettings_Gunplay(NeoSettings *ns);
 void NeoSettings_HUD(NeoSettings *ns);

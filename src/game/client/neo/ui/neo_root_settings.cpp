@@ -20,6 +20,7 @@
 #include "neo_theme.h"
 #include "neo_mp3player.h"
 #include "neo/ui/neo_scoreboard.h"
+#include "neo_ironsights.h"
 
 #include <cwctype>
 
@@ -423,7 +424,6 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pGeneral->bReloadEmpty = cvr->cl_autoreload_when_empty.GetBool();
 		pGeneral->bViewmodelRighthand = cvr->cl_righthand.GetBool();
 		pGeneral->bLeanViewmodelOnly = cvr->cl_neo_lean_viewmodel_only.GetBool();
-		pGeneral->bGunplay = cvr->cl_neo_gunplay.GetBool();
 		pGeneral->iLeanAutomatic = cvr->cl_neo_lean_automatic.GetInt();
 		pGeneral->iEquipUtilityPriority = cvr->cl_neo_equip_utility_priority.GetInt();
 		pGeneral->bWeaponFastSwitch = cvr->hud_fastswitch.GetBool();
@@ -677,6 +677,20 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pCrosshair->bNetworkCrosshair = cvr->cl_neo_crosshair_network.GetBool();
 		pCrosshair->bInaccuracyInScope = cvr->cl_neo_crosshair_scope_inaccuracy.GetBool();
 		pCrosshair->bFriendlyFireWarning = cvr->cl_neo_crosshair_friendly_fire_warning.GetBool();
+		pCrosshair->bGunplayLayer = cvr->cl_neo_gunplay_crosshair.GetBool();
+		pCrosshair->iGunplayCentre = cvr->cl_neo_gunplay_crosshair_centre.GetInt();
+		pCrosshair->flGunplayLayerAlpha = cvr->cl_neo_gunplay_crosshair_alpha.GetFloat();
+	}
+	{
+		NeoSettings::Gunplay *pGunplay = &ns->gunplay;
+		pGunplay->bEnabled = cvr->cl_neo_gunplay.GetBool();
+		pGunplay->iAimStyle = cvr->cl_neo_ironsights.GetBool() ? 1 : 0;
+		pGunplay->flKnock = cvr->cl_neo_viewmodel_recoil.GetFloat();
+		pGunplay->bSpreadPivot = cvr->cl_neo_spread_pivot.GetBool();
+		pGunplay->flAnimBlend = cvr->cl_neo_viewmodel_anim_blend.GetFloat();
+		pGunplay->flDotTrail = cvr->cl_neo_ironsight_dot_trail.GetFloat();
+		pGunplay->iSightGhost = cvr->cl_neo_ironsight_sight_ghost.GetInt();
+		pGunplay->bHudBoot = cvr->cl_neo_hud_boot.GetBool();
 	}
 	{
 		NeoSettings::HUD *pHUD = &ns->hud;
@@ -792,7 +806,6 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_autoreload_when_empty.SetValue(pGeneral->bReloadEmpty);
 		cvr->cl_righthand.SetValue(pGeneral->bViewmodelRighthand);
 		cvr->cl_neo_lean_viewmodel_only.SetValue(pGeneral->bLeanViewmodelOnly);
-		cvr->cl_neo_gunplay.SetValue(pGeneral->bGunplay);
 		cvr->cl_neo_lean_automatic.SetValue(pGeneral->iLeanAutomatic);
 		cvr->cl_neo_equip_utility_priority.SetValue(pGeneral->iEquipUtilityPriority);
 		cvr->hud_fastswitch.SetValue(pGeneral->bWeaponFastSwitch);
@@ -945,6 +958,20 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_crosshair_network.SetValue(pCrosshair->bNetworkCrosshair);
 		cvr->cl_neo_crosshair_scope_inaccuracy.SetValue(pCrosshair->bInaccuracyInScope);
 		cvr->cl_neo_crosshair_friendly_fire_warning.SetValue(pCrosshair->bFriendlyFireWarning);
+		cvr->cl_neo_gunplay_crosshair.SetValue(pCrosshair->bGunplayLayer);
+		cvr->cl_neo_gunplay_crosshair_centre.SetValue(pCrosshair->iGunplayCentre);
+		cvr->cl_neo_gunplay_crosshair_alpha.SetValue(pCrosshair->flGunplayLayerAlpha);
+	}
+	{
+		const NeoSettings::Gunplay *pGunplay = &ns->gunplay;
+		cvr->cl_neo_gunplay.SetValue(pGunplay->bEnabled);
+		cvr->cl_neo_ironsights.SetValue(pGunplay->iAimStyle);
+		cvr->cl_neo_viewmodel_recoil.SetValue(pGunplay->flKnock);
+		cvr->cl_neo_spread_pivot.SetValue(pGunplay->bSpreadPivot);
+		cvr->cl_neo_viewmodel_anim_blend.SetValue(pGunplay->flAnimBlend);
+		cvr->cl_neo_ironsight_dot_trail.SetValue(pGunplay->flDotTrail);
+		cvr->cl_neo_ironsight_sight_ghost.SetValue(pGunplay->iSightGhost);
+		cvr->cl_neo_hud_boot.SetValue(pGunplay->bHudBoot);
 	}
 	{
 		const NeoSettings::HUD *pHUD = &ns->hud;
@@ -1107,8 +1134,6 @@ void NeoSettings_General(NeoSettings *ns)
 	NeoUI::Divider(L"GAMEPLAY");
 	NeoUI::RingBoxBool(L"Reload empty", &pGeneral->bReloadEmpty);
 	NeoUI::RingBoxBool(L"Right hand viewmodel", &pGeneral->bViewmodelRighthand);
-	// Everything of the gunplay work at once (cl_neo_gunplay); Z switches its ADS and standard styles.
-	NeoUI::RingBoxBool(L"Enable Gunplay", &pGeneral->bGunplay);
 	NeoUI::RingBoxBool(L"Lean viewmodel only", &pGeneral->bLeanViewmodelOnly);
 	NeoUI::RingBox(L"Automatic leaning", AUTOMATIC_LEAN_LABELS, ARRAYSIZE(AUTOMATIC_LEAN_LABELS), &pGeneral->iLeanAutomatic);
 	NeoUI::RingBox(L"Utility slot equip priority", EQUIP_UTILITY_PRIORITY_LABELS, NeoSettings::EquipUtilityPriorityType::EQUIP_UTILITY_PRIORITY__TOTAL, &pGeneral->iEquipUtilityPriority);
@@ -1372,10 +1397,12 @@ void NeoSettings_Video(NeoSettings *ns)
 	NeoUI::RingBox(L"HDR", HDR_LABELS, ARRAYSIZE(HDR_LABELS), &pVideo->iHDR);
 }
 
+static const wchar_t *GUNPLAY_CENTRE_LABELS[] = { L"None", L"Tiny square", L"Small cross" };
+
 void NeoSettings_Crosshair(NeoSettings *ns)
 {
 	static constexpr int IVIEW_ROWS = 5;
-	static constexpr int IMISC_ROWS = 4;
+	static constexpr int IMISC_ROWS = 8;
 	NeoSettings::Crosshair *pCrosshair = &ns->crosshair;
 
 	g_uiCtx.dPanel.y += g_uiCtx.dPanel.tall;
@@ -1640,8 +1667,36 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		NeoUI::RingBoxBool(L"Show other players' crosshairs", &pCrosshair->bNetworkCrosshair);
 		NeoUI::RingBoxBool(L"Inaccuracy in scope", &pCrosshair->bInaccuracyInScope);
 		NeoUI::RingBoxBool(L"Friendly Fire warning", &pCrosshair->bFriendlyFireWarning);
+		// The gunplay layer around the crosshair (with Enable Gunplay, Settings > Gunplay): a family per gun.
+		NeoUI::Divider(L"GUNPLAY LAYER");
+		NeoUI::RingBoxBool(L"Animated layer", &pCrosshair->bGunplayLayer);
+		NeoUI::RingBox(L"Centre mark (Default, Alt)", GUNPLAY_CENTRE_LABELS, ARRAYSIZE(GUNPLAY_CENTRE_LABELS), &pCrosshair->iGunplayCentre);
+		NeoUI::Slider(L"Layer opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
 	}
 	NeoUI::EndSection();
+}
+
+static const wchar_t *GUNPLAY_AIM_STYLE_LABELS[] = { L"Standard", L"ADS" };
+static const wchar_t *GUNPLAY_SIGHT_GHOST_LABELS[] = { L"Off", L"Cloaked", L"Always" };
+
+void NeoSettings_Gunplay(NeoSettings *ns)
+{
+	NeoSettings::Gunplay *pGunplay = &ns->gunplay;
+	// What the server allows (sv_neo_gunplay), in the heading.
+	static const wchar_t *SERVER_HEADINGS[] = { L"GUNPLAY (OFF ON THIS SERVER)", L"GUNPLAY (SERVER: NO RANGE READOUTS)",
+		L"GUNPLAY", L"GUNPLAY (ON FOR EVERYONE ON THIS SERVER)" };
+	NeoUI::Divider(SERVER_HEADINGS[clamp(NeoGunplayServerMode(), 0, 3)]);
+	NeoUI::RingBoxBool(L"Enable Gunplay", &pGunplay->bEnabled);
+	NeoUI::RingBox(L"Aim style (toggle key: Z)", GUNPLAY_AIM_STYLE_LABELS, ARRAYSIZE(GUNPLAY_AIM_STYLE_LABELS), &pGunplay->iAimStyle);
+	NeoUI::Divider(L"MOVEMENT");
+	NeoUI::Slider(L"Recoil knock", &pGunplay->flKnock, 0.0f, 2.0f, 1, 0.1f);
+	NeoUI::RingBoxBool(L"Gun turns toward its shots", &pGunplay->bSpreadPivot);
+	NeoUI::Slider(L"Animation crossfade (s)", &pGunplay->flAnimBlend, 0.0f, 1.0f, 2, 0.05f);
+	NeoUI::Divider(L"SIGHTS");
+	NeoUI::Slider(L"Red dot afterimage", &pGunplay->flDotTrail, 0.0f, 1.0f, 2, 0.05f);
+	NeoUI::RingBox(L"Sight ghost", GUNPLAY_SIGHT_GHOST_LABELS, ARRAYSIZE(GUNPLAY_SIGHT_GHOST_LABELS), &pGunplay->iSightGhost);
+	NeoUI::Divider(L"HUD");
+	NeoUI::RingBoxBool(L"HUD boot animation", &pGunplay->bHudBoot);
 }
 
 static const wchar_t *IFF_LABELS[] = {
