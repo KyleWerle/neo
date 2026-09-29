@@ -680,6 +680,8 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pCrosshair->bGunplayLayer = cvr->cl_neo_gunplay_crosshair.GetBool();
 		pCrosshair->bGunplayAim = cvr->cl_neo_gunplay_crosshair_aim.GetBool();
 		pCrosshair->flGunplayLayerAlpha = cvr->cl_neo_gunplay_crosshair_alpha.GetFloat();
+		pCrosshair->flGunplayMarks = cvr->cl_neo_gunplay_crosshair_marks.GetFloat();
+		pCrosshair->flGunplayGhost = cvr->cl_neo_gunplay_crosshair_ghost.GetFloat();
 		pCrosshair->flGunplayOutline = cvr->cl_neo_gunplay_outline.GetFloat();
 	}
 	{
@@ -962,6 +964,8 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_neo_gunplay_crosshair.SetValue(pCrosshair->bGunplayLayer);
 		cvr->cl_neo_gunplay_crosshair_aim.SetValue(pCrosshair->bGunplayAim);
 		cvr->cl_neo_gunplay_crosshair_alpha.SetValue(pCrosshair->flGunplayLayerAlpha);
+		cvr->cl_neo_gunplay_crosshair_marks.SetValue(pCrosshair->flGunplayMarks);
+		cvr->cl_neo_gunplay_crosshair_ghost.SetValue(pCrosshair->flGunplayGhost);
 		cvr->cl_neo_gunplay_outline.SetValue(pCrosshair->flGunplayOutline);
 	}
 	{
@@ -1400,10 +1404,53 @@ void NeoSettings_Video(NeoSettings *ns)
 }
 
 
+// The gunplay crosshair's presets (GUNPLAY-PLAN.md, three layers): Feel, all of it lively; Comp, the player's own
+// crosshair centred (no aim crosshair), the spread view a whisper, the spread ghost the readout.
+enum
+{
+	GUNPLAY_PRESET_CUSTOM,
+	GUNPLAY_PRESET_FEEL,
+	GUNPLAY_PRESET_COMP,
+};
+static const wchar_t *GUNPLAY_PRESET_LABELS[] = { L"Custom", L"Feel", L"Comp" };
+struct GunplayCrosshairPreset
+{
+	bool bAim;
+	float flSpreadView, flMarks, flGhost;
+};
+static constexpr GunplayCrosshairPreset GUNPLAY_PRESETS[] = {
+	{ true, 1.0f, 0.7f, 0.35f },	// Feel
+	{ false, 0.35f, 0.5f, 0.8f },	// Comp
+};
+
+static int NeoGunplayCrosshairPresetOf(const NeoSettings::Crosshair *pCrosshair)
+{
+	const auto near = [](float a, float b) { return fabsf(a - b) < 0.01f; };
+	for (int i = 0; i < ARRAYSIZE(GUNPLAY_PRESETS); ++i)
+	{
+		const GunplayCrosshairPreset &preset = GUNPLAY_PRESETS[i];
+		if (pCrosshair->bGunplayAim == preset.bAim && near(pCrosshair->flGunplayLayerAlpha, preset.flSpreadView)
+			&& near(pCrosshair->flGunplayMarks, preset.flMarks) && near(pCrosshair->flGunplayGhost, preset.flGhost))
+		{
+			return GUNPLAY_PRESET_FEEL + i;
+		}
+	}
+	return GUNPLAY_PRESET_CUSTOM;
+}
+
+static void NeoGunplayCrosshairApplyPreset(NeoSettings::Crosshair *pCrosshair, int iPreset)
+{
+	const GunplayCrosshairPreset &preset = GUNPLAY_PRESETS[iPreset - GUNPLAY_PRESET_FEEL];
+	pCrosshair->bGunplayAim = preset.bAim;
+	pCrosshair->flGunplayLayerAlpha = preset.flSpreadView;
+	pCrosshair->flGunplayMarks = preset.flMarks;
+	pCrosshair->flGunplayGhost = preset.flGhost;
+}
+
 void NeoSettings_Crosshair(NeoSettings *ns)
 {
 	static constexpr int IVIEW_ROWS = 5;
-	static constexpr int IMISC_ROWS = 9;
+	static constexpr int IMISC_ROWS = 12;
 	NeoSettings::Crosshair *pCrosshair = &ns->crosshair;
 
 	g_uiCtx.dPanel.y += g_uiCtx.dPanel.tall;
@@ -1671,8 +1718,18 @@ void NeoSettings_Crosshair(NeoSettings *ns)
 		// The gunplay layer around the crosshair (with Enable Gunplay, Settings > Gunplay): a family per gun.
 		NeoUI::Divider(L"GUNPLAY LAYER");
 		NeoUI::RingBoxBool(L"Animated layer", &pCrosshair->bGunplayLayer);
+		// A preset sets the four below it; it reads Custom when they match neither.
+		int iPreset = NeoGunplayCrosshairPresetOf(pCrosshair);
+		const int iPrevPreset = iPreset;
+		NeoUI::RingBox(L"Preset", GUNPLAY_PRESET_LABELS, ARRAYSIZE(GUNPLAY_PRESET_LABELS), &iPreset);
+		if (iPreset != iPrevPreset && iPreset != GUNPLAY_PRESET_CUSTOM)
+		{
+			NeoGunplayCrosshairApplyPreset(pCrosshair, iPreset);
+		}
 		NeoUI::RingBoxBool(L"Aim crosshair", &pCrosshair->bGunplayAim);
-		NeoUI::Slider(L"Layer opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
+		NeoUI::Slider(L"Spread view opacity", &pCrosshair->flGunplayLayerAlpha, 0.2f, 1.0f, 2, 0.05f);
+		NeoUI::Slider(L"Impact marks", &pCrosshair->flGunplayMarks, 0.0f, 1.0f, 2, 0.05f);
+		NeoUI::Slider(L"Spread ghost", &pCrosshair->flGunplayGhost, 0.0f, 1.0f, 2, 0.05f);
 		NeoUI::Slider(L"Dark outline", &pCrosshair->flGunplayOutline, 0.0f, 1.0f, 2, 0.05f);
 	}
 	NeoUI::EndSection();
