@@ -29,6 +29,7 @@
 "v" "+vision"
 "w" "+forward"
 "y" "messagemode"
+"z" "cl_neo_ironsights_toggle"
 "f" "+use"
 "m"	"neo_mp3"
 "ALT" "+walk"
