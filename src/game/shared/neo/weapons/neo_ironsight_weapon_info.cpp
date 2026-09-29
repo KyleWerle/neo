@@ -105,7 +105,6 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 		m_iIronGhostRear = NameIndex(pGhost->GetString("rear", ""), s_rear, ARRAYSIZE(s_rear));
 		m_iIronGhostFront = NameIndex(pGhost->GetString("front", ""), s_front, ARRAYSIZE(s_front));
 		m_flIronGhostScale = clamp(pGhost->GetFloat("scale", 1.0f), 0.25f, 4.0f);
-		V_strncpy(m_szIronGhostLabel, pGhost->GetString("label", ""), sizeof(m_szIronGhostLabel));
 	}
 }
 

@@ -24,7 +24,7 @@ ConVar cl_neo_ironsight_sight_ghost_alpha("cl_neo_ironsight_sight_ghost_alpha", 
 
 // Animation timings, in seconds: quick and crisp.
 static constexpr float GHOST_TRACE_TIME = 0.11f;	// coming online, the strokes trace out from their middles
-static constexpr float GHOST_TYPE_DELAY = 0.04f;	// then the label types in
+static constexpr float GHOST_TYPE_DELAY = 0.04f;	// then the ammo count types in
 static constexpr float GHOST_TYPE_TIME = 0.16f;
 static constexpr float GHOST_LOCK_SETTLE = 0.08f;	// sights held aligned this long lock in
 static constexpr float GHOST_LOCK_TIME = 0.06f;
@@ -202,10 +202,11 @@ static struct
 	float lock = 0.0f;
 	float shotTime = -1.0f;
 	const CNEOWeaponInfo *pShotWeapon = nullptr;
-	int lastClip = -1;
+	int lastClip = -1;	// the viewed weapon's rounds left, drawn beside the rear sight
+	int maxClip = -1;
 } s_anim;
 
-// Notes a shot when the viewed weapon's clip drops.
+// Notes a shot when the viewed weapon's clip drops, and keeps its count for the readout.
 static void WatchShots()
 {
 	C_NEO_Player *pPlayer = NeoIronsightOpticViewPlayer();
@@ -218,6 +219,7 @@ static void WatchShots()
 	}
 	s_anim.pShotWeapon = pWeaponData;
 	s_anim.lastClip = clip;
+	s_anim.maxClip = pWeapon ? pWeapon->GetMaxClip1() : -1;
 }
 
 void NeoIronsightPaintSightGhost(const Color &color)
@@ -325,7 +327,7 @@ void NeoIronsightPaintSightGhost(const Color &color)
 		Stroke(frame.At(under, -2.0f * s * s_anim.lock, 9.0f * s), frame.At(under, 2.0f * s * s_anim.lock, 9.0f * s), MEDIUM);
 	}
 
-	if (pData->m_szIronGhostLabel[0])
+	if (s_anim.lastClip >= 0)
 	{
 		static vgui::HFont s_font = vgui::INVALID_FONT;
 		if (s_font == vgui::INVALID_FONT)
@@ -337,8 +339,10 @@ void NeoIronsightPaintSightGhost(const Color &color)
 		const float typed = Min(s_ghost.aim, clamp((boot - GHOST_TYPE_DELAY) / GHOST_TYPE_TIME, 0.0f, 1.0f));
 		if (s_font != vgui::INVALID_FONT && typed > 0.0f)
 		{
-			wchar_t text[34];
-			V_UTF8ToUnicode(pData->m_szIronGhostLabel, text, sizeof(text) - sizeof(wchar_t));
+			// Padded to the magazine's width so the count doesn't shift as it drops.
+			wchar_t text[16];
+			const int digits = (s_anim.maxClip >= 100) ? 3 : 2;
+			V_snwprintf(text, ARRAYSIZE(text) - 1, L"%0*d", digits, s_anim.lastClip);
 			const int length = V_wcslen(text);
 			int count = Min(length, static_cast<int>(ceilf(length * typed)));
 			if (typed < 1.0f)

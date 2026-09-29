@@ -89,7 +89,6 @@ WeaponData
 		"rear"		"ticks"
 		"front"		"diamond"
 		"scale"		"0.9"
-		"label"		"MILSO"
 	}
 	
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

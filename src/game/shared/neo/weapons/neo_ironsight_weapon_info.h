@@ -119,7 +119,6 @@ public:
 	int		m_iIronGhostRear = NEO_GHOST_REAR_BRACKETS;
 	int		m_iIronGhostFront = NEO_GHOST_FRONT_CHEVRON;
 	float	m_flIronGhostScale = 1.0f;
-	char	m_szIronGhostLabel[32] = "";
 
 private:
 	void ParseWindowGlass(const char *pszPoints);

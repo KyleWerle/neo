@@ -7,7 +7,7 @@
 //   "rear"	"brackets" | "ticks" | "gate" | "corners"	the rear notch
 //   "front"	"chevron" | "post" | "diamond" | "split"	the front post tip
 //   "scale"	size multiplier (1 = the default size at 1080p)
-//   "label"	a short designation drawn small beside the rear sight (optional)
+// Beside the rear sight, the rounds left in the magazine are drawn small.
 // cl_neo_ironsight_sight_ghost: 0 = the glowing dots instead, 1 = while cloaked, 2 = whenever aiming.
 
 class CNEOWeaponInfo;
