@@ -3,6 +3,7 @@
 
 #ifdef CLIENT_DLL
 #include "c_neo_player.h"
+#include "neo/neo_viewmodel_recoil.h"
 #else
 #include "neo_player.h"
 #endif
@@ -113,6 +114,10 @@ void CWeaponAA13::PrimaryAttack(void)
 
 	// Fire the bullets, and force the first shot to be perfectly accurate
 	pPlayer->FireBullets(info);
+#ifdef CLIENT_DLL
+	// The knock (cl_neo_viewmodel_recoil): pellets have no one place they went, so a kick to a random side.
+	NeoViewmodelRecoilRandomShot(this);
+#endif
 
 	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
 	{

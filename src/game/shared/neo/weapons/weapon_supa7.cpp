@@ -1,5 +1,8 @@
 #include "cbase.h"
 #include "weapon_supa7.h"
+#ifdef CLIENT_DLL
+#include "neo/neo_viewmodel_recoil.h"
+#endif
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -367,6 +370,11 @@ void CWeaponSupa7::PrimaryAttack(void)
 
 	// Fire the bullets, and force the first shot to be perfectly accurate
 	pPlayer->FireBullets(info);
+#ifdef CLIENT_DLL
+	// The knock (cl_neo_viewmodel_recoil): a spread of pellets has no one place it went, so there's nothing to lead
+	// or follow, just a kick to a random side.
+	NeoViewmodelRecoilRandomShot(this);
+#endif
 
 	if (!m_iClip1 && m_iPrimaryAmmoCount <= 0)
 	{

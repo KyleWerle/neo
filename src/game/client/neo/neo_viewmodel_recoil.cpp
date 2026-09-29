@@ -2,6 +2,8 @@
 #include "neo_viewmodel_recoil.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
+#include "prediction.h"
+#include "vstdlib/random.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -131,6 +133,24 @@ void NeoViewmodelRecoilShot(C_NEOBaseCombatWeapon *pWeapon, const Vector2D &cone
 	// The whole gun back toward the eye (and aside with the shot, if asked).
 	s_recoil.linear.v += Vector(-KICK_BACK, cl_neo_viewmodel_recoil_side_shift.GetFloat() * side, KICK_UP * (1.0f + lift))
 		* (strength * omegaLinear);
+}
+
+void NeoViewmodelRecoilRandomShot(C_NEOBaseCombatWeapon *pWeapon)
+{
+	if (!prediction->IsFirstTimePredicted())
+	{
+		return;
+	}
+	static CUniformRandomStream s_random;
+	static bool s_bSeeded = false;
+	if (!s_bSeeded)
+	{
+		s_random.SetSeed(static_cast<int>(Plat_FloatTime() * 1000.0) & 0x7fffffff);
+		s_bSeeded = true;
+	}
+	const float angle = s_random.RandomFloat(0.0f, 2.0f * M_PI_F);
+	const float distance = sqrtf(s_random.RandomFloat(0.0f, 1.0f));	// even over the disc
+	NeoViewmodelRecoilShot(pWeapon, Vector2D(cosf(angle) * distance, sinf(angle) * distance));
 }
 
 void NeoViewmodelRecoilApply(C_BasePlayer *pOwner, const QAngle &eyeAngles, float ironsightBlend, Vector &origin,
