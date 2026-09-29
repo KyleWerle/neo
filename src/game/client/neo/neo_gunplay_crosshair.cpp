@@ -160,10 +160,12 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 
 	// Coming online: whenever the layer wasn't drawn the frame before, or the gun changed, it traces in again.
 	const float now = gpGlobals->realtime;
-	const float dt = clamp(now - s_layer.lastTime, 0.0f, 0.1f);
+	float dt = clamp(now - s_layer.lastTime, 0.0f, 0.1f);
 	s_layer.lastTime = now;
-	if (s_layer.lastFrame != gpGlobals->framecount - 1 || s_layer.pWeapon != pWeapon)
+	const bool bBoot = s_layer.lastFrame != gpGlobals->framecount - 1 || s_layer.pWeapon != pWeapon;
+	if (bBoot)
 	{
+		dt = 0.0f;
 		s_layer.bootStart = now;
 		s_layer.spread = static_cast<float>(HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2));
 		s_layer.spreadVelocity = 0.0f;
@@ -172,7 +174,8 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 		s_layer.lastClip = pWeapon->Clip1();
 	}
 	// A shot: the clip drops.
-	if (pWeapon->Clip1() < s_layer.lastClip)
+	const bool bShot = pWeapon->Clip1() < s_layer.lastClip;
+	if (bShot)
 	{
 		s_layer.shotTime = now;
 	}
@@ -206,6 +209,9 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	frame.cycle = pWeapon->GetFireRate();
 	frame.ready = (frame.cycle > 0.0f)
 		? clamp(1.0f - (pWeapon->m_flNextPrimaryAttack - gpGlobals->curtime) / frame.cycle, 0.0f, 1.0f) : 1.0f;
+	frame.dt = dt;
+	frame.bBoot = bBoot;
+	frame.bShot = bShot;
 
 	// The plain centre cross in place of the Default crosshair: steady, full strength, traced in with the rest.
 	if (bCentre)
@@ -235,10 +241,12 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 
 	switch (NeoCrosshairFamilyOf(pWeapon))
 	{
+	case NEO_CROSSHAIR_SMG:		NeoCrosshairPaintSmg(frame); break;
+	case NEO_CROSSHAIR_MG:		NeoCrosshairPaintMg(frame); break;
+	case NEO_CROSSHAIR_SHOTGUN:	NeoCrosshairPaintShotgun(frame); break;
+	case NEO_CROSSHAIR_PISTOL:	NeoCrosshairPaintPistol(frame); break;
+	case NEO_CROSSHAIR_SCOPED:	NeoCrosshairPaintScoped(frame); break;
 	case NEO_CROSSHAIR_RIFLE:
-	default:
-		// Families not designed yet draw the rifle's.
-		NeoCrosshairPaintRifle(frame);
-		break;
+	default:					NeoCrosshairPaintRifle(frame); break;
 	}
 }

@@ -1668,6 +1668,11 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_crosshair.h
     neo/neo_crosshair_family.h
     neo/neo_crosshair_rifle.cpp
+    neo/neo_crosshair_smg.cpp
+    neo/neo_crosshair_mg.cpp
+    neo/neo_crosshair_shotgun.cpp
+    neo/neo_crosshair_pistol.cpp
+    neo/neo_crosshair_scoped.cpp
     neo/neo_gunplay_tunnel.cpp
     neo/neo_gunplay_tunnel.h
     neo/neo_ironsight_dots.cpp

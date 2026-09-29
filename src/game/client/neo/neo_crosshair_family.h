@@ -45,9 +45,19 @@ struct NeoCrosshairFrame
 	int clip, maxClip;		// rounds (-1 if the gun has no clip)
 	float cycle;			// seconds between shots
 	float ready;			// 0 to 1: how far the gun has cycled toward its next shot
+	float dt;				// seconds since the last frame drawn (0 on the first)
+	bool bBoot;				// the first frame after coming online: a family resets its own animation
+	bool bShot;				// a shot this frame
 
 	int Alpha(float opacity) const;	// 0-255, of the layer's opacity
 };
+
+// A dot: a stroke about its own width long.
+inline void NeoCrosshairDot(const NeoCrosshairFrame &frame, const Vector2D &at, NeoGhostWeight weight)
+{
+	const Vector2D half(0.6f * frame.s, 0.0f);
+	NeoGhostStroke(frame.pen, at - half, at + half, weight);
+}
 
 // Typed in behind a cursor, as the sight ghost's readouts: text at (x, y) (its left and vertical middle), in the
 // frame's colour at opacity (0 to 1), with typed (0 to 1) of it shown.
@@ -57,3 +67,8 @@ int NeoCrosshairReadoutTall();
 
 // The families' painters.
 void NeoCrosshairPaintRifle(const NeoCrosshairFrame &frame);
+void NeoCrosshairPaintSmg(const NeoCrosshairFrame &frame);
+void NeoCrosshairPaintMg(const NeoCrosshairFrame &frame);
+void NeoCrosshairPaintShotgun(const NeoCrosshairFrame &frame);
+void NeoCrosshairPaintPistol(const NeoCrosshairFrame &frame);
+void NeoCrosshairPaintScoped(const NeoCrosshairFrame &frame);

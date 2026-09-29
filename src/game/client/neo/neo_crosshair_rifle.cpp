@@ -9,6 +9,8 @@
 // horizontal, a post below), aimed their heavier "Default" (long pill caps, a heavy post, a tick ladder above).
 // The caps and post ride the spread and sit near the gun; the ladder is the magazine.
 
+namespace NeoCrosshairRifle
+{
 // Sizes in pixels at 1080p.
 static constexpr float GAP = 5.0f;					// beyond the spread's edge
 static constexpr float HIP_CAP = 4.0f;				// "Alt": short square caps
@@ -25,8 +27,11 @@ static constexpr float TYPE_TIME = 0.16f;
 static constexpr float READY_WIDTH = 10.0f;		// the ready bar under the readout, on slow guns
 static constexpr float READY_CYCLE = 0.25f;		// guns cycling this slowly or slower get it
 
+} // namespace NeoCrosshairRifle
+
 void NeoCrosshairPaintRifle(const NeoCrosshairFrame &frame)
 {
+	using namespace NeoCrosshairRifle;
 	const float s = frame.s;
 	const float aim = frame.aim;
 	const Vector2D near = frame.centre + frame.deviation + frame.jitter;
