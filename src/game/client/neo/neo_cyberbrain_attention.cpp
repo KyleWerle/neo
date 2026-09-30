@@ -47,13 +47,48 @@ constexpr float FOCUS_GAP = 6.0f;		// pixels at 1080p groups in focus keep betwe
 constexpr float ORBIT_STEP = 10.0f, ORBIT_MOST = 90.0f;	// degrees a group in focus swings its approach, a step and at most
 
 static struct { Vector2D offset, vel; } s_ringDeep;
-// Listening: quieting down it comes up slowly, over a few seconds; action pulls it straight back.
-constexpr float LISTEN_RISE = 2.5f, LISTEN_FALL = 0.15f;	// seconds
-static float s_listen = 1.0f;
+// Listening, a mode of its own (Kyle: "wasn't really noticing a defined listening mode"): a second of quiet after the
+// last action, then it settles in over two; action pulls it straight back. In from 0.8, out under 0.6.
+constexpr float LISTEN_AFTER = 1.0f, LISTEN_SETTLE = 2.0f;	// seconds
+constexpr float LISTEN_RISE = 0.5f, LISTEN_FALL = 0.15f;	// seconds the level eases over, up and down
+constexpr float LISTEN_ENTER = 0.8f, LISTEN_LEAVE = 0.6f;
+static struct
+{
+	float level = 1.0f;
+	float lastAction = -100.0f;
+	float since = -100.0f;	// when the mode began
+	bool bIn = false;
+} s_listen;
 
 float Listening()
 {
-	return s_listen;
+	return s_listen.level;
+}
+
+float ListeningFor(float now)
+{
+	return s_listen.bIn ? now - s_listen.since : -1.0f;
+}
+
+static void Listen(const Senses &senses, float now, float dt, bool bBoot)
+{
+	const float action = Action(senses, now);
+	if (bBoot)
+		s_listen.lastAction = now - 100.0f;
+	else if (action > 0.2f)
+		s_listen.lastAction = now;
+	const float goal = (1.0f - action) * NeoSmoothStep((now - s_listen.lastAction - LISTEN_AFTER) / LISTEN_SETTLE);
+	s_listen.level = bBoot ? goal
+		: s_listen.level + (goal - s_listen.level) * Min(1.0f, dt / (goal > s_listen.level ? LISTEN_RISE : LISTEN_FALL));
+	if (!s_listen.bIn && s_listen.level >= LISTEN_ENTER)
+	{
+		s_listen.bIn = true;
+		s_listen.since = bBoot ? now - 100.0f : now;	// on a boot straight in, without the ping
+	}
+	else if (s_listen.bIn && s_listen.level < LISTEN_LEAVE)
+	{
+		s_listen.bIn = false;
+	}
 }
 
 // Moves `at` toward `goal` on the deep spring.
@@ -237,8 +272,7 @@ static void SeparateFocused(const Frame &f, Place places[GROUP__COUNT])
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f, float dt, bool bBoot, Place places[GROUP__COUNT])
 {
 	const Comfort comfort = ComfortOf();
-	const float listen = 1.0f - Action(senses, f.now);
-	s_listen = bBoot ? listen : s_listen + (listen - s_listen) * Min(1.0f, dt / (listen > s_listen ? LISTEN_RISE : LISTEN_FALL));
+	Listen(senses, f.now, dt, bBoot);
 	const auto mirror = [&](const Vector2D &p) { return f.hand > 0 ? p : Vector2D(f.wide - p.x, p.y); };
 	// Attention: in fast, out slow.
 	for (int g = 0; g < GROUP__COUNT; ++g)

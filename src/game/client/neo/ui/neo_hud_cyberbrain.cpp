@@ -209,12 +209,14 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	f.ringCentre = f.centre;	// placed after the attention step; nothing round it until then
 	f.ringRadii.Init(0.0f, 0.0f);
 	f.listen = 1.0f;
+	f.listenFor = -1.0f;
 
 	NC::Home homes[NC::GROUP__COUNT];
 	HomesOf(homes, style);
 	NC::Attend(m_senses, homes, f, dt, bBoot, m_places);
 	f.listen = NC::Listening();
-	const float ringSize = 0.95f + 0.1f * f.listen;	// listening, the ring opens out a touch
+	f.listenFor = NC::ListeningFor(now);
+	const float ringSize = 0.92f + 0.16f * f.listen;	// listening, the ring opens out; in a fight it draws in
 
 	// The ring: small at the bottom centre, or the body's ground disc; it opens as you look down.
 	const float down = clamp(m_senses.pitch / 60.0f, -0.5f, 1.0f);

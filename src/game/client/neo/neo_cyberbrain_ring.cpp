@@ -156,6 +156,38 @@ static float SoundPriority(const Heard &h, float now)
 		+ 0.99f * (0.4f + 0.6f * h.loud) * (0.5f + 0.5f * fresh) - (h.bFriendly ? 10.0f : 0.0f);
 }
 
+// The listening mode made plain (Kyle: the level alone wasn't noticed): on entering, a ping ripples out from the ring;
+// in it, a sonar sweep circles the ring once every three seconds, a dashed ring of the hearing's reach breathes
+// outside it, and LSTN shows at its side. All of it fades in with the mode and goes as it leaves.
+static void PaintListening(const Frame &f, const Ring &ring)
+{
+	const float age = f.listenFor;
+	if (age < 0.0f)
+		return;
+	const float in = NeoSmoothStep(age / 0.6f) * f.alpha;
+	const Vector2D c = f.ringCentre, r = f.ringRadii;
+	const float aspect = r.y / Max(r.x, 1.0f);
+	if (age < 0.7f)
+	{
+		const float t = age / 0.7f, grow = 60.0f * NeoSmoothStep(t) * f.s;
+		Arc(f, c, r + Vector2D(grow, grow * aspect), -180.0f, 180.0f, NEO_GHOST_MEDIUM, f.color, 0.6f * (1.0f - t));
+	}
+	// The sweep: a bright head trailing off behind it.
+	const float head = fmodf(age * 120.0f, 360.0f) - 180.0f;
+	for (int k = 0; k < 6; ++k)
+	{
+		const float b1 = head - k * 7.0f, b0 = b1 - 7.0f;
+		Arc(f, c, r, b0, b1, k == 0 ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT, f.color, 0.55f * (1.0f - k / 6.0f) * in);
+	}
+	// The hearing's reach, dashed, breathing.
+	const float breathe = 0.8f + 0.2f * sinf(age * 2.0f), out = 18.0f * f.s;
+	const Vector2D reach = r + Vector2D(out, out * aspect);
+	for (int d = 0; d < 36; d += 2)
+		Arc(f, c, reach, d * 10.0f - 180.0f, d * 10.0f - 175.0f, NEO_GHOST_LIGHT, f.color, 0.22f * breathe * in);
+	const Vector2D at = ring.At(90.0f, 30.0f);
+	Text(f, L"LSTN", at.x, at.y, -1, FONT_LABEL, f.color, 0.7f * in);
+}
+
 constexpr int SOUNDS_LEADING_BUSY = 2, SOUNDS_LEADING_QUIET = 6;	// full marks at most at once, in a fight and all quiet
 
 void PaintRing(const Frame &f)
@@ -168,7 +200,7 @@ void PaintRing(const Frame &f)
 	const float a = bBody ? LookOf(f, GROUP_BODY).alpha : 1.0f;
 	// Listening (Kyle: in a fight you hear less; quiet, the noise round you and your own is what you focus on): the
 	// ring, the compass and the sounds come up as it quiets, and draw back in action. The callouts never do.
-	const float L = f.listen, ringA = a * (0.6f + 0.6f * L), compassA = 0.65f + 0.35f * L;
+	const float L = f.listen, ringA = a * (0.45f + 0.75f * L), compassA = 0.6f + 0.4f * L;
 
 	// The ring, brighter ahead; ticks every 30 degrees of heading.
 	for (int i = 0; i < 72; ++i)
@@ -309,6 +341,7 @@ void PaintRing(const Frame &f)
 				bLoud ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT, bLoud ? WARN : f.color, (0.25f + 0.65f * L) * fade);
 		}
 	}
+	PaintListening(f, ring);
 	// The ghost's callouts over everything, just outside the sound icons: On the body the glyphs sit out past the ring
 	// (22), so the callouts start beyond them; Compact's sit inside it, so just outside the ring.
 	PaintCallouts(f, ring, rel, bBody ? 32.0f : 6.0f);
