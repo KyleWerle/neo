@@ -9,8 +9,9 @@
 enum NeoIronsightProfileSection
 {
 	NEO_PROFILE_LENS,		// the glass: its art, and leaving it out of the gun
-	NEO_PROFILE_DAMPING,		// bob, idle and recoil damping on the viewmodel's bones
-	NEO_PROFILE_SIGHTS,		// sight points, dots and the sight ghost
+	NEO_PROFILE_DAMPING,		// the viewmodel's motion: bob, idle and recoil damping on its bones, the animation
+							// blend, the recoil spring and the spread pivot
+	NEO_PROFILE_SIGHTS,		// sight points, dots, the dot's afterimage and the sight ghost
 	NEO_PROFILE_HUD,		// the crosshair layer and the quick info band (HUD linework)
 	NEO_PROFILE__COUNT,
 };

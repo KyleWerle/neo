@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_ironsight_dot_trail.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_optic.h"
 #include "neo_gunplay_shots.h"
 #include "c_neo_player.h"
@@ -145,6 +146,7 @@ static float Darkness(const Vector &eye)
 
 void NeoIronsightPaintDotTrail()
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SIGHTS, "NeoIronsightPaintDotTrail");
 	const float brightness = cl_neo_ironsight_dot_trail.GetFloat();
 	const CViewSetup *pView = view ? view->GetViewSetup() : nullptr;
 	if (brightness <= 0.0f || !pView || s_trail.count < 2 || !NeoGunplayEnabled())

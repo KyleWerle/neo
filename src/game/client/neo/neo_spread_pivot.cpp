@@ -5,6 +5,7 @@
 #include "neo_gunplay_marks.h"
 #include "neo_gunplay_shots.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
 #include "usercmd.h"
@@ -221,6 +222,7 @@ static void DrawDebugMarker(C_BasePlayer *pOwner, const Vector2D &offset)
 
 void NeoSpreadPivotApply(C_NEOBaseCombatWeapon *pWeapon, C_BasePlayer *pOwner, QAngle &angles)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_DAMPING, "NeoSpreadPivotApply");
 	// The local player's gun, or a watched player's in first person (their shots from their impacts).
 	if (!pWeapon || !pOwner || pOwner != NeoGunplayWatchShots().pPlayer)
 	{
