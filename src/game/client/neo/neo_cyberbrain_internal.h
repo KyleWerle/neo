@@ -141,7 +141,7 @@ constexpr int BRIGHT_RING = GROUP__COUNT;
 // Readability on bright scenes (neo_cyberbrain_backing.cpp): the scene's brightness behind each group and the ring,
 // one ray a frame round them; a feathered dark backing behind each, darker the brighter it is.
 void MeasureBrightness(C_NEO_Player *pPlayer, Frame &f, float dt, bool bBoot);
-// A group's (or the ring's) centre and half size on screen, pixels.
+// A group's (or the ring's) centre and half size on screen, pixels (neo_cyberbrain_attention.cpp, with the layout).
 void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half);
 // The etched chassis on the deep layer (neo_cyberbrain_chassis.cpp): registration crosses, rulers, channel codes.
 void PaintChassis(const Frame &f);
