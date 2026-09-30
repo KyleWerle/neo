@@ -86,7 +86,9 @@ WeaponData
 		// The lens surface on Torus01 (from v_*_jitte(s).mdl), and the lens circle within its UVs.
 		"lens_bone"	"Torus01"
 		"lens_map"	"-1.798 1.773 1.506  3.611 0 0  0 0 -3.611"
-		"lens_circle"	"0.494 0.455 0.455"
+		// Out to the art's edge, where the stock black ring was cut out (build-jitte-reticle.py): further, the gun
+		// behind the glass was left out past the art and the world showed round the lens at the hip while cloaked.
+		"lens_circle"	"0.494 0.455 0.40"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
