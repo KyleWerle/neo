@@ -77,16 +77,14 @@ WeaponData
 		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/mxs_reticle"
-		// The glass on sight_glass (from v_*_mxs.mdl), and the clear part of it in its UVs.
+		// The glass on sight_glass (from v_*_mxs.mdl).
 		"lens_bone"	"sight_glass"
 		"lens_map"	"1.551 0 1.727  -3.1 0 0  -0.0075 0 -3.454"
-		"lens_circle"	"0.5 0.53 0.46 0.28"
 		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0 0.438  0 0.831  0.085 0.330  0.228 0.247  0.409 0.202  0.596 0.201  0.827 0.271  0.952 0.359  1 0.459  1 0.831"
 		// Sight parts sit 1.13 to 1.22 behind the glass, the front sight (its crosshair) from 1.47: the crosshair
 		// shows through the glass, the parts don't.
 		"window_skip"	"1.3"
-		"lens_shape"	"2.5"
 		// Collimated: the red cross (u v radius in the art) floats at infinity, where the sight points, and
 		// slides off the glass seen from off axis. The glass material is hidden and its art drawn by us.
 		"lens"		"models/weapons/MpnSight_glass"

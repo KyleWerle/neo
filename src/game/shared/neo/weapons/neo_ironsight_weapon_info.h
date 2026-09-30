@@ -93,11 +93,10 @@ public:
 	// "window_glass" "u v u v ...": the whole glass's outline in UV, its mesh's vertices (from
 	// art/optics/extract-lens-map.py --dump; their convex hull is used). While the gun is drawn over, the
 	// clear view and the reticle cover exactly this, so none of the glass is left see-through to what is
-	// behind it. Kept as its bounding box (centre, half-width, half-height) and the hull's corners around
-	// that centre, counter-clockwise. Without it, the lens: "lens_circle" and "lens_shape".
+	// behind it. Kept as its bounding box's centre and the hull's corners around that centre,
+	// counter-clockwise. Without it, the lens: "lens_circle" and "lens_shape" (the centre is the lens's then).
 	static constexpr int IRON_WINDOW_GLASS_MAX = 32;
-	Vector	m_vecIronOpticWindowCircle = Vector(0.5f, 0.5f, 0.5f);
-	float	m_flIronOpticWindowRadiusV = 0.5f;
+	Vector2D m_vecIronOpticWindowCentre = Vector2D(0.5f, 0.5f);
 	int		m_iIronOpticWindowGlassPoints = 0;
 	Vector2D m_vecIronOpticWindowGlass[IRON_WINDOW_GLASS_MAX];
 	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
