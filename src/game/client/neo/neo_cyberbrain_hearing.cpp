@@ -28,6 +28,9 @@ namespace NeoCyberbrain
 // the stride waveform's shot marks are what bots hear, not a guess.
 constexpr float SHOT_UNITS = 1500.0f, SHOT_SUPPRESSED_UNITS = 900.0f;
 constexpr float SHOT_DEDUPE = 0.15f;	// seconds a shot's sound and its magazine drop count as one
+// The therm-optic's on and off: the server sends them only to players within 50 units (CNEO_Player::PlayCloakSound's
+// MAX_CLOAK_DISTANCE), so that's how far they carry.
+constexpr float CLOAK_UNITS = 50.0f;
 constexpr float AUDIBLE = 0.02f;		// spatialised volume under this: not heard
 constexpr float HEARD_FOR = 2.0f, NOISE_FOR = 1.2f;
 
@@ -178,11 +181,14 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		{
 			if (cl_neo_hud_hearing_debug.GetBool())
 				Msg("[cyberbrain] yours %s: kind %d\n", file, static_cast<int>(kind));
-			// A shot the magazine already marked isn't counted again.
+			// A shot the magazine already marked isn't counted again. The cloak coming on or off is yours too (Kyle: it
+			// wasn't in the graph), at its real reach.
 			const bool bMarked = kind == SOUND_GUNFIRE && now - s_hearing.lastShotMark < SHOT_DEDUPE;
-			if (out.noiseCount < MAX_NOISE && kind != SOUND_OTHER && !bMarked)
+			const bool bCloak = V_stristr(file, "therm_on") || V_stristr(file, "therm_off");
+			if (out.noiseCount < MAX_NOISE && (kind != SOUND_OTHER || bCloak) && !bMarked)
 			{
-				const float metres = kind == SOUND_GUNFIRE ? ShotMetres(pPlayer) : MetresOf(kind, snd.m_flVolume);
+				const float metres = bCloak ? CLOAK_UNITS * METERS_PER_INCH
+					: kind == SOUND_GUNFIRE ? ShotMetres(pPlayer) : MetresOf(kind, snd.m_flVolume);
 				out.noise[out.noiseCount++] = { now, metres, kind };
 			}
 			continue;
