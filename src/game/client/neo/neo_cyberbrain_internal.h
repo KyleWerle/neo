@@ -185,6 +185,8 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 float TextWidth(const wchar_t *pText, Font font);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
+// A plate in other colours (the ammo calls: OUT in red).
+void PlateIn(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
 // How loud you are now, 0 (nothing) to 3 (60 m and more): the noise waveform's colour, the ring's ticks.
 int NoiseArcs(const Senses &s);

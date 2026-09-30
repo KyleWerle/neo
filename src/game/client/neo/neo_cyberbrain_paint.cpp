@@ -146,23 +146,42 @@ float TextWidth(const wchar_t *pText, Font font)
 	return static_cast<float>(wide);
 }
 
-void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji)
+// The plate's box and text, returning its left edge and width.
+static bool PlateBox(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg,
+	float &x0, float &w)
 {
 	const vgui::HFont handle = GetFont(FONT_PLATE);
 	if (handle == vgui::INVALID_FONT || !pText)
 	{
-		return;
+		return false;
 	}
 	int wide, tall;
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
-	const float pad = 5.0f * f.s, w = wide + pad * 2.0f, h = tall + 2.0f * f.s;
-	const float x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;
-	Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), Color(198, 203, 206, 255), 0.85f * alpha);
+	const float pad = 5.0f * f.s, h = tall + 2.0f * f.s;
+	w = wide + pad * 2.0f;
+	x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;
+	Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), bg, 0.85f * alpha);
 	NeoGhostFlush();
 	vgui::surface()->DrawSetTextFont(handle);
-	vgui::surface()->DrawSetTextColor(18, 22, 25, Alpha(f, alpha));
+	vgui::surface()->DrawSetTextColor(fg.r(), fg.g(), fg.b(), Alpha(f, alpha));
 	vgui::surface()->DrawSetTextPos(RoundFloatToInt(x0 + pad), RoundFloatToInt(y - tall * 0.5f));
 	vgui::surface()->DrawPrintText(pText, V_wcslen(pText));
+	return true;
+}
+
+void PlateIn(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg)
+{
+	float x0, w;
+	PlateBox(f, pText, x, y, align, alpha, bg, fg, x0, w);
+}
+
+void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji)
+{
+	float x0, w;
+	if (!PlateBox(f, pText, x, y, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
+	{
+		return;
+	}
 	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
 	if (pKanji && align != 0 && cl_neo_hud_kanji.GetBool())
 	{

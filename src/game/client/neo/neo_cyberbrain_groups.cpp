@@ -138,7 +138,7 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 // The rounds on the gun itself: a short leader out from the magazine (level, toward the screen's centre side, then a
 // drop), the count at its end. It rides with the magazine, reloads included. False when the magazine isn't on screen
 // or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
-static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a)
+static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a, Vector2D &below, int &align)
 {
 	Vector2D mag;
 	if (!NeoCyberGunPointOnScreen(NEO_GUN_MAG, mag) || InKeepout(f, mag))
@@ -151,7 +151,40 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 	Line(f, mag, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_VALUE_LARGE, c, a);
+	below.Init(end.x + out * 4.0f, end.y + 30.0f * f.s);
+	align = f.hand > 0 ? -1 : 1;
 	return true;
+}
+
+// The ammo calls (Kyle's pick): NT's plates hung under the count, saying what to do while the state holds: RELOAD (the
+// magazine's empty, spares left), LOW (the last magazine in, no spares), OUT in red (nothing left). Kyle's words. Each
+// blinks off once as it starts (motion only for the event).
+enum AmmoCall { CALL_NONE, CALL_RELOAD, CALL_LAST, CALL_NONE_LEFT };
+
+static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Vector2D &at, int align)
+{
+	static AmmoCall s_call = CALL_NONE;
+	static float s_since = -100.0f;
+	AmmoCall call = CALL_NONE;
+	if (!s.bReloading && ammo.maxRounds > 0 && !ammo.bHeat && !(ammo.pMode && !V_wcscmp(ammo.pMode, L"THROW")))
+	{
+		call = ammo.rounds == 0 ? (ammo.bMagsOut ? CALL_NONE_LEFT : CALL_RELOAD) : ammo.bMagsOut ? CALL_LAST : CALL_NONE;
+	}
+	if (call != s_call)
+	{
+		s_call = call;
+		s_since = f.now;
+	}
+	if (call == CALL_NONE)
+		return;
+	const float age = f.now - s_since;
+	if (age > 0.08f && age < 0.16f)
+		return;	// the one blink
+	const wchar_t *pText = call == CALL_RELOAD ? L"RELOAD" : call == CALL_LAST ? L"LOW" : L"OUT";
+	if (call == CALL_NONE_LEFT)
+		PlateIn(f, pText, at.x, at.y, align, 1.0f, CRIT, Color(252, 235, 235, 255));
+	else
+		Plate(f, pText, at.x, at.y, align, 0.95f);
 }
 
 // The rounds as ticks (weapons without a bullet glyph: the detpack): the magazine a tick each (or grouped past 30).
@@ -268,11 +301,16 @@ void PaintWeapon(const Frame &f)
 		wchar_t count[16];
 		V_snwprintf(count, ARRAYSIZE(count), L"%d", ammo.rounds);
 		const float countAlpha = Max(look.numbers, bLow ? 1.0f : 0.5f);
-		if (!RoundsOnGun(f, count, col, countAlpha))
+		Vector2D callAt;
+		int callAlign;
+		if (!RoundsOnGun(f, count, col, countAlpha, callAt, callAlign))
 		{
 			const Vector2D ca = L.At(m * 84.0f, 12.0f);
 			Text(f, count, ca.x, ca.y, side, FONT_VALUE_LARGE, col, countAlpha);
+			callAt = L.At(0.0f, 62.0f);
+			callAlign = 0;
 		}
+		PaintAmmoCall(f, s, ammo, callAt, callAlign);
 		ModeGlyph(f, L, m > 0.0f ? 84.0f : -96.0f, 34.0f, ammo.pMode, 0.7f * a);
 		// Magazines as pips over the count (the Supa 7: shells, then slugs as taller pips).
 		int mags = 0, slugs = 0;
