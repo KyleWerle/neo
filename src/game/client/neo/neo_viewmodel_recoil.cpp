@@ -3,6 +3,7 @@
 #include "weapon_neobasecombatweapon.h"
 #include "c_neo_player.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 #include "neo_ironsight_optic.h"
 #include "neo_gunplay_shots.h"
 #include "neo_gunplay_spectator_hits.h"
@@ -332,6 +333,7 @@ static void WatchSpectatedShots()
 void NeoViewmodelRecoilApply(C_BasePlayer *pOwner, const QAngle &eyeAngles, float ironsightBlend, Vector &origin,
 	QAngle &angles)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_DAMPING, "NeoViewmodelRecoilApply");
 	// Whoever's eyes the view is through: the local player, or one watched in first person.
 	if (!pOwner || pOwner != NeoIronsightOpticViewPlayer())
 	{

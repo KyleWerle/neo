@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_viewmodel_anim_blend.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -11,6 +12,7 @@ ConVar cl_neo_viewmodel_anim_blend("cl_neo_viewmodel_anim_blend", "0.4", FCVAR_A
 
 void NeoViewmodelAnimBlend::Apply(CStudioHdr *hdr, int sequence, Vector pos[], Quaternion q[], int boneMask)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_DAMPING, "NeoViewmodelAnimBlend::Apply");
 	if (!hdr)
 	{
 		return;
