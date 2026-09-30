@@ -20,10 +20,8 @@ public:
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme) override;
 	virtual void Paint() override;
 	virtual bool ShouldDraw() override;
-	virtual void Init() override;
 	virtual void VidInit() override;
 	virtual void LevelInit() override;
-	virtual void FireGameEvent(IGameEvent *pEvent) override;
 
 protected:
 	virtual void UpdateStateForNeoHudElementDraw() override {}

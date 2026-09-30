@@ -287,7 +287,7 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	out.bExposed = out.light > 0.6f && !out.bCloaked;
 
 	// The weapon.
-	NeoQuickInfo::ReadAmmo(pPlayer, out.ammo);
+	NeoHud::ReadAmmo(pPlayer, out.ammo);
 	out.bAmmoLow = !out.ammo.bHeat && out.ammo.maxRounds > 1 && out.ammo.rounds <= out.ammo.maxRounds / 5;
 	out.heatLevel = !out.ammo.bHeat ? 0 : out.ammo.heat > 0.8f ? 2 : out.ammo.heat > 0.5f ? 1 : 0;
 	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
@@ -395,5 +395,9 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	{
 		out.spawnTime = now;
 	}
+}
+void SenseCallouts(float now, Senses &out)
+{
+	out.calloutCount = NeoHud::ReadCallouts(now, out.callout, out.calloutNewest);
 }
 } // namespace NeoCyberbrain

@@ -7,7 +7,8 @@
 
 #include "neo_cyberbrain.h"
 #include "neo_ghost_stroke.h"
-#include "neo_quickinfo_internal.h"
+#include "neo_hud_model_ammo.h"
+#include "neo_hud_model_callouts.h"
 #include "mathlib/vector2d.h"
 #include "Color.h"
 
@@ -38,10 +39,11 @@ struct Heard { float time; float bearing; float loud; SoundKind kind; };
 struct Noise { float time; float metres; SoundKind kind; };
 // An enemy the ghost called out: where (world yaw, degrees), how far (metres), how long ago, and how much of its time
 // on the ring is left (1 new, 0 gone).
-struct Callout { float yaw; float metres; float age; float life; };
+using NeoHud::Callout;
 // Who has the objective: nobody, your team, or theirs.
 enum Carrier { CARRIER_NONE, CARRIER_OURS, CARRIER_THEIRS };
-constexpr int MAX_HEARD = 16, MAX_NOISE = 16, MAX_MATES = 32, MAX_CALLOUTS = 32;
+constexpr int MAX_HEARD = 16, MAX_NOISE = 16, MAX_MATES = 32;
+using NeoHud::MAX_CALLOUTS;
 
 // Everything the groups show, read once a frame.
 struct Senses
@@ -63,7 +65,7 @@ struct Senses
 	bool bMoving = false, bSilent = false;
 	float light = 0.3f;					// the light you stand in, 0 dark to 1 bright
 	// The weapon, as the ammo panel counts it.
-	NeoQuickInfo::Ammo ammo;
+	NeoHud::Ammo ammo;
 	// The rules the groups show, decided here once (attention and paint only read them): low on rounds, how hot the
 	// BALC runs (0 fine, 1 warm, 2 critical), standing in bright light uncloaked.
 	bool bAmmoLow = false;
@@ -149,10 +151,9 @@ Frame ForGroup(const Frame &f, int slot);
 
 // Sensing (neo_cyberbrain_sense.cpp): reads the player, the view, light and sounds into senses.
 void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &senses);
-// The ghost's enemy callouts (neo_cyberbrain_callouts.cpp): the HUD element passes on the game events it listens for.
-void CalloutEvent(IGameEvent *pEvent);
+// The ghost's enemy callouts (neo_hud_model_callouts.h) into senses.
 void SenseCallouts(float now, Senses &senses);
-void ResetCallouts();
+using NeoHud::ResetCallouts;
 // The senses and colour the HUD drew with last (for the gun's overlay, drawn in the 3D pass before the HUD), or none
 // if it didn't draw last frame.
 const Senses *PublishedSenses(Color &color);

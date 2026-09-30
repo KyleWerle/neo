@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_competitive.h"
-#include "neo_cyberbrain_internal.h"
+#include "neo_hud_model_ammo.h"
+#include "neo_hud_model_callouts.h"
 #include "c_neo_player.h"
 #include "c_team.h"
 #include "neo_gamerules.h"
@@ -48,8 +49,8 @@ static void Health(const Pen &pen, C_NEO_Player *pPlayer)
 
 static void Ammo(const Pen &pen, C_NEO_Player *pPlayer)
 {
-	NeoQuickInfo::Ammo ammo;
-	NeoQuickInfo::ReadAmmo(pPlayer, ammo);
+	NeoHud::Ammo ammo;
+	NeoHud::ReadAmmo(pPlayer, ammo);
 	if (!ammo.bShown)
 		return;
 	const float s = pen.s, right = pen.wide - EDGE * s, bottom = pen.tall - EDGE * s, gap = 12.0f * s, pad = BOX_PAD * s;
@@ -141,16 +142,17 @@ static void Compass(const Pen &pen, C_NEO_Player *pPlayer)
 		Print(pen, L"v", x, markY, 0, FACE_TEXT, c);
 	}
 	// The ghost's callouts, red and fading, the newest with its distance.
-	NeoCyberbrain::Senses senses;
-	NeoCyberbrain::SenseCallouts(gpGlobals->realtime, senses);
-	for (int i = 0; i < senses.calloutCount; ++i)
+	NeoHud::Callout callouts[NeoHud::MAX_CALLOUTS];
+	int newest;
+	const int calloutCount = NeoHud::ReadCallouts(gpGlobals->realtime, callouts, newest);
+	for (int i = 0; i < calloutCount; ++i)
 	{
-		const NeoCyberbrain::Callout &c = senses.callout[i];
+		const NeoHud::Callout &c = callouts[i];
 		float x;
 		CompassX(pen, clamp(AngleNormalize(yaw - c.yaw), -COMPASS_FOV * 0.5f, COMPASS_FOV * 0.5f), x);
 		const Color red(255, 0, 0, clamp(RoundFloatToInt(255.0f * c.life), 0, 255));
 		Print(pen, L"v", x, markY, 0, FACE_TEXT, red);
-		if (i == senses.calloutNewest)
+		if (i == newest)
 		{
 			wchar_t metres[16];
 			V_snwprintf(metres, ARRAYSIZE(metres), L"%dm", static_cast<int>(c.metres));

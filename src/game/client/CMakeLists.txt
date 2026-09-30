@@ -1692,7 +1692,6 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_attention.cpp
     neo/neo_cyberbrain_paint.cpp
     neo/neo_cyberbrain_body.cpp
-    neo/neo_cyberbrain_callouts.cpp
     neo/neo_cyberbrain_gun.cpp
     neo/neo_cyberbrain_gun.h
     neo/neo_cyberbrain_feed.cpp
@@ -1726,6 +1725,14 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_draw.h
     neo/neo_hud_light.cpp
     neo/neo_hud_light.h
+    neo/neo_hud_model_ammo.cpp
+    neo/neo_hud_model_ammo.h
+    neo/neo_hud_model_callouts.cpp
+    neo/neo_hud_model_callouts.h
+    neo/neo_hud_model_feed.cpp
+    neo/neo_hud_model_feed.h
+    neo/neo_hud_model_team.cpp
+    neo/neo_hud_model_team.h
     neo/neo_hud_profile.cpp
     neo/neo_hud_profile.h
     neo/neo_hud_style.cpp

@@ -24,21 +24,6 @@ NEO_HUD_ELEMENT_DECLARE_FREQ_CVAR(CyberbrainTeam, 0.0)
 
 namespace NC = NeoCyberbrain;
 
-void NC::TeamSides(int &left, int &right)
-{
-	static ConVarRef cl_neo_hud_team_swap_sides("cl_neo_hud_team_swap_sides");
-	const int local = GetLocalPlayerTeam();
-	const bool bOnTeam = local == TEAM_JINRAI || local == TEAM_NSF;
-	left = (cl_neo_hud_team_swap_sides.GetBool() && bOnTeam) ? local : TEAM_JINRAI;
-	right = left == TEAM_JINRAI ? TEAM_NSF : TEAM_JINRAI;
-}
-
-Color NC::TeamColour(int team)
-{
-	return team == TEAM_JINRAI ? COLOR_NEO_GREEN : team == TEAM_NSF ? COLOR_NEO_BLUE : team == TEAM_SPECTATOR ? COLOR_NEO_ORANGE
-		: COLOR_NEO_WHITE;
-}
-
 CNEOHud_CyberbrainTeam::CNEOHud_CyberbrainTeam(const char *pElementName, vgui::Panel *parent)
 	: CHudElement(pElementName), Panel(parent, pElementName)
 {
@@ -60,30 +45,15 @@ void CNEOHud_CyberbrainTeam::ApplySchemeSettings(vgui::IScheme *pScheme)
 	SetBgColor(Color(0, 0, 0, 0));
 }
 
-void CNEOHud_CyberbrainTeam::Init()
-{
-	// The death notice's events, for the feed's own copy.
-	ListenForGameEvent("player_death");
-	ListenForGameEvent("player_rankchange");
-	ListenForGameEvent("ghost_capture");
-	ListenForGameEvent("vip_extract");
-	ListenForGameEvent("vip_death");
-}
-
 void CNEOHud_CyberbrainTeam::VidInit()
 {
-	NC::ResetFeed();
+	NeoHud::ResetFeed();
 }
 
 // Every map starts its feed empty (the entries' lifetimes are on game time, which restarts with the map).
 void CNEOHud_CyberbrainTeam::LevelInit()
 {
-	NC::ResetFeed();
-}
-
-void CNEOHud_CyberbrainTeam::FireGameEvent(IGameEvent *pEvent)
-{
-	NC::FeedEvent(pEvent);
+	NeoHud::ResetFeed();
 }
 
 bool CNEOHud_CyberbrainTeam::ShouldDraw()

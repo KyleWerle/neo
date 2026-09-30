@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_competitive.h"
-#include "neo_cyberbrain_team.h"
+#include "neo_hud_model_team.h"
+#include "neo_hud_model_feed.h"
 #include "c_neo_player.h"
 #include "c_playerresource.h"
 #include "neo_gamerules.h"
@@ -12,7 +13,7 @@
 // The Competitive HUD's team side, in the stock places as lowercase text: the round top centre (its label, the
 // clock, the rounds each team has won either side, the tally, the status), the squad top left (the star's name, then
 // the stock list's rows: name, rank, [class], health, or dead), the kill feed top right. The same readouts as the
-// cyberbrain's (neo_cyberbrain_team.h), so both carry exactly what the stock elements do.
+// cyberbrain's (neo_hud_model_team.h), so both carry exactly what the stock elements do.
 
 namespace NeoCompetitive
 {
@@ -20,9 +21,8 @@ constexpr float TOP = 8.0f, SCORE_X = 90.0f, SQUAD_GAP = 12.0f, FEED_TOP = 16.0f
 
 void PaintRound(const Pen &pen)
 {
-	namespace NC = NeoCyberbrain;
-	NC::RoundReadout r;
-	NC::ReadRound(r);
+	NeoHud::RoundReadout r;
+	NeoHud::ReadRound(r);
 	const float s = pen.s, cx = pen.wide * 0.5f, text = Height(FACE_TEXT), large = Height(FACE_LARGE);
 	float y = TOP * s;
 	if (r.bTimed)
@@ -38,7 +38,7 @@ void PaintRound(const Pen &pen)
 			{
 				wchar_t won[8];
 				V_snwprintf(won, ARRAYSIZE(won), L"%d", r.won[i]);
-				Print(pen, won, cx + (i ? SCORE_X : -SCORE_X) * s, y, 0, FACE_LARGE, NC::TeamColour(r.teams[i]));
+				Print(pen, won, cx + (i ? SCORE_X : -SCORE_X) * s, y, 0, FACE_LARGE, NeoHud::TeamColour(r.teams[i]));
 			}
 		}
 		y += large;
@@ -60,7 +60,6 @@ void PaintRound(const Pen &pen)
 
 void PaintSquad(const Pen &pen)
 {
-	namespace NC = NeoCyberbrain;
 	C_NEO_Player *pLocal = C_NEO_Player::GetLocalNEOPlayer();
 	const int team = GetLocalPlayerTeam();
 	if (!g_PR || !pLocal || !NEORules()->IsTeamplay())
@@ -73,33 +72,22 @@ void PaintSquad(const Pen &pen)
 	const Color starColour = star == STAR_NONE ? COLOR_NEO_WHITE : team == TEAM_NSF ? COLOR_NSF : COLOR_JINRAI;
 	y += Height(FACE_LARGE) + 4.0f * s;
 
-	NC::SquadEntry order[MAX_PLAYERS];
-	const int count = NC::SquadOrder(order);
+	NeoHud::SquadEntry order[MAX_PLAYERS];
+	const int count = NeoHud::SquadOrder(order);
 	static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
-	const Color teamColour = NC::TeamColour(team);
+	const Color teamColour = NeoHud::TeamColour(team);
 	struct Line { wchar_t name[64], rest[64]; Color c; float y; };
 	static Line s_lines[MAX_PLAYERS];
 	float widest = Width(s_stars[star], FACE_LARGE);
 	for (int i = 0; i < count; ++i)
 	{
-		const NC::SquadEntry &e = order[i];
+		const NeoHud::SquadEntry &e = order[i];
 		if (e.bGapBefore)
 			y += SQUAD_GAP * s;
 		const int player = e.player;
 		const bool bAlive = g_PR->IsAlive(player);
-		C_NEO_Player *pMate = ToNEOPlayer(UTIL_PlayerByIndex(player));
-		const char *pName, *pClass = GetNeoClassName(g_PR->GetClass(player));
-		if (bAlive)
-		{
-			pName = pMate ? pMate->GetPlayerNameWithTakeoverContext(player) : g_PR->GetPlayerName(player);
-		}
-		else
-		{
-			C_NEO_Player *pImpersonator = pMate ? pMate->m_hSpectatorTakeoverPlayerImpersonatingMe.Get() : nullptr;
-			pName = pImpersonator ? pImpersonator->GetPlayerName() : g_PR->GetPlayerName(player);
-			if (pImpersonator)
-				pClass = GetNeoClassName(pImpersonator->m_iClassBeforeTakeover);
-		}
+		const char *pName, *pClass;
+		NeoHud::SquadMateNames(player, &pName, &pClass);
 		Line &line = s_lines[i];
 		g_pVGuiLocalize->ConvertANSIToUnicode(pName ? pName : "", line.name, sizeof(line.name));
 		wchar_t cls[24];
@@ -134,27 +122,26 @@ void PaintSquad(const Pen &pen)
 
 void PaintFeed(const Pen &pen)
 {
-	namespace NC = NeoCyberbrain;
-	const NC::FeedEntry *pFeed;
-	const int count = NC::FeedEntries(&pFeed);
+	const NeoHud::FeedEntry *pFeed;
+	const int count = NeoHud::FeedEntries(&pFeed);
 	const float s = pen.s, right = pen.wide - EDGE * s, line = Height(FACE_TEXT) + 8.0f * s;
 	for (int i = 0; i < count; ++i)
 	{
-		const NC::FeedEntry &e = pFeed[i];
+		const NeoHud::FeedEntry &e = pFeed[i];
 		// Names keep their case; the icons stay NT's glyphs; the words go lowercase.
-		const auto faceOf = [](const NC::FeedSegment &seg) { return seg.font == NC::FONT_ICONS ? FACE_ICONS : FACE_TEXT; };
+		const auto faceOf = [](const NeoHud::FeedSegment &seg) { return seg.kind == NeoHud::FEED_ICON ? FACE_ICONS : FACE_TEXT; };
 		float width = 0.0f;
 		for (int k = 0; k < e.count; ++k)
-			width += Width(e.seg[k].text, faceOf(e.seg[k]), e.seg[k].font == NC::FONT_NAME);
+			width += Width(e.seg[k].text, faceOf(e.seg[k]), e.seg[k].kind == NeoHud::FEED_NAME);
 		float x = right - width;
 		const float y = FEED_TOP * s + i * line;
 		// The stock feed's boxes: dark, and grey for the ones you're in.
 		Box(x - 4.0f * s, y - 2.0f * s, right + 4.0f * s, y + line - 4.0f * s, e.bInvolved ? BOX : FEED_BOX);
 		for (int k = 0; k < e.count; ++k)
 		{
-			const NC::FeedSegment &seg = e.seg[k];
-			const bool bName = seg.font == NC::FONT_NAME;
-			const float ty = seg.font == NC::FONT_ICONS ? y + (Height(FACE_TEXT) - Height(FACE_ICONS)) * 0.5f : y;
+			const NeoHud::FeedSegment &seg = e.seg[k];
+			const bool bName = seg.kind == NeoHud::FEED_NAME;
+			const float ty = seg.kind == NeoHud::FEED_ICON ? y + (Height(FACE_TEXT) - Height(FACE_ICONS)) * 0.5f : y;
 			x += Print(pen, seg.text, x, ty, 1, faceOf(seg), seg.color, bName);
 		}
 	}

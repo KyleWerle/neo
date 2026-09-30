@@ -1,28 +1,25 @@
 #include "cbase.h"
-#include "neo_cyberbrain_internal.h"
+#include "neo_hud_model_callouts.h"
 #include "c_neo_player.h"
 #include "view.h"
 #include "igameevents.h"
+#include "igamesystem.h"
+#include "GameEventListener.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// The ghost's enemy callouts, for the surround ring. The stock compass keeps them (neo_hud_compass.cpp) but hides in the
-// cyberbrain styles, so the ring keeps its own copy from the same game event: one per spotted player, restarted each
-// time the ghost calls them out again, for as long as the compass would show it (cl_neo_ghost_callout_compass_time).
-
-namespace NeoCyberbrain
+namespace NeoHud
 {
-
 static struct Spotted { Vector pos; float time = -100.0f; } s_spotted[MAX_PLAYERS_ARRAY_SAFE];
 
-static void ClearCallouts()
+void ResetCallouts()
 {
 	for (Spotted &spotted : s_spotted)
 		spotted.time = -100.0f;
 }
 
-void CalloutEvent(IGameEvent *pEvent)
+static void CalloutEvent(IGameEvent *pEvent)
 {
 	const char *pName = pEvent->GetName();
 	if (!V_stricmp(pName, "ghost_enemy_callout"))
@@ -40,41 +37,54 @@ void CalloutEvent(IGameEvent *pEvent)
 	}
 	else if (!V_stricmp(pName, "round_start"))
 	{
-		ClearCallouts();
+		ResetCallouts();
 	}
 	else if (!V_stricmp(pName, "player_team"))
 	{
 		C_BasePlayer *pPlayer = UTIL_PlayerByUserId(pEvent->GetInt("userid"));
 		if (pPlayer && pPlayer->IsLocalPlayer())
-			ClearCallouts();
+			ResetCallouts();
 	}
 }
 
-void SenseCallouts(float now, Senses &out)
+int ReadCallouts(float now, Callout out[MAX_CALLOUTS], int &newest)
 {
 	static ConVarRef cl_neo_ghost_callout_compass_time("cl_neo_ghost_callout_compass_time");
 	const float lasts = cl_neo_ghost_callout_compass_time.IsValid() ? cl_neo_ghost_callout_compass_time.GetFloat() : 10.0f;
-	out.calloutCount = 0;
-	out.calloutNewest = -1;
+	int count = 0;
+	newest = -1;
 	for (const Spotted &spotted : s_spotted)
 	{
 		const float age = now - spotted.time;
-		if (age < 0.0f || age >= lasts || out.calloutCount >= MAX_CALLOUTS)
+		if (age < 0.0f || age >= lasts || count >= MAX_CALLOUTS)
 			continue;
 		const Vector d = spotted.pos - MainViewOrigin();
-		Callout &c = out.callout[out.calloutCount];
+		Callout &c = out[count];
 		c.yaw = RAD2DEG(atan2f(d.y, d.x));
 		c.metres = d.Length() * METERS_PER_INCH;
 		c.age = age;
 		c.life = lasts > 0.0f ? 1.0f - age / lasts : 0.0f;
-		if (out.calloutNewest < 0 || age < out.callout[out.calloutNewest].age)
-			out.calloutNewest = out.calloutCount;
-		++out.calloutCount;
+		if (newest < 0 || age < out[newest].age)
+			newest = count;
+		++count;
 	}
+	return count;
 }
 
-void ResetCallouts()
+// Listens for the callouts in every style (Competitive's compass shows them too).
+class CNeoHudCalloutModel : public CAutoGameSystem, public CGameEventListener
 {
-	ClearCallouts();
-}
-} // namespace NeoCyberbrain
+public:
+	CNeoHudCalloutModel() : CAutoGameSystem("CNeoHudCalloutModel") {}
+
+	bool Init() override
+	{
+		ListenForGameEvent("ghost_enemy_callout");
+		ListenForGameEvent("round_start");
+		ListenForGameEvent("player_team");
+		return true;
+	}
+	void FireGameEvent(IGameEvent *pEvent) override { CalloutEvent(pEvent); }
+};
+static CNeoHudCalloutModel s_calloutModel;
+} // namespace NeoHud

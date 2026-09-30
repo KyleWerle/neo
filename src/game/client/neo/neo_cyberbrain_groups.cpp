@@ -188,7 +188,7 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 // blinks off once as it starts (motion only for the event).
 enum AmmoCall { CALL_NONE, CALL_RELOAD, CALL_LAST, CALL_NONE_LEFT };
 
-static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Vector2D &at, int align)
+static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoHud::Ammo &ammo, const Vector2D &at, int align)
 {
 	static AmmoCall s_call = CALL_NONE;
 	static float s_since = -100.0f;
@@ -217,7 +217,7 @@ static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoQuickInfo::A
 // The rounds as ticks (weapons without a bullet glyph: the detpack): the magazine a tick each (or grouped past 30).
 // A reload fills them back in on the weapon's own clock (a magazine over its whole reload; shells as the real count,
 // the next one filling as it goes in); a shot flicks the tick it spent.
-static void Ticks(const Frame &f, const Local &L, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Color &col, float flick, float a)
+static void Ticks(const Frame &f, const Local &L, const Senses &s, const NeoHud::Ammo &ammo, const Color &col, float flick, float a)
 {
 	const float m = static_cast<float>(L.m);
 	const int n = Min(ammo.maxRounds, 30);
@@ -239,7 +239,7 @@ static void Ticks(const Frame &f, const Local &L, const Senses &s, const NeoQuic
 // The rounds as the stock panel draws them: the weapon's own bullet glyph a round, spent ones dim; a magazine too
 // long for the row ends in "+" as stock does (full, the "+" lit too). Drawn as two strings (full, spent) and the one
 // glyph moving: the round a shot just spent flicking up, or the shell going in filling.
-static void Bullets(const Frame &f, const Local &L, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Color &col, float flick,
+static void Bullets(const Frame &f, const Local &L, const Senses &s, const NeoHud::Ammo &ammo, const Color &col, float flick,
 	float glyphW, float a)
 {
 	const float m = static_cast<float>(L.m);
@@ -291,7 +291,7 @@ static void Bullets(const Frame &f, const Local &L, const Senses &s, const NeoQu
 void PaintWeapon(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
-	const NeoQuickInfo::Ammo &ammo = s.ammo;
+	const NeoHud::Ammo &ammo = s.ammo;
 	const Look look = LookOf(f, GROUP_WEAPON);
 	const Local L = { f.pPlaces[GROUP_WEAPON].pos, f.s * look.scale, f.hand };
 	// Carrying the ghost, its uplink takes the weapon group's place (the ghost has no rounds).

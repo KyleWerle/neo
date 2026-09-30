@@ -23,8 +23,6 @@ public:
 	virtual void Paint() override;
 	virtual bool ShouldDraw() override;
 	virtual void LevelInit() override;
-	virtual void Init() override;
-	virtual void FireGameEvent(IGameEvent *pEvent) override;
 
 protected:
 	virtual void UpdateStateForNeoHudElementDraw() override;

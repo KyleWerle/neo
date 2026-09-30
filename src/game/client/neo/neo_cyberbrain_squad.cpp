@@ -85,23 +85,11 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 {
 	const float s = f.s, h = (bSmall ? ROW_SMALL : ROW_BIG) * s, icon = h - 4.0f * s, mid = y + h * 0.5f;
 	const bool bAlive = g_PR->IsAlive(player);
-	C_NEO_Player *pMate = ToNEOPlayer(UTIL_PlayerByIndex(player));
 	const float x = LIST_X * s, right = (LIST_X + LIST_W) * s;
 	ClassIcon(f, player, x, y + 2.0f * s, icon);
 
-	const char *pName;
-	const char *pClass = GetNeoClassName(g_PR->GetClass(player));
-	if (bAlive)
-	{
-		pName = pMate ? pMate->GetPlayerNameWithTakeoverContext(player) : g_PR->GetPlayerName(player);
-	}
-	else
-	{
-		C_NEO_Player *pImpersonator = pMate ? pMate->m_hSpectatorTakeoverPlayerImpersonatingMe.Get() : nullptr;
-		pName = pImpersonator ? pImpersonator->GetPlayerName() : g_PR->GetPlayerName(player);
-		if (pImpersonator)
-			pClass = GetNeoClassName(pImpersonator->m_iClassBeforeTakeover);
-	}
+	const char *pName, *pClass;
+	SquadMateNames(player, &pName, &pClass);
 	wchar_t name[64], cls[32];
 	g_pVGuiLocalize->ConvertANSIToUnicode(pName ? pName : "", name, sizeof(name));
 	g_pVGuiLocalize->ConvertANSIToUnicode(pClass ? pClass : "", cls, sizeof(cls));
@@ -135,48 +123,6 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 		Plate(f, L"KIA", right, mid, -1, 0.5f);
 	}
 	return y + h;
-}
-
-int SquadOrder(SquadEntry out[MAX_PLAYERS])
-{
-	C_NEO_Player *pLocal = C_NEO_Player::GetLocalNEOPlayer();
-	const int team = GetLocalPlayerTeam(), self = GetLocalPlayerIndex();
-	if (!g_PR || !pLocal || !NEORules()->IsTeamplay() || (team != TEAM_JINRAI && team != TEAM_NSF))
-		return 0;
-	static ConVarRef cl_neo_hud_scoreboard_hide_others("cl_neo_hud_scoreboard_hide_others");
-	if (cl_neo_hud_scoreboard_hide_others.GetBool() && g_pNeoScoreBoard && g_pNeoScoreBoard->IsVisible())
-		return 0;
-	static ConVarRef sv_neo_bot_cmdr_enable("sv_neo_bot_cmdr_enable");
-	const bool bCommander = sv_neo_bot_cmdr_enable.IsValid() && sv_neo_bot_cmdr_enable.GetBool();
-	const int star = g_PR->GetStar(self);
-
-	int commanded[MAX_PLAYERS], squad[MAX_PLAYERS], rest[MAX_PLAYERS];
-	int nCommanded = 0, nSquad = 0, nRest = 0;
-	for (int i = 1; i <= gpGlobals->maxClients; ++i)
-	{
-		if (i == self || !g_PR->IsConnected(i) || g_PR->GetTeam(i) != team)
-			continue;
-		if (star != STAR_NONE && g_PR->GetStar(i) == star)
-		{
-			C_NEO_Player *pMate = ToNEOPlayer(UTIL_PlayerByIndex(i));
-			if (bCommander && pMate && pMate->m_hCommandingPlayer.Get() == pLocal)
-				commanded[nCommanded++] = i;
-			else
-				squad[nSquad++] = i;
-		}
-		else
-		{
-			rest[nRest++] = i;
-		}
-	}
-	int count = 0;
-	for (int i = 0; i < nCommanded; ++i)
-		out[count++] = { commanded[i], false, true, false };
-	for (int i = 0; i < nSquad; ++i)
-		out[count++] = { squad[i], false, false, false };
-	for (int i = 0; i < nRest; ++i)
-		out[count++] = { rest[i], true, false, i == 0 && count > 0 };
-	return count;
 }
 
 void PaintSquad(const Frame &f)

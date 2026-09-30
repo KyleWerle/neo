@@ -119,19 +119,6 @@ void CNEOHud_Cyberbrain::LevelInit()
 	NC::ResetCallouts();
 }
 
-// The ghost's enemy callouts, for the ring (the compass keeps its own).
-void CNEOHud_Cyberbrain::Init()
-{
-	ListenForGameEvent("ghost_enemy_callout");
-	ListenForGameEvent("round_start");
-	ListenForGameEvent("player_team");
-}
-
-void CNEOHud_Cyberbrain::FireGameEvent(IGameEvent *pEvent)
-{
-	NC::CalloutEvent(pEvent);
-}
-
 bool CNEOHud_Cyberbrain::ShouldDraw()
 {
 	if (!NeoHudCyberbrainStyle(NeoHudStyleCurrent()))
