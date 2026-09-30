@@ -91,11 +91,13 @@ static float DistanceReach(float metres)
 	return clamp(log10f(Max(metres, 1.0f) / 10.0f) / log10f(30.0f), 0.0f, 1.0f);
 }
 
-// The ghost's enemy callouts, as the compass's red arrows but at their real bearing (behind you too): a wedge on the
-// ring pointing in, fading over the callout's time; a fresh one closes in with a bracket. The newest carries its
-// distance as a line, and as metres while it's fresh (the compass always showed it).
+// The ghost's enemy callouts, as the compass's red arrows but at their real bearing (behind you too). Kyle: above
+// everything else on the ring, always exact and highlighted, just outside the sound icons: drawn last, a hairline from
+// the ring to the wedge at the exact bearing, the wedge pointing in on a dark backing, at full strength ahead or
+// behind, fading only over the callout's time; a fresh one closes in with a bracket. The newest carries its distance
+// as a line, and as metres while it's fresh (the compass always showed it).
 template <typename Rel>
-static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel)
+static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel, float out0)
 {
 	const Senses &s = *f.pSenses;
 	for (int pass = 0; pass < 2; ++pass)	// older first, the newest on top
@@ -106,10 +108,16 @@ static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel)
 			if (bNewest != (pass == 1))
 				continue;
 			const Callout &c = s.callout[i];
-			const float b = rel(c.yaw), front = Ring::Front(b), fade = c.life * (0.55f + 0.45f * front);
-			const Vector2D tip = ring.At(b, 1.0f), base = ring.At(b, bNewest ? 13.0f : 10.0f);
-			const Vector2D across = Unit(Vector2D(base.y - tip.y, tip.x - base.x)) * (bNewest ? 5.0f : 4.0f) * f.s;
-			NeoGhostBegin(CRIT, Alpha(f, (bNewest ? 0.95f : 0.7f) * fade));
+			const float b = rel(c.yaw), fade = c.life;
+			const Vector2D tip = ring.At(b, out0), base = ring.At(b, out0 + (bNewest ? 12.0f : 9.0f));
+			const Vector2D along = Unit(base - tip), across = Unit(Vector2D(base.y - tip.y, tip.x - base.x)) * (bNewest ? 5.0f : 4.0f) * f.s;
+			Line(f, ring.At(b, 0.0f), tip, NEO_GHOST_LIGHT, CRIT, 0.85f * fade);
+			const float rim = 2.5f * f.s;
+			NeoGhostBegin(Color(0, 0, 0, 255), Alpha(f, 0.6f * fade));
+			const Vector2D backing[4] = { tip - along * rim * 1.5f, base + along * rim + across * 1.6f,
+				base + along * rim - across * 1.6f, tip - along * rim * 1.5f };
+			NeoGhostFill(backing);
+			NeoGhostBegin(CRIT, Alpha(f, (bNewest ? 1.0f : 0.85f) * fade));
 			const Vector2D wedge[4] = { tip, base + across, base - across, tip };
 			NeoGhostFill(wedge);
 			if (c.age < 0.25f)
@@ -121,18 +129,32 @@ static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel)
 			}
 			if (bNewest)
 			{
-				Line(f, ring.At(b, 16.0f), ring.At(b, 16.0f + 30.0f * DistanceReach(c.metres)), NEO_GHOST_LIGHT, CRIT, 0.6f * fade);
+				Line(f, ring.At(b, out0 + 15.0f), ring.At(b, out0 + 15.0f + 30.0f * DistanceReach(c.metres)), NEO_GHOST_LIGHT, CRIT,
+					0.7f * fade);
 				if (c.age < 3.0f)
 				{
 					wchar_t metres[16];
 					V_snwprintf(metres, ARRAYSIZE(metres), L"%.0f M", c.metres);
-					const Vector2D at = ring.At(b, 54.0f);
+					const Vector2D at = ring.At(b, out0 + 53.0f);
 					Text(f, metres, at.x, at.y, 0, FONT_VALUE, CRIT, 0.85f * fade * Min(1.0f, (3.0f - c.age) / 0.5f));
 				}
 			}
 		}
 	}
 }
+
+// Which heard sound matters most (Kyle: in a real fight the marks crowded; weight them to the highest priority): danger
+// first (gunfire, blasts), then someone close (steps), reloads, landings, the rest; louder and fresher above quieter
+// and older.
+static float SoundPriority(const Heard &h, float now)
+{
+	static const float s_weight[SOUND__COUNT] = { 0.7f, 1.0f, 0.55f, 0.45f, 1.0f, 0.25f };	// SoundKind's order
+	const float fresh = 1.0f - clamp((now - h.time) / 2.0f, 0.0f, 1.0f);
+	return s_weight[clamp(static_cast<int>(h.kind), 0, static_cast<int>(SOUND__COUNT) - 1)] * (0.4f + 0.6f * h.loud)
+		* (0.5f + 0.5f * fresh);
+}
+
+constexpr int SOUNDS_LEADING = 4;	// full marks at most at once
 
 void PaintRing(const Frame &f)
 {
@@ -193,19 +215,59 @@ void PaintRing(const Frame &f)
 		Line(f, ring.At(b, 8.0f), ring.At(b, 8.0f + 30.0f * DistanceReach(s.objectiveMetres)), NEO_GHOST_LIGHT, oc,
 			(0.3f + 0.5f * Ring::Front(b)) * a);
 	}
-	PaintCallouts(f, ring, rel);
 	for (int i = 0; i < s.mates; ++i)
 	{
 		const Vector2D p = ring.At(rel(s.mateYaw[i]));
 		Rect(f, p - Vector2D(1.5f, 4.0f) * f.s, p + Vector2D(1.5f, 4.0f) * f.s, TEAM_OURS, 0.8f * a);
 	}
-	// Sounds you can hear, anywhere round you: an arc at the bearing, thicker the louder, arriving from outside.
+	// Sounds you can hear, anywhere round you: an arc at the bearing, thicker the louder, arriving from outside. Only
+	// the most important in each direction leads (its full arc and glyph, a few at once); the others near it stay as a
+	// faint thin arc, so a fight reads as its loudest threat, not a pile of marks.
+	const float span = bBody ? 16.0f : 12.0f;
+	int order[MAX_HEARD];
+	float priority[MAX_HEARD];
 	for (int i = 0; i < s.heardCount; ++i)
 	{
+		order[i] = i;
+		priority[i] = SoundPriority(s.heard[i], f.now);
+	}
+	for (int i = 1; i < s.heardCount; ++i)	// by priority, highest first (a handful: insertion)
+	{
+		for (int j = i; j > 0 && priority[order[j]] > priority[order[j - 1]]; --j)
+			V_swap(order[j], order[j - 1]);
+	}
+	bool bLeads[MAX_HEARD] = {};
+	int leading = 0;
+	for (int n = 0; n < s.heardCount && leading < SOUNDS_LEADING; ++n)
+	{
+		const int i = order[n];
+		bool bClear = true;
+		for (int m = 0; m < n && bClear; ++m)
+		{
+			if (bLeads[order[m]] && fabsf(AngleNormalize(s.heard[i].bearing - s.heard[order[m]].bearing)) < 2.0f * span + 6.0f)
+				bClear = false;
+		}
+		if (bClear)
+		{
+			bLeads[i] = true;
+			++leading;
+		}
+	}
+	for (int i = 0; i < s.heardCount; ++i)
+	{
+		if (bLeads[i])
+			continue;
+		const Heard &h = s.heard[i];
+		const float fade = 1.0f - (f.now - h.time) / 2.0f, b = rel(h.bearing);
+		Arc(f, f.ringCentre, f.ringRadii, b - span * 0.7f, b + span * 0.7f, NEO_GHOST_LIGHT, f.color, 0.3f * fade);
+	}
+	for (int i = 0; i < s.heardCount; ++i)
+	{
+		if (!bLeads[i])
+			continue;
 		const Heard &h = s.heard[i];
 		const float age = f.now - h.time, fade = 1.0f - age / 2.0f, b = rel(h.bearing);
 		const Color c = h.kind == SOUND_GUNFIRE || h.kind == SOUND_BLAST ? WARN : f.color;
-		const float span = bBody ? 16.0f : 12.0f;
 		const NeoGhostWeight w = h.loud > 0.6f ? NEO_GHOST_HEAVY : h.loud > 0.3f ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT;
 		for (int layer = 0; layer < (h.loud > 0.6f ? 2 : 1); ++layer)
 		{
@@ -234,5 +296,8 @@ void PaintRing(const Frame &f)
 				bLoud ? WARN : f.color, 0.7f * fade);
 		}
 	}
+	// The ghost's callouts over everything, just outside the sound icons: On the body the glyphs sit out past the ring
+	// (22), so the callouts start beyond them; Compact's sit inside it, so just outside the ring.
+	PaintCallouts(f, ring, rel, bBody ? 32.0f : 6.0f);
 }
 } // namespace NeoCyberbrain
