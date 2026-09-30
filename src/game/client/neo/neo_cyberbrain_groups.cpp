@@ -173,11 +173,13 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 	const float out = static_cast<float>(-f.hand) * f.s;
 	const Vector2D elbow = at + Vector2D(out * 20.0f, 0.0f), end = elbow + Vector2D(out * 8.0f, 10.0f * f.s);
 	const float b = 4.0f * f.s;
+	MeasurePause(true);	// at the muzzle, not the group
 	Line(f, at + Vector2D(-b, -b), at + Vector2D(-b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
 	Line(f, at + Vector2D(b, -b), at + Vector2D(b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
 	Line(f, at, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_VALUE_LARGE, c, a);
+	MeasurePause(false);
 	below.Init(end.x + out * 4.0f, end.y + 30.0f * f.s);
 	align = f.hand > 0 ? -1 : 1;
 	return true;

@@ -133,6 +133,11 @@ struct Place
 	Vector2D pos, vel, deep, deepVel, kick = Vector2D(0.0f, 0.0f);
 	int layer = LAYER_AMBIENT, lastLayer = LAYER_AMBIENT;
 	float layerChanged = -100.0f;
+	// What it drew last frame, round its point (pos): the box's centre offset and half size, eased (Kyle: the
+	// backings should fit each class, their parts differ and change). bDrawn: measured at all.
+	Vector2D drawnCentre = Vector2D(0.0f, 0.0f), drawnHalf = Vector2D(0.0f, 0.0f);
+	float drawnTime = -100.0f;
+	bool bDrawn = false;
 	bool bPlaced = false;
 };
 // A group's priority now, 0 to 1, from its signals in layers (neo_cyberbrain_perceive.cpp).
@@ -218,6 +223,12 @@ void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, fl
 // A plate in other colours (the ammo calls: OUT in red).
 void PlateIn(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
+// Measuring what a group draws (neo_cyberbrain_paint.cpp): between Begin and End every stroke, fill and text it draws
+// with any strength goes into one box, kept on its place for GroupExtent next frame. Paused: drawn far from the group
+// (the rounds at the muzzle), not counted.
+void MeasureBegin();
+void MeasurePause(bool bPaused);
+void MeasureEnd(Place &place, float now);
 // How loud you are now, 0 (nothing) to 3 (60 m and more): the noise waveform's colour, the ring's ticks.
 int NoiseArcs(const Senses &s);
 // Loose cells (Kyle's pick for stamina and jumps, in place of the tanks): `count` separate cells stacked bottom up in

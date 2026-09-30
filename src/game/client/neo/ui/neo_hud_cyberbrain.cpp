@@ -206,6 +206,8 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	f.pen.scale = f.s;
 	f.pSenses = &m_senses;
 	f.pPlaces = m_places;
+	f.ringCentre = f.centre;	// placed after the attention step; nothing round it until then
+	f.ringRadii.Init(0.0f, 0.0f);
 
 	NC::Home homes[NC::GROUP__COUNT];
 	HomesOf(homes, style);
@@ -250,6 +252,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	for (const NC::Group g : order)
 	{
 		const NC::Frame gf = NC::ForGroup(f, g);
+		NC::MeasureBegin();
 		switch (g)
 		{
 		case NC::GROUP_BODY:	NC::PaintBody(gf); break;
@@ -258,6 +261,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		case NC::GROUP_MOTION:	NC::PaintMotion(gf); break;
 		default:			NC::PaintLink(gf); break;
 		}
+		NC::MeasureEnd(m_places[g], now);
 		NC::PaintLayer(gf, g);
 	}
 	if (bRingOnBody)

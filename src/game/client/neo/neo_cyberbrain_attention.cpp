@@ -19,6 +19,9 @@
 ConVar cl_neo_hud_motion("cl_neo_hud_motion", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD's motion. 0 = still (groups never move; attention shows as size and strength), 1 = calm (short"
 	" travel), 2 = full.", true, 0, true, 2);
+ConVar cl_neo_hud_drawn_extent("cl_neo_hud_drawn_extent", "1", FCVAR_NONE,
+	"The cyberbrain HUD: 1 = each group's extent (its backing, rulers, edge and focus bounds) is what it drew last"
+	" frame, fitting each class; 0 = the fixed sizes.", true, 0, true, 1);
 ConVar cl_neo_hud_focus("cl_neo_hud_focus", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD: 1 = a group at a critical (a hit, a reload, the ghost held, a teammate down...) comes in past"
 	" the keep-out, close by the crosshair; 0 = every group stops at the keep-out.", true, 0, true, 1);
@@ -38,7 +41,8 @@ constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
 // The focus zone: a group's whole extent kept outside this ellipse round the crosshair (pixels at 1080p, about the
 // spread at the hip), and the gun's knock it rides, followed in full while small, to at most KICK_MAX.
 constexpr float FOCUS_X = 110.0f, FOCUS_Y = 80.0f, KICK_MAX = 14.0f;
-constexpr float LAYER_HYSTERESIS = 0.03f;		// how far under a layer's floor its group drops back
+constexpr float LAYER_HYSTERESIS = 0.03f;
+constexpr float DRAWN_PAD = 3.0f;		// pixels at 1080p round what a group drew, for its extent		// how far under a layer's floor its group drops back
 
 static struct { Vector2D offset, vel; } s_ringDeep;
 
@@ -281,6 +285,23 @@ void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 		half = f.ringRadii + Vector2D(40.0f, 30.0f) * f.s;
 		return;
 	}
+	// What it drew last frame, where it's been measured (each class's parts differ, and change).
+	const Place &p = f.pPlaces[slot];
+	if (p.bDrawn && cl_neo_hud_drawn_extent.GetBool())
+	{
+		centre = p.pos + p.drawnCentre;
+		half = p.drawnHalf + Vector2D(DRAWN_PAD, DRAWN_PAD) * f.s;
+		// On the body the ring's disc is the body's too (it shares the body's backing), drawn after it.
+		if (slot == GROUP_BODY && f.style == NEO_HUD_STYLE_BODY && f.ringRadii.x > 0.0f)
+		{
+			const Vector2D lo(Min(centre.x - half.x, f.ringCentre.x - f.ringRadii.x), Min(centre.y - half.y, f.ringCentre.y - f.ringRadii.y));
+			const Vector2D hi(Max(centre.x + half.x, f.ringCentre.x + f.ringRadii.x), Max(centre.y + half.y, f.ringCentre.y + f.ringRadii.y));
+			centre = (lo + hi) * 0.5f;
+			half = (hi - lo) * 0.5f;
+		}
+		return;
+	}
+	// Not yet: its usual size.
 	const float k = f.s * LookOf(f, static_cast<Group>(slot)).scale;
 	Vector2D offset, size;
 	switch (slot)

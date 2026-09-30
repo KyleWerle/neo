@@ -20,14 +20,81 @@ int Alpha(const Frame &f, float a)
 	return clamp(RoundFloatToInt(f.color.a() * a * f.alpha), 0, 255);
 }
 
+constexpr float MEASURE_FROM = 0.05f;	// strength under this doesn't count as drawn
+constexpr float DRAWN_SHRINK = 0.4f;	// seconds the measured box takes to shrink (it grows at once)
+static struct
+{
+	bool bOn = false, bPaused = false, bAny = false;
+	Vector2D lo, hi;
+} s_measure;
+
+static void Measure(const Vector2D &a, const Vector2D &b, float alpha)
+{
+	if (!s_measure.bOn || s_measure.bPaused || alpha < MEASURE_FROM)
+		return;
+	const Vector2D lo(Min(a.x, b.x), Min(a.y, b.y)), hi(Max(a.x, b.x), Max(a.y, b.y));
+	if (!s_measure.bAny)
+	{
+		s_measure.lo = lo;
+		s_measure.hi = hi;
+		s_measure.bAny = true;
+		return;
+	}
+	s_measure.lo.Init(Min(s_measure.lo.x, lo.x), Min(s_measure.lo.y, lo.y));
+	s_measure.hi.Init(Max(s_measure.hi.x, hi.x), Max(s_measure.hi.y, hi.y));
+}
+
+void MeasureBegin()
+{
+	s_measure.bOn = true;
+	s_measure.bPaused = s_measure.bAny = false;
+}
+
+void MeasurePause(bool bPaused)
+{
+	s_measure.bPaused = bPaused;
+}
+
+void MeasureEnd(Place &place, float now)
+{
+	s_measure.bOn = false;
+	if (!s_measure.bAny)
+	{
+		place.bDrawn = false;
+		return;
+	}
+	const Vector2D centre = (s_measure.lo + s_measure.hi) * 0.5f - place.pos, half = (s_measure.hi - s_measure.lo) * 0.5f;
+	const float dt = clamp(now - place.drawnTime, 0.0f, 0.1f);
+	place.drawnTime = now;
+	if (!place.bDrawn)
+	{
+		place.drawnCentre = centre;
+		place.drawnHalf = half;
+		place.bDrawn = true;
+		return;
+	}
+	// Growing at once (nothing drawn outside it), shrinking eased (no pop as a part goes).
+	const float ease = Min(1.0f, dt / DRAWN_SHRINK);
+	Vector2D lo = place.drawnCentre - place.drawnHalf, hi = place.drawnCentre + place.drawnHalf;
+	const Vector2D newLo = centre - half, newHi = centre + half;
+	lo.x = newLo.x < lo.x ? newLo.x : lo.x + (newLo.x - lo.x) * ease;
+	lo.y = newLo.y < lo.y ? newLo.y : lo.y + (newLo.y - lo.y) * ease;
+	hi.x = newHi.x > hi.x ? newHi.x : hi.x + (newHi.x - hi.x) * ease;
+	hi.y = newHi.y > hi.y ? newHi.y : hi.y + (newHi.y - hi.y) * ease;
+	place.drawnCentre = (lo + hi) * 0.5f;
+	place.drawnHalf = (hi - lo) * 0.5f;
+}
+
 void Line(const Frame &f, const Vector2D &a, const Vector2D &b, NeoGhostWeight weight, const Color &c, float alpha)
 {
+	Measure(a, b, alpha);
 	NeoGhostBegin(c, Alpha(f, alpha));
 	NeoGhostStroke(f.pen, a, b, weight);
 }
 
 void Rect(const Frame &f, const Vector2D &a, const Vector2D &b, const Color &c, float alpha)
 {
+	Measure(a, b, alpha);
 	NeoGhostBegin(c, Alpha(f, alpha));
 	NeoGhostFillRect(Min(a.x, b.x), Min(a.y, b.y), Max(Max(a.x, b.x), Min(a.x, b.x) + 1.0f), Max(Max(a.y, b.y), Min(a.y, b.y) + 1.0f));
 }
@@ -107,6 +174,7 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	int wide, tall;
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	const int tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(y) - tall / 2;
+	Measure(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), alpha);
 	// A shadow on a dark scene; a dark edge all round on a bright one.
 	NeoHudPrintText(handle, pText, count, tx, ty, Color(c.r(), c.g(), c.b(), Alpha(f, alpha)),
 		f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW, Alpha(f, alpha * (0.6f + 0.35f * f.contrast)));
@@ -175,6 +243,7 @@ static void CellShape(const Frame &f, float x0, float y0, float x1, float y1, fl
 	const Vector2D cutB = chamfer > 0 ? Vector2D(x1, y0 + c) : Vector2D(x0, y0 + c);
 	if (bFill)
 	{
+		Measure(tl, br, alpha);
 		NeoGhostBegin(col, Alpha(f, alpha));
 		if (chamfer > 0)
 		{
