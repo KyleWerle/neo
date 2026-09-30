@@ -141,6 +141,7 @@ struct LensState
 {
 	IMaterial *pReticle = nullptr;
 	bool bOverridden = false;		// drawn over (cloak, thermals): the split leaves the glass out of the gun
+								// (an eyepiece only on the sights)
 	bool bScopeOnSights = false;	// a scope on the sights: the hole leaves its lens out
 	bool bReticle = false;
 };
@@ -168,7 +169,8 @@ static LensState GetLensState(const CNEOWeaponInfo &data, bool bCloaked, bool bT
 	LensState state;
 	state.pReticle = ReticleMaterial(data);
 	const bool bActive = NeoIronsightsActive(data);
-	state.bOverridden = (bCloaked || bThermal) && data.m_bIronOpticWindow && bActive;
+	state.bOverridden = (bCloaked || bThermal) && data.m_bIronOpticWindow && bActive
+		&& (!data.m_bIronOpticEyepiece || ironsightBlend >= NEO_IRONSIGHT_ON_SIGHTS);
 	state.bScopeOnSights = data.m_bIronOpticScope && !state.bOverridden && ironsightBlend >= NEO_IRONSIGHT_ON_SIGHTS
 		&& bActive;
 	// Glass hidden on the gun (one pane, a collimated dot) shows its art whatever else happens to it.
@@ -319,7 +321,7 @@ static void SetPlane(float plane[4], const Vector &normal, float dist)
 }
 
 static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
-	NeoIronsightGlassSplit &split)
+	float ironsightBlend, NeoIronsightGlassSplit &split)
 {
 	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_LENS, "NeoIronsightBeginGlassSplit");
 	// Custom clip planes can't change mid-scene under fast clipping (depth problems), so not then.
@@ -329,7 +331,7 @@ static bool ComputeGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 	}
 	// This frame's pose, before the gun sets it up itself, so the depth sits where the gun is drawn.
 	pViewModel->SetupBones(nullptr, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime);
-	const LensState state = GetLensState(data, bCloaked, bThermal, 1.0f);
+	const LensState state = GetLensState(data, bCloaked, bThermal, ironsightBlend);
 	NeoLensPane pane, farPane;
 	if (!state.bOverridden || !NeoIronsightLensPane(pViewModel, data, CurrentViewOrigin(), pane, &farPane))
 	{
@@ -395,7 +397,7 @@ void NeoIronsightDrawGlassDepth(const CNEOWeaponInfo &data)
 }
 
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
-	NeoIronsightGlassSplit &split)
+	float ironsightBlend, NeoIronsightGlassSplit &split)
 {
 	// Worked out once a frame: a two-pass model asks again for its translucent pass.
 	static struct
@@ -409,7 +411,7 @@ bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponIn
 	{
 		s_cache.frame = gpGlobals->framecount;
 		s_cache.pData = &data;
-		s_cache.bSplit = ComputeGlassSplit(pViewModel, data, bCloaked, bThermal, s_cache.split);
+		s_cache.bSplit = ComputeGlassSplit(pViewModel, data, bCloaked, bThermal, ironsightBlend, s_cache.split);
 	}
 	split = s_cache.split;
 	return s_cache.bSplit;

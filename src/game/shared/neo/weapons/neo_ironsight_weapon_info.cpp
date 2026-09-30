@@ -74,6 +74,7 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 	m_flIronOpticWindowSkip = pOptic ? pOptic->GetFloat("window_skip", -1.0f) : -1.0f;
 	ParseWindowGlass(pOptic ? pOptic->GetString("window_glass", "") : "");
 	m_bIronOpticScope = m_bIronOpticWindow && pOptic->GetBool("scope");
+	m_bIronOpticEyepiece = m_bIronOpticScope && pOptic->GetBool("eyepiece");
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 	m_bIronOpticReticleInLens = pOptic && pOptic->GetBool("reticle_in_lens");
 	// (The reticle name is read at the end, so look it up here.)
