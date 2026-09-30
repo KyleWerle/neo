@@ -33,6 +33,7 @@ static struct
 	bool bAir = false, bCloaked = false, bVision = false, bReloading = false;
 	wchar_t ammoKey[96] = L"";
 	int rounds = -1;
+	int squadAlive = -1, squadTotal = -1;
 } s_sense;
 
 // The light you stand in: the world's light at your chest, times the view's auto exposure on HDR maps.
@@ -188,6 +189,11 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 			out.mateYaw[out.mates++] = RAD2DEG(atan2f(d.y, d.x));
 		}
 	}
+	// A teammate down: one fewer alive, with nobody leaving (a disconnect isn't a death), while you're up to see it.
+	if (!bBoot && out.squadTotal == s_sense.squadTotal && out.squadAlive < s_sense.squadAlive && pPlayer->IsAlive())
+		out.mateDiedTime = now;
+	s_sense.squadAlive = out.squadAlive;
+	s_sense.squadTotal = out.squadTotal;
 
 	// The view, the objective (as the compass finds it), and the range while aiming (as the rangefinder does).
 	out.yaw = MainViewAngles()[YAW];

@@ -107,7 +107,7 @@ struct Senses
 	int noiseCount = 0;
 	// When things happened (gpGlobals->realtime).
 	float hitTime = -100.0f, landTime = -100.0f, cloakChanged = -100.0f, visionChanged = -100.0f, lightChanged = -100.0f,
-		ammoChanged = -100.0f, shotTime = -100.0f, spawnTime = -100.0f;
+		ammoChanged = -100.0f, shotTime = -100.0f, spawnTime = -100.0f, mateDiedTime = -100.0f;
 };
 
 // Where a group lives: a far home deep in the periphery and a near one closer to the focus, screen pixels,
@@ -118,7 +118,19 @@ struct Home { Vector2D far, nearer; float weight; bool bLeft = false; };
 // One group's attention and placement.
 // The deep layer (its registration crosses and etched rail) trails the group on a softer spring and drifts a few
 // pixels as you turn: the depth.
-struct Place { float att = 0.0f, attVel = 0.0f, sal = 0.0f, balance = 0.0f; Vector2D pos, vel, deep, deepVel; bool bPlaced = false; };
+// focus: how far into the focus zone by the crosshair (0 out, 1 all the way; neo_cyberbrain_attention.cpp); kick: the
+// gun's knock it rides there, as it was last frame.
+struct Place
+{
+	float att = 0.0f, attVel = 0.0f, sal = 0.0f, balance = 0.0f, focus = 0.0f;
+	Vector2D pos, vel, deep, deepVel, kick = Vector2D(0.0f, 0.0f);
+	bool bPlaced = false;
+};
+
+// The priority from which a group is critical and comes into the focus zone (neo_cyberbrain_perceive.cpp's layers).
+constexpr float FOCUS_FROM = 0.85f;
+// A group's priority now, 0 to 1, from its signals in layers (neo_cyberbrain_perceive.cpp).
+float Perceive(const Senses &senses, Group group, float now);
 
 struct Frame
 {

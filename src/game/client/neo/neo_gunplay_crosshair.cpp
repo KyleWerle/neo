@@ -154,6 +154,15 @@ static Vector2D GunDeviation(float pixelsPerTangent)
 	return Vector2D(-tanf(DEG2RAD(turn.y)), tanf(DEG2RAD(turn.x))) * pixelsPerTangent;
 }
 
+Vector2D NeoGunplayGunKnock(int wide)
+{
+	C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+	if (!pLocal)
+		return Vector2D(0.0f, 0.0f);
+	const float scaledFov = DEG2RAD(ScaleFOVByWidthRatio(pLocal->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
+	return GunDeviation((wide * 0.5f) / tanf(scaledFov));
+}
+
 static bool LayerShown(C_NEOBaseCombatWeapon *pWeapon)
 {
 	return NeoGunplayEnabled() && cl_neo_gunplay_crosshair.GetBool() && pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_FIREARM);

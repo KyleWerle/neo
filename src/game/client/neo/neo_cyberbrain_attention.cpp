@@ -2,6 +2,7 @@
 #include "neo_cyberbrain_internal.h"
 #include "neo_ironsights.h"
 #include "neo_hud_spring.h"
+#include "neo_gunplay_crosshair.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -10,11 +11,17 @@
 // reload, cloaking, standing in light) pulls it from its far home toward its near one fast, and it lets go slowly.
 // Placement is a critically damped spring (no overshoot, no wobble); groups are locked to the screen while you look
 // round (nothing trails the view); a slow balance eases the quieter groups sideways to keep the weight even against
-// the gun; nothing enters the keep-out round the crosshair. Motion comfort limits all of it.
+// the gun; nothing enters the keep-out round the crosshair but a critical group (Kyle, 2026-09-30: attention "even
+// into the crosshair range"), which comes on into a smaller focus zone, its whole extent kept out of a tight bound
+// round the crosshair, and rides the gun's knock there: small kicks all of it, wild ones only so far. Motion comfort
+// limits all of it. The priorities are neo_cyberbrain_perceive.cpp's.
 
 ConVar cl_neo_hud_motion("cl_neo_hud_motion", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD's motion. 0 = still (groups never move; attention shows as size and strength), 1 = calm (short"
 	" travel), 2 = full.", true, 0, true, 2);
+ConVar cl_neo_hud_focus("cl_neo_hud_focus", "1", FCVAR_ARCHIVE,
+	"The cyberbrain HUD: 1 = a group at a critical (a hit, a reload, the ghost held, a teammate down...) comes in past"
+	" the keep-out, close by the crosshair; 0 = every group stops at the keep-out.", true, 0, true, 1);
 
 namespace NeoCyberbrain
 {
@@ -28,6 +35,9 @@ constexpr float BALANCE_GAIN = 0.35f, BALANCE_MAX = 40.0f, BALANCE_EASE = 1.5f;
 // capped at a few pixels (the racer band's sway).
 constexpr float DEEP_OMEGA = 7.0f, DEEP_DAMPING = 0.7f;
 constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
+// The focus zone: a group's whole extent kept outside this ellipse round the crosshair (pixels at 1080p, about the
+// spread at the hip), and the gun's knock it rides, followed in full while small, to at most KICK_MAX.
+constexpr float FOCUS_X = 110.0f, FOCUS_Y = 80.0f, KICK_MAX = 14.0f;
 
 static struct { Vector2D offset, vel; } s_ringDeep;
 
@@ -68,48 +78,35 @@ bool InKeepout(const Frame &f, const Vector2D &p)
 	return fabsf(p.x - f.centre.x) < KEEPOUT_X * f.s && fabsf(p.y - f.centre.y) < KEEPOUT_Y * f.s;
 }
 
-struct Comfort { float travel, pullIn, letGo; };
+struct Comfort { float travel, pullIn, letGo, focus; };
 static Comfort ComfortOf()
 {
 	// Pulling in fast; letting go slower and eased (Kyle), the seconds it takes to settle.
-	static const Comfort s_levels[] = { { 0.0f, 0.3f, 2.8f }, { 0.6f, 0.3f, 2.8f }, { 1.0f, 0.22f, 2.2f } };
+	static const Comfort s_levels[] = { { 0.0f, 0.3f, 2.8f, 0.0f }, { 0.6f, 0.3f, 2.8f, 0.6f }, { 1.0f, 0.22f, 2.2f, 1.0f } };
 	return s_levels[clamp(cl_neo_hud_motion.GetInt(), 0, 2)];
 }
-// Something that happened at `when`, fading from its peak.
-static float Pulse(float now, float when, float peak)
+// Whether a group's box (centre, half) keeps clear of the focus bound round the crosshair.
+static bool ClearOfFocus(const Frame &f, const Vector2D &centre, const Vector2D &half)
 {
-	const float age = now - when;
-	return (age >= 0.0f && age < 6.0f) ? peak * expf(-age / 1.1f) : 0.0f;
+	const float nx = clamp(f.centre.x, centre.x - half.x, centre.x + half.x) - f.centre.x;
+	const float ny = clamp(f.centre.y, centre.y - half.y, centre.y + half.y) - f.centre.y;
+	return Square(nx / (FOCUS_X * f.s)) + Square(ny / (FOCUS_Y * f.s)) >= 1.0f;
 }
 
-static float Salience(const Senses &s, Group group, float now)
+// How far from the crosshair along `dir` a group's box, offset from its point by `offset`, first keeps clear of the
+// focus bound (searched up to `most`).
+static float FocusReach(const Frame &f, const Vector2D &dir, const Vector2D &offset, const Vector2D &half, float most)
 {
-	switch (group)
+	float lo = 0.0f, hi = most;
+	for (int i = 0; i < 12; ++i)
 	{
-	case GROUP_BODY:
-		return Max(Max(Pulse(now, s.hitTime, 1.0f), Pulse(now, s.landTime, 0.4f)),
-			Max(s.hp < 0.5f ? 0.35f + 0.65f * (1.0f - s.hp / 0.5f) : 0.0f, Max(0.2f * s.crouch, 0.2f * fabsf(s.lean))));
-	case GROUP_MOTION:
-	{
-		const bool bRecovering = (s.bHasSprint && s.aux < 99.5f) || (s.bHasJumps && s.aux < 90.0f);
-		return Max(Max(Pulse(now, s.landTime, 0.5f), s.bSprinting ? 0.5f : 0.0f),
-			Max(Max(bRecovering ? 0.35f : 0.0f, s.speed > s.runSpeed * 1.2f ? 0.6f : 0.0f), Max(0.3f * s.air, s.bMoving ? 0.1f : 0.0f)));
+		const float mid = 0.5f * (lo + hi);
+		if (ClearOfFocus(f, f.centre + dir * mid + offset, half))
+			hi = mid;
+		else
+			lo = mid;
 	}
-	case GROUP_OPTICS:
-		return Max(Max(Pulse(now, s.cloakChanged, 1.0f), Pulse(now, s.visionChanged, 0.7f)),
-			Max(Max(Pulse(now, s.lightChanged, 0.6f), s.bCloaked ? 0.75f : 0.0f),
-				Max(Max(s.bHasCloak && s.cloak < 0.98f ? 0.3f : 0.0f, s.bVision ? 0.35f : 0.0f), s.bExposed ? 0.4f : 0.0f)));
-	case GROUP_WEAPON:
-	{
-		// The ghost's uplink in its place: in while it boots or sees someone.
-		if (s.bGhost)
-			return s.bGhostWorking && s.ghostBoot < 1.0f ? 0.8f : s.ghostContacts > 0 ? 0.7f : 0.4f;
-		return Max(Max(Pulse(now, s.ammoChanged, 0.8f), now - s.shotTime < 1.0f ? 0.6f : 0.0f),
-			Max(s.bReloading ? 0.85f : 0.0f, s.bAmmoLow || s.heatLevel > 0 ? 0.7f : 0.0f));
-	}
-	default:
-		return 0.05f;
-	}
+	return hi;
 }
 
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f, float dt, bool bBoot, Place places[GROUP__COUNT])
@@ -120,7 +117,7 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 	for (int g = 0; g < GROUP__COUNT; ++g)
 	{
 		Place &p = places[g];
-		p.sal = clamp(Salience(senses, static_cast<Group>(g), f.now), 0.0f, 1.0f);
+		p.sal = clamp(Perceive(senses, static_cast<Group>(g), f.now), 0.0f, 1.0f);
 		if (bBoot)
 		{
 			p.att = p.attVel = 0.0f;
@@ -168,7 +165,30 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		const Vector2D far = homes[g].bLeft ? homes[g].far : mirror(homes[g].far);
 		const Vector2D nearer = homes[g].bLeft ? homes[g].nearer : mirror(homes[g].nearer);
 		p.balance = bBoot ? 0.0f : p.balance + (shift * (1.0f - p.att) * comfort.travel - p.balance) * Min(1.0f, dt / BALANCE_EASE);
-		Vector2D target = far + (nearer - far) * (p.att * comfort.travel) + Vector2D(p.balance, 0.0f);
+		Vector2D target = far + (nearer - far) * (Min(1.0f, p.att / FOCUS_FROM) * comfort.travel) + Vector2D(p.balance, 0.0f);
+		// A critical: on in toward the crosshair, from the side its near home is on, until its extent meets the focus
+		// bound; there it rides the gun's knock, followed straight (not through the spring).
+		const float focusGoal = cl_neo_hud_focus.GetBool() && !bBoot
+			? clamp((p.att - FOCUS_FROM) / (1.0f - FOCUS_FROM), 0.0f, 1.0f) * comfort.focus : 0.0f;
+		p.focus = focusGoal;
+		Vector2D kick(0.0f, 0.0f);
+		if (p.focus > 0.0f)
+		{
+			Vector2D centre, half;
+			GroupExtent(f, g, centre, half);
+			Vector2D dir = nearer - f.centre;
+			const float most = dir.NormalizeInPlace();
+			const float reach = FocusReach(f, dir, centre - p.pos, half, most);
+			target += (f.centre + dir * reach - target) * p.focus;
+			const Vector2D knock = NeoGunplayGunKnock(f.wide);
+			const float length = knock.Length(), limit = KICK_MAX * f.s;
+			if (length > 0.001f)
+				kick = knock * (limit * tanhf(length / limit) / length * p.focus);
+		}
+		target += kick;
+		if (!bBoot && p.bPlaced)
+			p.pos += kick - p.kick;
+		p.kick = kick;
 		// Never past the screen's edges, whatever its size or shape: the group's extent (at its scale now, moved to the
 		// target) held inside, so the spring eases up to the edge rather than being stopped at it.
 		Vector2D centre, half;
@@ -200,13 +220,23 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		{
 			DeepSpring(p.deep, p.deepVel, deepGoal, dt);
 		}
-		// Never inside the keep-out round the crosshair.
+		// Never inside the keep-out round the crosshair (a group in focus: the keep-out shrinking away as it comes in),
+		// and never over the focus bound at all.
+		const float margin = KEEPOUT_MARGIN * (1.0f - p.focus);
 		const Vector2D e((p.pos.x - f.centre.x) / (KEEPOUT_X * f.s), (p.pos.y - f.centre.y) / (KEEPOUT_Y * f.s));
 		const float d = e.Length();
-		if (d < KEEPOUT_MARGIN && d > 0.001f)
+		if (d < margin && d > 0.001f)
 		{
-			p.pos.x = f.centre.x + e.x / d * KEEPOUT_MARGIN * KEEPOUT_X * f.s;
-			p.pos.y = f.centre.y + e.y / d * KEEPOUT_MARGIN * KEEPOUT_Y * f.s;
+			p.pos.x = f.centre.x + e.x / d * margin * KEEPOUT_X * f.s;
+			p.pos.y = f.centre.y + e.y / d * margin * KEEPOUT_Y * f.s;
+		}
+		{
+			Vector2D centre, half;
+			GroupExtent(f, g, centre, half);
+			Vector2D dir = p.pos - f.centre;
+			const float at = dir.NormalizeInPlace();
+			if (at > 0.001f && !ClearOfFocus(f, centre, half))
+				p.pos = f.centre + dir * FocusReach(f, dir, centre - p.pos, half, at + 400.0f * f.s);
 		}
 		// A backstop for the keep-out's push: still inside the edges, the push's speed dropped.
 		GroupExtent(f, g, centre, half);
@@ -222,7 +252,8 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 Look LookOf(const Frame &f, Group group)
 {
 	const float a = f.pPlaces[group].att;
-	return { 0.86f + 0.3f * a, 0.4f + 0.6f * a, NeoSmoothStep((a - 0.15f) / 0.35f), NeoSmoothStep((a - 0.35f) / 0.35f) };
+	// In focus a touch smaller again, to keep clear of what you're aiming at.
+	return { 0.86f + 0.3f * a - 0.14f * f.pPlaces[group].focus, 0.4f + 0.6f * a, NeoSmoothStep((a - 0.15f) / 0.35f), NeoSmoothStep((a - 0.35f) / 0.35f) };
 }
 
 // A slot's centre and half size on screen (pixels): each group round its point at its attention's scale, the ring

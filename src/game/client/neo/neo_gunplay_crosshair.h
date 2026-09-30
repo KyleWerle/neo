@@ -9,6 +9,7 @@
 
 class C_NEOBaseCombatWeapon;
 class Color;
+class Vector2D;
 
 // Whether the player's crosshair gives way to the layer: the crosshair editor's Default and Alt styles (those
 // original shapes are what the layer echoes); a Custom one stays, dead centre. The aim crosshair
@@ -24,3 +25,7 @@ bool NeoGunplayCrosshairLayerOn(C_NEOBaseCombatWeapon *pWeapon);
 // Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the
 // player's crosshair gave way to it (see NeoGunplayReplacesCrosshair).
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre);
+
+// Where the gun's knock and pivot have turned it from the aim, in screen pixels (right, down) on a screen `wide`
+// across: what the layer's parts near the gun ride (the cyberbrain's groups in focus ride it too).
+Vector2D NeoGunplayGunKnock(int wide);
