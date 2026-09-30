@@ -16,7 +16,7 @@ extern ConVar cl_neo_hud_backing;
 namespace NeoCyberbrain
 {
 constexpr int SLOTS = GROUP__COUNT + 1, SPOTS = 3;
-constexpr float BACK_MIN = 0.1f, BACK_MAX = 0.55f;	// the backing's opacity in the dark, and in daylight
+constexpr float BACK_MIN = 0.1f, BACK_MAX = 0.75f;	// the backing's opacity in the dark, and in daylight (Kyle: more on bright scenes)
 constexpr float DIM = 0.2f, BRIGHT = 0.75f;			// the brightness it ramps over
 constexpr float EASE = 0.4f;
 constexpr float FEATHER = 40.0f;
@@ -142,7 +142,7 @@ void PaintBackings(const Frame &f)
 		GroupExtent(f, slot, centre, half);
 		const float att = slot == BRIGHT_RING ? 0.5f : f.pPlaces[slot].att;
 		const float alpha = Lerp(NeoSmoothStep((f.bright[slot] - DIM) / (BRIGHT - DIM)), BACK_MIN, BACK_MAX) * strength
-			* (0.6f + 0.4f * att) * f.alpha;
+			* (0.75f + 0.25f * att) * f.alpha;
 		Blob(f, centre, half, FEATHER * f.s, alpha);
 	}
 }
