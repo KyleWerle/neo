@@ -145,7 +145,7 @@ void PaintFeed(const Pen &pen)
 		const auto faceOf = [](const NC::FeedSegment &seg) { return seg.font == NC::FONT_ICONS ? FACE_ICONS : FACE_TEXT; };
 		float width = 0.0f;
 		for (int k = 0; k < e.count; ++k)
-			width += Width(e.seg[k].text, faceOf(e.seg[k]), e.seg[k].font == NC::FONT_VALUE);
+			width += Width(e.seg[k].text, faceOf(e.seg[k]), e.seg[k].font == NC::FONT_NAME);
 		float x = right - width;
 		const float y = FEED_TOP * s + i * line;
 		// The stock feed's boxes: dark, and grey for the ones you're in.
@@ -153,7 +153,7 @@ void PaintFeed(const Pen &pen)
 		for (int k = 0; k < e.count; ++k)
 		{
 			const NC::FeedSegment &seg = e.seg[k];
-			const bool bName = seg.font == NC::FONT_VALUE;
+			const bool bName = seg.font == NC::FONT_NAME;
 			const float ty = seg.font == NC::FONT_ICONS ? y + (Height(FACE_TEXT) - Height(FACE_ICONS)) * 0.5f : y;
 			x += Print(pen, seg.text, x, ty, 1, faceOf(seg), seg.color, bName);
 		}

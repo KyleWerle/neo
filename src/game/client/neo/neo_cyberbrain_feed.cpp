@@ -47,7 +47,7 @@ static void AddName(Entry &e, const char *pName, int team)
 {
 	wchar_t name[64];
 	g_pVGuiLocalize->ConvertANSIToUnicode(pName ? pName : "", name, sizeof(name));
-	Add(e, name, FONT_VALUE, TeamColour(team));
+	Add(e, name, FONT_NAME, TeamColour(team));
 }
 
 static void AddIcon(Entry &e, wchar_t glyph, const Color &c)

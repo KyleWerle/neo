@@ -2568,50 +2568,50 @@ Scheme
 				//"additive"	"1"
 			}
 		}
-		// The Competitive HUD's text (cl_neo_hud_style 4): NT's NOCR, lowercase, one face.
+		// The Competitive HUD's text (cl_neo_hud_style 4): Neuropol2, the stock HUD's face, lowercase.
 		NHudCompText
 		{
 			"1"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"8"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"480 599"
 				"antialias"	"1"
 			}
 			"2"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"10"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"600 767"
 				"antialias"	"1"
 			}
 			"3"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"12"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"768 1023"
 				"antialias"	"1"
 			}
 			"4"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"16"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"1024 1199"
 				"antialias"	"1"
 			}
 			"5"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"21"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"1200 6000"
 				"antialias"	"1"
@@ -2622,45 +2622,45 @@ Scheme
 		{
 			"1"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"13"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"480 599"
 				"antialias"	"1"
 			}
 			"2"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"16"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"600 767"
 				"antialias"	"1"
 			}
 			"3"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"19"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"768 1023"
 				"antialias"	"1"
 			}
 			"4"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"26"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"1024 1199"
 				"antialias"	"1"
 			}
 			"5"
 			{
-				"name"		"NOCR"
+				"name"		"Neuropol2"
 				"tall"		"34"
-				"weight"	"0"
+				"weight"	"600"
 				"range"		"0x0000 0x017F"
 				"yres"		"1200 6000"
 				"antialias"	"1"

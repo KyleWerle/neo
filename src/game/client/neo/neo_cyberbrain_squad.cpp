@@ -113,7 +113,7 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 	const wchar_t rank[2] = { static_cast<wchar_t>(NEO_HUD_DEATHNOTICEICON_RANKLESS_DOG + GetRank(g_PR->GetXP(player))), L'\0' };
 	float tx = x + icon + 6.0f * s;
 	tx += Text(f, rank, tx, mid, 1, FONT_ICONS, f.color, 0.6f * a) + 5.0f * s;
-	tx += Text(f, name, tx, mid, 1, FONT_VALUE, nameColour, a) + 7.0f * s;
+	tx += Text(f, name, tx, mid, 1, FONT_NAME, nameColour, a) + 7.0f * s;
 	Text(f, cls, tx, mid, 1, FONT_LABEL, f.color, 0.45f * a);
 
 	if (bAlive)

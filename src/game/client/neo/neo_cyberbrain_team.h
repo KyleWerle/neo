@@ -42,7 +42,7 @@ void PaintScore(const Frame &f);
 void PaintSquad(const Frame &f);
 
 // The kill feed's own copy of the death notice's events (the stock one keeps its side effects). An entry is its
-// segments in order: names (value face), words (label face) and NT's killfeed glyphs (icons face).
+// segments in order: names (name face), words (label face) and NT's killfeed glyphs (icons face).
 constexpr int FEED_MAX = 8, FEED_SEGMENTS = 12;
 struct FeedSegment { wchar_t text[64]; Font font; Color color; };
 struct FeedEntry { FeedSegment seg[FEED_SEGMENTS]; int count; float hide; bool bInvolved; };

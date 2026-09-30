@@ -58,9 +58,10 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 
 static vgui::HFont GetFont(Font font)
 {
-	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons" };
-	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr };
-	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT };
+	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons", "NHudCyberLabel" };
+	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive" };
+	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT,
+		vgui::INVALID_FONT };
 	vgui::HFont &handle = s_fonts[font];
 	if (handle == vgui::INVALID_FONT)
 	{
@@ -80,7 +81,7 @@ static vgui::HFont GetFont(Font font)
 
 void PrintFonts()
 {
-	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons" };
+	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name" };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));

@@ -1,7 +1,7 @@
 #pragma once
 
 // The Competitive HUD (cl_neo_hud_style 4; HUD-REDESIGN.md, "Competitive"): the original layout, pared down to
-// lowercase text in NT's NOCR, with nothing else: no boxes, bars, textures or animation, so it costs next to nothing
+// lowercase text in Neuropol2 (the stock HUD's face), with nothing else: no boxes, bars, textures or animation, so it costs next to nothing
 // to draw and reads the same on every map. It shows everything the stock panels show, in their places: the vitals
 // bottom left, the ammo bottom right, the compass bottom centre (with the objective, the ghost's callouts and the
 // rangefinder), the round top centre, the squad top left, the kill feed top right (its weapon marks stay NT's killfeed

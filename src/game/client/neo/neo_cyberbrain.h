@@ -12,7 +12,7 @@ enum NeoHudStyle
 	NEO_HUD_STYLE_COMPACT,			// the cyberbrain, its ring small at the bottom centre
 	NEO_HUD_STYLE_BODY,				// the cyberbrain, its ring on the body group's ground disc
 	NEO_HUD_STYLE_RACER,			// the quick info band (neo_quickinfo.h), until the cyberbrain covers it
-	NEO_HUD_STYLE_COMPETITIVE,		// the original layout pared down: lowercase NOCR text only (ui/neo_hud_competitive.*)
+	NEO_HUD_STYLE_COMPETITIVE,		// the original layout pared down: lowercase Neuropol2 text only (ui/neo_hud_competitive.*)
 
 	NEO_HUD_STYLE__COUNT
 };
