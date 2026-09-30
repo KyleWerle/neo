@@ -72,7 +72,13 @@ void PaintBackings(const Frame &f)
 		const float att = slot == BRIGHT_RING ? 0.5f : f.pPlaces[slot].att;
 		const float alpha = NeoHudBackingOpacity(f.bright[slot], BACK_MIN, BACK_MAX) * (0.75f + 0.25f * att) * f.alpha;
 		const float feather = (slot == GROUP_LINK ? FEATHER_LINK : FEATHER) * f.s;
-		NeoHudPaintBacking(centre, half, Vector2D(feather, feather), alpha, BACKING_POINTS);
+		// On the GPU the noise rises with the group's perception layer: a critical group's patch tears and churns.
+		NeoHudBackingLook look;
+		const int layer = slot == BRIGHT_RING ? LAYER_AMBIENT : f.pPlaces[slot].layer;
+		look.glitch = 0.3f + 0.7f * layer / static_cast<float>(LAYER__COUNT - 1);
+		look.blur = slot == GROUP_LINK ? 0.6f : 1.0f;
+		look.seed = 1.7f * slot;
+		NeoHudPaintBacking(centre, half, Vector2D(feather, feather), alpha, BACKING_POINTS, look);
 	}
 }
 

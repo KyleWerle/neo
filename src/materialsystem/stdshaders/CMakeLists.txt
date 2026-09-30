@@ -117,6 +117,7 @@ target_sources_grouped(
     FILES
     #Neo_MotionVision_ModelShader.cpp
     Neo_GaussianBlur_Shader.cpp
+    Neo_HudBacking.cpp
     Neo_MotionVision.cpp
     neo_motion_model_dx9.cpp
     neo_motion_model_dx9_helper.cpp

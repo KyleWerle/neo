@@ -5,3 +5,6 @@
 neo_nightvision_ps30.fxc
 neo_motionvision_ps30.fxc
 neo_thermalvision_ps30.fxc
+
+neo_hudbacking_vs30.fxc
+neo_hudbacking_ps30.fxc

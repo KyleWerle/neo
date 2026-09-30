@@ -1,0 +1,83 @@
+// The HUD's backings (Neo_HudBacking): a blurred, darkened patch of the finished frame behind each HUD group, with
+// a cyberbrain's noise in it. Bright pixels are pulled down toward a target and dark ones left as they are, so the
+// linework reads on any scene with nothing to calibrate. Over it: a dithered quantize, a slow fractal cloud drifting
+// through the darkening, faint scanlines, and now and then a row torn sideways (all scaled by the glitch amount).
+#include "common_ps_fxc.h"
+
+sampler Scene				: register( s0 );	// a quarter-size copy of the frame
+const float4 g_Texel		: register( c0 );	// xy: one texel of the copy, in its 0 to 1 coordinates
+
+struct PS_INPUT
+{
+	float2 vScreen		: TEXCOORD0;
+	float2 vTime		: TEXCOORD1;
+	float4 vLook		: TEXCOORD2;
+	float2 vPixel		: VPOS;
+};
+
+float Hash( float2 p )
+{
+	return frac( sin( dot( p, float2( 12.9898f, 78.233f ) ) ) * 43758.5453f );
+}
+
+float ValueNoise( float2 p )
+{
+	const float2 i = floor( p );
+	float2 f = frac( p );
+	f = f * f * ( 3.0f - 2.0f * f );
+	const float a = Hash( i ), b = Hash( i + float2( 1, 0 ) ), c = Hash( i + float2( 0, 1 ) ), d = Hash( i + float2( 1, 1 ) );
+	return lerp( lerp( a, b, f.x ), lerp( c, d, f.x ), f.y );
+}
+
+float4 main( const PS_INPUT i ) : COLOR
+{
+	const float target = i.vLook.r, glitch = i.vLook.g, alpha = i.vLook.a;
+	const float radius = 0.75f + 2.5f * i.vLook.b;	// texels of the copy
+	const float t = i.vTime.x, seed = i.vTime.y;
+
+	// Torn rows: bands 3 px tall, a few jumping sideways for a tick.
+	float2 uv = i.vScreen;
+	const float row = floor( i.vPixel.y / 3.0f ), tick = floor( t * 12.0f );
+	const float tear = Hash( float2( row * 0.137f + seed, tick ) );
+	float torn = 0.0f;
+	if ( tear > 1.0f - 0.07f * glitch )
+	{
+		torn = 1.0f;
+		uv.x += ( Hash( float2( tick, row ) ) - 0.5f ) * 8.0f * g_Texel.x * ( 0.5f + glitch );
+	}
+
+	// The blur: the centre and eight round it (the copy's bilinear filter does the rest).
+	const float2 r = g_Texel.xy * radius;
+	float3 c = tex2D( Scene, uv ).rgb * 0.2f;
+	c += tex2D( Scene, uv + r * float2( 1.0f, 0.0f ) ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( -1.0f, 0.0f ) ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( 0.0f, 1.0f ) ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( 0.0f, -1.0f ) ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( 0.7f, 0.7f ) * 1.6f ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( -0.7f, 0.7f ) * 1.6f ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( 0.7f, -0.7f ) * 1.6f ).rgb * 0.1f;
+	c += tex2D( Scene, uv + r * float2( -0.7f, -0.7f ) * 1.6f ).rgb * 0.1f;
+
+	// Bright pulled down toward the target (a soft knee), dark left be.
+	const float lum = dot( c, float3( 0.299f, 0.587f, 0.114f ) );
+	const float pulled = lum > target ? target + ( lum - target ) * 0.2f : lum;
+	c *= pulled / max( lum, 0.001f );
+
+	// The cloud: two octaves drifting, darkening through it in slow waves.
+	const float2 p = i.vPixel * 0.01f;
+	const float cloud = ValueNoise( p + float2( t * 0.07f, t * 0.04f ) + seed ) * 0.65f
+		+ ValueNoise( p * 2.7f - float2( t * 0.11f, 0.0f ) ) * 0.35f;
+	const float wave = 0.5f + 0.5f * sin( i.vPixel.y * 0.04f + cloud * 5.0f - t * 1.3f );
+	c *= 1.0f - glitch * 0.18f * cloud * wave;
+
+	// Scanlines, and the torn rows' colour split.
+	c *= 1.0f - glitch * 0.08f * step( frac( i.vPixel.y / 3.0f ), 0.34f );
+	c.rb += torn * glitch * float2( 0.04f, -0.02f );
+
+	// A dithered quantize: the patch reads as the cyberbrain's picture of the scene, not a glass pane.
+	const float levels = lerp( 64.0f, 20.0f, glitch );
+	const float dither = frac( 52.9829189f * frac( dot( i.vPixel + frac( t * 7.0f ) * 17.0f, float2( 0.06711056f, 0.00583715f ) ) ) );
+	c = floor( saturate( c ) * levels + dither ) / levels;
+
+	return float4( c, alpha );
+}
