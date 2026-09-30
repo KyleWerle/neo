@@ -17,6 +17,7 @@ namespace NeoCyberbrain
 {
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
 constexpr int HALFTONE_CELLS = 5;
+constexpr float CLOAK_BAR = 5.0f;		// the therm-optic frame's bars, pixels at 1080p
 constexpr int LINK_MAX_MATES = 9;
 constexpr float LINK_YOU_Y = 14.0f, LINK_RADIUS = 30.0f, LINK_FAN = 70.0f;	// pixels at 1080p; degrees either side
 constexpr float ROUNDS_W = 150.0f, ROUNDS_Y = 12.5f;	// pixels at 1080p: the rounds' row, and its middle
@@ -56,7 +57,7 @@ void PaintOptics(const Frame &f)
 	const bool bJuggernaut = s.neoClass == NEO_CLASS_JUGGERNAUT;
 	const float flash = expf(-Max(0.0f, f.now - s.visionChanged) / 0.25f);
 	const float bracket = (s.bVision || bJuggernaut) ? 0.75f + 0.25f * flash : 0.25f;
-	const float edge = half + (s.bHasCloak ? 10.0f : 4.0f), arm = 7.0f;
+	const float edge = half + (s.bHasCloak ? 14.0f : 4.0f), arm = 7.0f;
 	for (int corner = 0; corner < 4; ++corner)
 	{
 		const float sx = (corner & 1) ? 1.0f : -1.0f, sy = (corner & 2) ? 1.0f : -1.0f;
@@ -66,10 +67,11 @@ void PaintOptics(const Frame &f)
 	}
 	// The therm-optic as the patch's frame (Kyle's pick): eight segments round it, two a side, filling clockwise from
 	// the top corner away from the gun, the last one part-lit as it charges; amber under a quarter. Cloaked (it's
-	// draining), the lit segments go thin and sit displaced outward, as the patch's rows do.
+	// draining), the lit segments go to outlines and sit displaced outward, as the patch's rows do. Solid bars, not
+	// lines (Kyle: much thicker, it was a hard read), on a faint track of the same weight.
 	if (s.bHasCloak)
 	{
-		const float r = half + 4.0f, out = s.bCloaked ? 2.0f : 0.0f, seg = r;	// each segment half a side
+		const float r = half + 6.0f, out = s.bCloaked ? 2.0f : 0.0f, seg = r, thick = CLOAK_BAR * 0.5f;	// each segment half a side
 		const Vector2D corners[4] = { Vector2D(-r, -r), Vector2D(r, -r), Vector2D(r, r), Vector2D(-r, r) };
 		const Color frame = s.cloak < 0.25f ? WARN : f.color;
 		const float lit = s.cloak * 8.0f;
@@ -81,9 +83,24 @@ void PaintOptics(const Frame &f)
 			const Vector2D from = c0 + dir * (seg * (i % 2) + 1.5f), to = c0 + dir * (seg * (i % 2 + 1) - 1.5f);
 			const float t = clamp(lit - i, 0.0f, 1.0f);
 			const auto at = [&](const Vector2D &p) { const Vector2D q = p + normal * out; return L.At(q.x * m, q.y); };
-			Line(f, at(from), at(to), NEO_GHOST_LIGHT, f.color, 0.18f * a);
+			// A bar from p0 to p1, the frame's weight across it.
+			const auto bar = [&](const Vector2D &p0, const Vector2D &p1, bool bFill, const Color &c, float alpha)
+			{
+				const Vector2D q[4] = { at(p0 - normal * thick), at(p1 - normal * thick), at(p1 + normal * thick), at(p0 + normal * thick) };
+				if (bFill)
+				{
+					NeoGhostBegin(c, Alpha(f, alpha));
+					NeoGhostFill(q);
+				}
+				else
+				{
+					for (int k = 0; k < 4; ++k)
+						Line(f, q[k], q[(k + 1) % 4], NEO_GHOST_MEDIUM, c, alpha);
+				}
+			};
+			bar(from, to, true, f.color, 0.15f * a);
 			if (t > 0.0f)
-				Line(f, at(from), at(from + (to - from) * t), s.bCloaked ? NEO_GHOST_LIGHT : NEO_GHOST_HEAVY, frame, (t < 1.0f ? 0.7f : 0.9f) * a);
+				bar(from, from + (to - from) * t, !s.bCloaked, frame, (t < 1.0f ? 0.75f : 0.9f) * a);
 		}
 	}
 	// A word only when it's pulled in.
@@ -138,20 +155,20 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 	}
 }
 
-// The rounds on the gun itself: a short leader out from the magazine (level, toward the screen's centre side, then a
-// drop), the count at its end. It rides with the magazine, reloads included. False when the magazine isn't on screen
-// or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
+// The rounds on the gun itself: a short leader out from the muzzle (Kyle: the muzzle, not the magazine; level, toward
+// the screen's centre side, then a drop), the count at its end, riding with the gun. False when the muzzle isn't on
+// screen or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
 static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a, Vector2D &below, int &align)
 {
-	Vector2D mag;
-	if (!NeoCyberGunPointOnScreen(NEO_GUN_MAG, mag) || InKeepout(f, mag))
+	Vector2D at;
+	if (!NeoCyberGunPointOnScreen(NEO_GUN_MUZZLE, at) || InKeepout(f, at))
 		return false;
 	const float out = static_cast<float>(-f.hand) * f.s;
-	const Vector2D elbow = mag + Vector2D(out * 20.0f, 0.0f), end = elbow + Vector2D(out * 8.0f, 10.0f * f.s);
+	const Vector2D elbow = at + Vector2D(out * 20.0f, 0.0f), end = elbow + Vector2D(out * 8.0f, 10.0f * f.s);
 	const float b = 4.0f * f.s;
-	Line(f, mag + Vector2D(-b, -b), mag + Vector2D(-b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
-	Line(f, mag + Vector2D(b, -b), mag + Vector2D(b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
-	Line(f, mag, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
+	Line(f, at + Vector2D(-b, -b), at + Vector2D(-b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
+	Line(f, at + Vector2D(b, -b), at + Vector2D(b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
+	Line(f, at, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_VALUE_LARGE, c, a);
 	below.Init(end.x + out * 4.0f, end.y + 30.0f * f.s);

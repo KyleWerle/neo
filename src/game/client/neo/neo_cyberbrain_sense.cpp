@@ -27,8 +27,15 @@ ConVar cl_neo_hud_hearing("cl_neo_hud_hearing", "1", FCVAR_ARCHIVE,
 ConVar cl_neo_hud_light_range("cl_neo_hud_light_range", "0.25 0.75", FCVAR_ARCHIVE,
 	"The light sensor's raw readings that count as fully dark and fully bright (the iris spreads between them).");
 
+ConVar cl_neo_hud_hearing_debug("cl_neo_hud_hearing_debug", "0", FCVAR_NONE,
+	"1 = print your own sounds as the cyberbrain takes them, and the weapon sounds it skips (and why).", true, 0, true, 1);
+
 namespace NeoCyberbrain
 {
+// How far a shot carries: the game's own AI hearing radii (SOUNDENT_VOLUME_PISTOL / _NEO_SUPPRESSED, in units), so
+// the stride waveform's shot marks are what bots hear, not a guess.
+constexpr float SHOT_UNITS = 1500.0f, SHOT_SUPPRESSED_UNITS = 900.0f;
+constexpr float SHOT_DEDUPE = 0.15f;	// seconds a shot's sound and its magazine drop count as one
 constexpr float METRES_PER_UNIT = 0.0254f;
 constexpr float STEP_MIN_SPEED = 50.0f * METRES_PER_UNIT;	// no steps under 50 units a second (NT;RE)
 constexpr float AUDIBLE = 0.02f;		// spatialised volume under this: not heard
@@ -50,6 +57,7 @@ static struct
 	int rounds = -1;
 	int seen[64] = {};				// sounds already taken (guids), a ring
 	int seenNext = 0;
+	float lastShotMark = -100.0f;	// the last shot marked from the magazine (the sound path mustn't count it again)
 } s_sense;
 
 // The sound's kind, from its file name.
@@ -101,6 +109,24 @@ static C_BasePlayer *OwnerPlayer(int entIndex)
 	return nullptr;
 }
 
+// How far your shot carries, metres: the game's AI hearing radius, less for a suppressed weapon.
+static float ShotMetres(C_NEO_Player *pPlayer)
+{
+	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
+	const bool bSuppressed = pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_SUPPRESSED);
+	return (bSuppressed ? SHOT_SUPPRESSED_UNITS : SHOT_UNITS) * METRES_PER_UNIT;
+}
+
+static bool NoisedSince(const Senses &out, SoundKind kind, float since)
+{
+	for (int i = 0; i < out.noiseCount; ++i)
+	{
+		if (out.noise[i].kind == kind && out.noise[i].time >= since)
+			return true;
+	}
+	return false;
+}
+
 static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 {
 	// Drop what's done.
@@ -130,6 +156,13 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		// Taken once, when it first reaches your ears (a sound starts before it's spatialised).
 		if (snd.m_nSoundSource <= 0 || snd.m_flLastSpatializedVolume <= 0.0f || Seen(snd.m_nGuid))
 		{
+			if (cl_neo_hud_hearing_debug.GetBool() && !Seen(snd.m_nGuid))
+			{
+				char skipped[MAX_PATH] = "";
+				g_pFullFileSystem->String(snd.m_filenameHandle, skipped, sizeof(skipped));
+				if (V_stristr(skipped, "weapons"))
+					Msg("[cyberbrain] skipped %s: source %d, spatialised %.3f\n", skipped, snd.m_nSoundSource, snd.m_flLastSpatializedVolume);
+			}
 			continue;
 		}
 		C_BasePlayer *pOwner = OwnerPlayer(snd.m_nSoundSource);
@@ -144,9 +177,14 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		const SoundKind kind = KindOf(file);
 		if (pOwner == pPlayer)
 		{
-			if (out.noiseCount < MAX_NOISE && kind != SOUND_OTHER)
+			if (cl_neo_hud_hearing_debug.GetBool())
+				Msg("[cyberbrain] yours %s: kind %d\n", file, static_cast<int>(kind));
+			// A shot the magazine already marked isn't counted again.
+			const bool bMarked = kind == SOUND_GUNFIRE && now - s_sense.lastShotMark < SHOT_DEDUPE;
+			if (out.noiseCount < MAX_NOISE && kind != SOUND_OTHER && !bMarked)
 			{
-				out.noise[out.noiseCount++] = { now, MetresOf(kind, snd.m_flVolume), kind };
+				const float metres = kind == SOUND_GUNFIRE ? ShotMetres(pPlayer) : MetresOf(kind, snd.m_flVolume);
+				out.noise[out.noiseCount++] = { now, metres, kind };
 			}
 			continue;
 		}
@@ -346,6 +384,13 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	}
 
 	SenseSounds(pPlayer, now, out);
+	// Your shots from the magazine too: a first-person weapon sound can come without a source the engine names, or
+	// unspatialised, so the sound path can miss it; the magazine dropping never does. Once per shot.
+	if (out.shotTime == now && !NoisedSince(out, SOUND_GUNFIRE, now - SHOT_DEDUPE) && out.noiseCount < MAX_NOISE)
+	{
+		out.noise[out.noiseCount++] = { now, ShotMetres(pPlayer), SOUND_GUNFIRE };
+		s_sense.lastShotMark = now;
+	}
 	SenseUplink(pPlayer, out);
 	if (bBoot)
 	{

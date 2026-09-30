@@ -54,7 +54,8 @@ void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 			size.Init(84.0f, 96.0f);
 		}
 		break;
-	case GROUP_OPTICS:	offset.Init(30.0f * m, 8.0f); size.Init(100.0f, 72.0f); break;
+	// Optics: the halftone patch, its therm-optic frame and the brackets (about 47 either side), centred on it.
+	case GROUP_OPTICS:	offset.Init(0.0f, 4.0f); size.Init(58.0f, 58.0f); break;
 	case GROUP_WEAPON:	offset.Init(0.0f, 6.0f); size.Init(125.0f, 48.0f); break;
 	case GROUP_MOTION:	offset.Init(-12.0f * (f.pPlaces[GROUP_BODY].pos.x >= f.pPlaces[GROUP_MOTION].pos.x ? 1.0f : -1.0f), 0.0f); size.Init(80.0f, 58.0f); break;
 	default:			offset.Init(30.0f * m, 10.0f); size.Init(70.0f, 40.0f); break;
