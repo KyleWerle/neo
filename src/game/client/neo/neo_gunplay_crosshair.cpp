@@ -11,6 +11,7 @@
 #include "neo_ironsights.h"
 #include "neo_ironsight_profile.h"
 #include "neo_hud_profile.h"
+#include "neo_hud_draw.h"
 #include "neo_crosshair.h"
 #include "neo_predicted_viewmodel.h"
 #include "c_neo_player.h"
@@ -107,12 +108,7 @@ int NeoCrosshairFrame::Alpha(float opacity) const
 static vgui::HFont ReadoutFont()
 {
 	static vgui::HFont s_font = vgui::INVALID_FONT;
-	if (s_font == vgui::INVALID_FONT)
-	{
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
-		s_font = pScheme ? pScheme->GetFont("NHudOCRSmallerNoAdditive", true) : vgui::INVALID_FONT;
-	}
-	return s_font;
+	return NeoHudSchemeFont(s_font, "NHudOCRSmallerNoAdditive");
 }
 
 int NeoCrosshairReadoutTall()
@@ -138,11 +134,8 @@ void NeoCrosshairReadout(const NeoCrosshairFrame &frame, const Vector2D &at, con
 	{
 		text[count++] = L'_';
 	}
-	vgui::surface()->DrawSetTextFont(font);
-	vgui::surface()->DrawSetTextColor(frame.color.r(), frame.color.g(), frame.color.b(), frame.Alpha(opacity));
-	vgui::surface()->DrawSetTextPos(RoundFloatToInt(at.x), RoundFloatToInt(at.y) - vgui::surface()->GetFontTall(font) / 2);
-	vgui::surface()->DrawPrintText(text, count);
-	NeoHudCount(NEO_HUD_COUNT_TEXT);
+	NeoHudPrintText(font, text, count, RoundFloatToInt(at.x), RoundFloatToInt(at.y) - vgui::surface()->GetFontTall(font) / 2,
+		Color(frame.color.r(), frame.color.g(), frame.color.b(), frame.Alpha(opacity)), NEO_HUD_TEXT_PLAIN, 0);
 }
 
 // Where the gun's knock and pivot have turned it from the aim, in screen pixels (right, down). The local player's

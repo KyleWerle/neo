@@ -8,6 +8,7 @@
 #include "neo/neo_competitive.h"
 #include "neo/neo_cyberbrain.h"
 #include "neo_hud_profile.h"
+#include "neo_hud_draw.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -62,15 +63,7 @@ static vgui::HFont FaceFont(NCo::Face face)
 {
 	static vgui::HFont s_fonts[NCo::FACE__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT };
 	static const char *s_names[NCo::FACE__COUNT] = { "NHudCompText", "NHudCompLarge", "NHudKillfeedIcons" };
-	vgui::HFont &font = s_fonts[face];
-	if (font == vgui::INVALID_FONT)
-	{
-		// The HUD's faces live in the client scheme, not the engine's default one.
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
-		if (pScheme)
-			font = pScheme->GetFont(s_names[face], true);
-	}
-	return font;
+	return NeoHudSchemeFont(s_fonts[face], s_names[face]);
 }
 
 // Lowercased as Print draws it (unless bKeepCase or the icons), into text.
@@ -113,14 +106,7 @@ float NCo::Print(const Pen &pen, const wchar_t *pText, float x, float y, int ali
 	int wide, tall;
 	surface()->GetTextSize(font, text, wide, tall);
 	const int tx = RoundFloatToInt(x) - (align < 0 ? wide : align == 0 ? wide / 2 : 0), ty = RoundFloatToInt(y);
-	surface()->DrawSetTextFont(font);
-	surface()->DrawSetTextColor(0, 0, 0, c.a() * 3 / 4);
-	surface()->DrawSetTextPos(tx + 1, ty + 1);
-	surface()->DrawPrintText(text, count);
-	surface()->DrawSetTextColor(c);
-	surface()->DrawSetTextPos(tx, ty);
-	surface()->DrawPrintText(text, count);
-	NeoHudCount(NEO_HUD_COUNT_TEXT, 2);
+	NeoHudPrintText(font, text, count, tx, ty, c, NEO_HUD_TEXT_SHADOW, c.a() * 3 / 4);
 	return static_cast<float>(wide);
 }
 

@@ -34,7 +34,7 @@ constexpr float RAIL_Y = BAND_Y + 44.0f;			// the etched rail
 constexpr float CODES_Y = BAND_Y + 58.0f;			// the channel codes on it: at the left tip, centred, at the right tip
 constexpr float LABELS_Y = BAND_Y + 82.0f;			// the spawn labels, each under its code
 constexpr float MARK = 4.0f;						// a registration cross's half size
-constexpr float JUMP_COST = 45.0f;					// SUPER_JMP_COST: a recon's jump cell
+constexpr float JUMP_COST = SUPER_JMP_COST;		// a recon's jump cell
 
 // The layers, far to near: each sways on its own spring by its depth.
 enum Layer { LAYER_DETAIL, LAYER_FRAME, LAYER_BAR, LAYER_LABELS, LAYER_DOTS, LAYER__COUNT };
@@ -124,8 +124,6 @@ extern const Color WARN;
 // A backing's opacity for how bright the scene is behind it, measured through its spots (screen pixels); call once
 // a frame each, in order (they share one ray a frame). And the backing: a feathered rounded blob, 1080p units.
 float BackingAlpha(Backing backing, C_NEO_Player *pPlayer, const Vector2D *pSpots, int spots, float dt, bool bBoot);
-// How bright the scene looks through a screen pixel (0 black, 1 white): one ray, the world's light where it lands.
-float SceneBrightness(C_NEO_Player *pPlayer, const Vector2D &pixel);
 void PaintBacking(const QuickFrame &f, Layer layer, const Vector2D &centre, const Vector2D &inner, const Vector2D &feather, float alpha);
 
 void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo);

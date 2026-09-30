@@ -12,7 +12,6 @@
 
 namespace NeoQuickInfo
 {
-constexpr float METRES_PER_UNIT = 0.0254f;	// as the range readout
 constexpr float SPAN = 8.0f;				// seconds shown
 constexpr float SAMPLE = 0.1f;				// a sample this often, the fastest speed since the last (a hop's peak stays)
 constexpr int SAMPLES = 96;				// more than SPAN / SAMPLE
@@ -48,7 +47,7 @@ static float Newest(int i)
 
 void PaintSpeed(const QuickFrame &frame, C_NEO_Player *pPlayer, float dt, bool bBoot, float floorAlpha)
 {
-	const float speed = pPlayer->GetAbsVelocity().Length2D() * METRES_PER_UNIT;
+	const float speed = pPlayer->GetAbsVelocity().Length2D() * METERS_PER_INCH;
 	if (bBoot)
 	{
 		s_speed.head = s_speed.count = 0;
@@ -73,9 +72,9 @@ void PaintSpeed(const QuickFrame &frame, C_NEO_Player *pPlayer, float dt, bool b
 
 	// The class's lines, with the weapon in hand: walk (as crouched), run, and sprint for those who can.
 	const bool bSprints = pPlayer->GetClass() != NEO_CLASS_SUPPORT;
-	float refs[3] = { pPlayer->GetCrouchSpeed_WithActiveWepEncumberment() * METRES_PER_UNIT,
-		pPlayer->GetNormSpeed_WithActiveWepEncumberment() * METRES_PER_UNIT,
-		bSprints ? pPlayer->GetSprintSpeed_WithActiveWepEncumberment() * METRES_PER_UNIT : 0.0f };
+	float refs[3] = { pPlayer->GetCrouchSpeed_WithActiveWepEncumberment() * METERS_PER_INCH,
+		pPlayer->GetNormSpeed_WithActiveWepEncumberment() * METERS_PER_INCH,
+		bSprints ? pPlayer->GetSprintSpeed_WithActiveWepEncumberment() * METERS_PER_INCH : 0.0f };
 	const int refCount = bSprints ? 3 : 2;
 	float peak = 0.0f;
 	for (int i = 0; i < shown; ++i)

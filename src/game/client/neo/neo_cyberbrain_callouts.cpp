@@ -13,7 +13,6 @@
 
 namespace NeoCyberbrain
 {
-constexpr float CALLOUT_METRES_PER_UNIT = 0.0254f;
 
 static struct Spotted { Vector pos; float time = -100.0f; } s_spotted[MAX_PLAYERS_ARRAY_SAFE];
 
@@ -65,7 +64,7 @@ void SenseCallouts(float now, Senses &out)
 		const Vector d = spotted.pos - MainViewOrigin();
 		Callout &c = out.callout[out.calloutCount];
 		c.yaw = RAD2DEG(atan2f(d.y, d.x));
-		c.metres = d.Length() * CALLOUT_METRES_PER_UNIT;
+		c.metres = d.Length() * METERS_PER_INCH;
 		c.age = age;
 		c.life = lasts > 0.0f ? 1.0f - age / lasts : 0.0f;
 		if (out.calloutNewest < 0 || age < out.callout[out.calloutNewest].age)

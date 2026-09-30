@@ -1,6 +1,6 @@
 #include "cbase.h"
 #include "neo_quickinfo_internal.h"
-#include "neo_hud_profile.h"
+#include "neo_hud_draw.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -61,14 +61,7 @@ static vgui::HFont GetFont(Font font)
 {
 	static const char *s_names[] = { "NHudOCRSmallerNoAdditive", "NHudOCRSmallNoAdditive", "NHudOCRNoAdditive" };
 	static vgui::HFont s_fonts[ARRAYSIZE(s_names)] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT };
-	vgui::HFont &handle = s_fonts[font];
-	if (handle == vgui::INVALID_FONT)
-	{
-		// The HUD's faces live in the client scheme (the default scheme is the engine's, without them: no text at all).
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
-		handle = pScheme ? pScheme->GetFont(s_names[font], true) : vgui::INVALID_FONT;
-	}
-	return handle;
+	return NeoHudSchemeFont(s_fonts[font], s_names[font]);
 }
 
 float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, float x, float y, int align, Font font,
@@ -88,14 +81,7 @@ float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, fl
 	}
 	const Vector2D at = At(f, layer, x, y);
 	const int tx = RoundFloatToInt(at.x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(at.y) - tall / 2;
-	vgui::surface()->DrawSetTextFont(handle);
-	vgui::surface()->DrawSetTextColor(0, 0, 0, Alpha(f, a * 0.7f));
-	vgui::surface()->DrawSetTextPos(tx + 1, ty + 1);
-	vgui::surface()->DrawPrintText(pText, count);
-	vgui::surface()->DrawSetTextColor(c.r(), c.g(), c.b(), Alpha(f, a));
-	vgui::surface()->DrawSetTextPos(tx, ty);
-	vgui::surface()->DrawPrintText(pText, count);
-	NeoHudCount(NEO_HUD_COUNT_TEXT, 2);
+	NeoHudPrintText(handle, pText, count, tx, ty, Color(c.r(), c.g(), c.b(), Alpha(f, a)), NEO_HUD_TEXT_SHADOW, Alpha(f, a * 0.7f));
 	return wide / f.s;
 }
 

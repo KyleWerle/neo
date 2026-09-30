@@ -1,6 +1,6 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
-#include "neo_hud_profile.h"
+#include "neo_hud_draw.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -64,21 +64,7 @@ static vgui::HFont GetFont(Font font)
 	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive", "NHudBullets" };
 	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT,
 		vgui::INVALID_FONT, vgui::INVALID_FONT };
-	vgui::HFont &handle = s_fonts[font];
-	if (handle == vgui::INVALID_FONT)
-	{
-		// The HUD's faces live in the client scheme (the default scheme is the engine's, without them).
-		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
-		if (pScheme)
-		{
-			handle = pScheme->GetFont(s_names[font], true);
-			if (handle == vgui::INVALID_FONT && s_fallbacks[font])
-			{
-				handle = pScheme->GetFont(s_fallbacks[font], true);
-			}
-		}
-	}
-	return handle;
+	return NeoHudSchemeFont(s_fonts[font], s_names[font], s_fallbacks[font]);
 }
 
 void PrintFonts()
@@ -121,21 +107,9 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	int wide, tall;
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	const int tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(y) - tall / 2;
-	vgui::surface()->DrawSetTextFont(handle);
 	// A shadow on a dark scene; a dark edge all round on a bright one.
-	const int edge = Alpha(f, alpha * (0.6f + 0.35f * f.contrast));
-	vgui::surface()->DrawSetTextColor(0, 0, 0, edge);
-	static const int s_offsets[][2] = { { 1, 1 }, { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-	const int edges = f.contrast > 0.3f ? 5 : 1;
-	NeoHudCount(NEO_HUD_COUNT_TEXT, edges + 1);
-	for (int i = 0; i < edges; ++i)
-	{
-		vgui::surface()->DrawSetTextPos(tx + s_offsets[i][0], ty + s_offsets[i][1]);
-		vgui::surface()->DrawPrintText(pText, count);
-	}
-	vgui::surface()->DrawSetTextColor(c.r(), c.g(), c.b(), Alpha(f, alpha));
-	vgui::surface()->DrawSetTextPos(tx, ty);
-	vgui::surface()->DrawPrintText(pText, count);
+	NeoHudPrintText(handle, pText, count, tx, ty, Color(c.r(), c.g(), c.b(), Alpha(f, alpha)),
+		f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW, Alpha(f, alpha * (0.6f + 0.35f * f.contrast)));
 	return static_cast<float>(wide);
 }
 
@@ -165,11 +139,8 @@ static bool PlateBox(const Frame &f, const wchar_t *pText, float x, float y, int
 	x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;
 	Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), bg, 0.85f * alpha);
 	NeoGhostFlush();
-	vgui::surface()->DrawSetTextFont(handle);
-	vgui::surface()->DrawSetTextColor(fg.r(), fg.g(), fg.b(), Alpha(f, alpha));
-	vgui::surface()->DrawSetTextPos(RoundFloatToInt(x0 + pad), RoundFloatToInt(y - tall * 0.5f));
-	vgui::surface()->DrawPrintText(pText, V_wcslen(pText));
-	NeoHudCount(NEO_HUD_COUNT_TEXT);
+	NeoHudPrintText(handle, pText, V_wcslen(pText), RoundFloatToInt(x0 + pad), RoundFloatToInt(y - tall * 0.5f),
+		Color(fg.r(), fg.g(), fg.b(), Alpha(f, alpha)), NEO_HUD_TEXT_PLAIN, 0);
 	return true;
 }
 

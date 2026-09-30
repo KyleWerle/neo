@@ -13,7 +13,7 @@
 
 namespace NeoCyberbrain
 {
-constexpr float JUMP_COST = 45.0f;					// SUPER_JMP_COST
+constexpr float JUMP_COST = SUPER_JMP_COST;			// a recon's jump cell
 constexpr int SAMPLES = 80;							// eight seconds at ten a second
 constexpr float SAMPLE_EVERY = 0.1f;
 constexpr float TRACE_W = 90.0f, TRACE_TOP = -8.0f, TRACE_BOTTOM = 28.0f;

@@ -36,8 +36,7 @@ namespace NeoCyberbrain
 // the stride waveform's shot marks are what bots hear, not a guess.
 constexpr float SHOT_UNITS = 1500.0f, SHOT_SUPPRESSED_UNITS = 900.0f;
 constexpr float SHOT_DEDUPE = 0.15f;	// seconds a shot's sound and its magazine drop count as one
-constexpr float METRES_PER_UNIT = 0.0254f;
-constexpr float STEP_MIN_SPEED = 50.0f * METRES_PER_UNIT;	// no steps under 50 units a second (NT;RE)
+constexpr float STEP_MIN_SPEED = 50.0f * METERS_PER_INCH;	// no steps under 50 units a second (NT;RE)
 constexpr float AUDIBLE = 0.02f;		// spatialised volume under this: not heard
 constexpr float HEARD_FOR = 2.0f, NOISE_FOR = 1.2f;
 constexpr float LIGHT_EVERY = 0.1f;		// seconds between light samples
@@ -114,7 +113,7 @@ static float ShotMetres(C_NEO_Player *pPlayer)
 {
 	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
 	const bool bSuppressed = pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_SUPPRESSED);
-	return (bSuppressed ? SHOT_SUPPRESSED_UNITS : SHOT_UNITS) * METRES_PER_UNIT;
+	return (bSuppressed ? SHOT_SUPPRESSED_UNITS : SHOT_UNITS) * METERS_PER_INCH;
 }
 
 static bool NoisedSince(const Senses &out, SoundKind kind, float since)
@@ -263,8 +262,8 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	Vector velocity = pPlayer->GetAbsVelocity();
 	velocity.z = 0.0f;
 	const float unitsPerSecond = velocity.Length();
-	out.speed = unitsPerSecond * METRES_PER_UNIT;
-	out.runSpeed = pPlayer->GetNormSpeed_WithActiveWepEncumberment() * METRES_PER_UNIT;
+	out.speed = unitsPerSecond * METERS_PER_INCH;
+	out.runSpeed = pPlayer->GetNormSpeed_WithActiveWepEncumberment() * METERS_PER_INCH;
 	out.bMoving = out.speed > STEP_MIN_SPEED;
 	if (out.bMoving)
 	{
@@ -365,7 +364,7 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 		const Vector objPos = NEORules()->GetGameType() == NEO_GAME_TYPE_JGR ? NEORules()->GetJuggernautMarkerPos() : NEORules()->GetGhostPos();
 		const Vector d = objPos - MainViewOrigin();
 		out.objectiveYaw = RAD2DEG(atan2f(d.y, d.x));
-		out.objectiveMetres = d.Length() * METRES_PER_UNIT;
+		out.objectiveMetres = d.Length() * METERS_PER_INCH;
 		// Coloured by who carries it, as the compass's arrow; hidden while you carry it yourself.
 		const int ghoster = NEORules()->GetGhosterTeam();
 		out.carrier = (ghoster != TEAM_JINRAI && ghoster != TEAM_NSF) ? CARRIER_NONE : ghoster == team ? CARRIER_OURS : CARRIER_THEIRS;
@@ -380,7 +379,7 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 		trace_t tr;
 		UTIL_TraceLine(MainViewOrigin(), MainViewOrigin() + forward * MAX_TRACE_LENGTH, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
 		const bool bSky = (tr.surface.flags & (SURF_SKY | SURF_SKY2D)) != 0;
-		out.rangeMetres = bSky ? -1.0f : tr.startpos.DistTo(tr.endpos) * METRES_PER_UNIT;
+		out.rangeMetres = bSky ? -1.0f : tr.startpos.DistTo(tr.endpos) * METERS_PER_INCH;
 	}
 
 	SenseSounds(pPlayer, now, out);

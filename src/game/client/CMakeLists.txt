@@ -1722,6 +1722,10 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_boot.cpp
     neo/neo_hud_boot.h
     neo/neo_hud_bench.cpp
+    neo/neo_hud_draw.cpp
+    neo/neo_hud_draw.h
+    neo/neo_hud_light.cpp
+    neo/neo_hud_light.h
     neo/neo_hud_profile.cpp
     neo/neo_hud_profile.h
     neo/neo_ironsight_dots.cpp

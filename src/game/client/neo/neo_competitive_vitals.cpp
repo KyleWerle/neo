@@ -19,7 +19,6 @@ namespace NeoCompetitive
 {
 constexpr float VITALS_VALUE_X = 200.0f;			// where the vitals' values end
 constexpr float COMPASS_Y = 1044.0f, COMPASS_W = 450.0f, COMPASS_FOV = 90.0f;
-constexpr float METRES_PER_UNIT = 0.0254f;
 
 static void Health(const Pen &pen, C_NEO_Player *pPlayer)
 {
@@ -171,7 +170,7 @@ static void Range(const Pen &pen, C_NEO_Player *pPlayer)
 	AngleVectors(MainViewAngles(), &forward);
 	trace_t tr;
 	UTIL_TraceLine(MainViewOrigin(), MainViewOrigin() + forward * MAX_TRACE_LENGTH, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
-	const float metres = METRES_PER_UNIT * tr.startpos.DistTo(tr.endpos);
+	const float metres = METERS_PER_INCH * tr.startpos.DistTo(tr.endpos);
 	wchar_t range[24];
 	if (metres >= 999.0f || (tr.surface.flags & (SURF_SKY | SURF_SKY2D)))
 		V_wcsncpy(range, L"range ---m", sizeof(range));
