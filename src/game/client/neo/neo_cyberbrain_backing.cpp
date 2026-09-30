@@ -16,7 +16,7 @@ namespace NeoCyberbrain
 {
 constexpr int SLOTS = GROUP__COUNT + 1, SPOTS = 3;
 constexpr float BACK_MIN = 0.1f, BACK_MAX = 0.75f;	// the backing's opacity in the dark, and in daylight (Kyle: more on bright scenes)
-constexpr float FEATHER = 40.0f;
+constexpr float FEATHER = 40.0f, FEATHER_LINK = 22.0f;	// the soft edge's width (the link's small: its own size nearly)
 constexpr int BACKING_POINTS = 28;
 
 static struct
@@ -71,7 +71,8 @@ void PaintBackings(const Frame &f)
 		GroupExtent(f, slot, centre, half);
 		const float att = slot == BRIGHT_RING ? 0.5f : f.pPlaces[slot].att;
 		const float alpha = NeoHudBackingOpacity(f.bright[slot], BACK_MIN, BACK_MAX) * (0.75f + 0.25f * att) * f.alpha;
-		NeoHudPaintBacking(centre, half, Vector2D(FEATHER * f.s, FEATHER * f.s), alpha, BACKING_POINTS);
+		const float feather = (slot == GROUP_LINK ? FEATHER_LINK : FEATHER) * f.s;
+		NeoHudPaintBacking(centre, half, Vector2D(feather, feather), alpha, BACKING_POINTS);
 	}
 }
 
