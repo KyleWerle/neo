@@ -239,6 +239,14 @@ void NeoIronsightDrawGlassArt(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 	}
 }
 
+// The area kept clear of the gun behind the glass: its outline, grown to seal the edge (NEO_IRONSIGHT_WINDOW_GROW),
+// except an eyepiece's, whose outline is its exact rim: grown, it cut a ring behind the rim's lip that showed the world
+// from some angles (a white line in motion vision).
+static LensArea ClearArea(const CNEOWeaponInfo &data)
+{
+	return LensAreaOf(data, true, data.m_bIronOpticEyepiece ? 1.0f : NEO_IRONSIGHT_WINDOW_GROW);
+}
+
 // Draws nothing itself: only its depth is written (see DrawDepthOnly).
 static IMaterial *GlassDepthMaterial()
 {
@@ -280,7 +288,7 @@ void NeoIronsightDrawScopeHole(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	NeoLensPane pane;
 	if (NeoIronsightLensPane(pViewModel, data, CurrentViewOrigin(), pane))
 	{
-		DrawDepthOnly(pane, LensAreaOf(data, true, NEO_IRONSIGHT_WINDOW_GROW));
+		DrawDepthOnly(pane, ClearArea(data));
 	}
 }
 
@@ -393,7 +401,7 @@ void NeoIronsightDrawGlassDepth(const CNEOWeaponInfo &data)
 		return;
 	}
 	s_glassView.depthFrame = gpGlobals->framecount;
-	DrawDepthOnly(s_glassView.pane, LensAreaOf(data, true, NEO_IRONSIGHT_WINDOW_GROW));
+	DrawDepthOnly(s_glassView.pane, ClearArea(data));
 }
 
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
