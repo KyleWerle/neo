@@ -11,7 +11,7 @@
 
 Vector NeoLensPane::Centre(const CNEOWeaponInfo &data) const
 {
-	return At(data.m_vecIronOpticLensCircle.x, data.m_vecIronOpticLensCircle.y);
+	return At(data.m_vecIronOpticWindowCentre.x, data.m_vecIronOpticWindowCentre.y);
 }
 
 // The lens bone's index on the viewmodel, looked up by name only when the model or the weapon changes.

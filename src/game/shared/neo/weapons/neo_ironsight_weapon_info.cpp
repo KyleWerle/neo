@@ -112,8 +112,7 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 
 void CNEOIronsightWeaponInfo::ParseWindowGlass(const char *pszPoints)
 {
-	m_vecIronOpticWindowCircle = m_vecIronOpticLensCircle;
-	m_flIronOpticWindowRadiusV = m_flIronOpticLensRadiusV;
+	m_vecIronOpticWindowCentre.Init(m_vecIronOpticLensCircle.x, m_vecIronOpticLensCircle.y);
 	m_iIronOpticWindowGlassPoints = 0;
 
 	// The points, sorted by u then v, for the hull (Andrew's monotone chain).
@@ -182,8 +181,7 @@ void CNEOIronsightWeaponInfo::ParseWindowGlass(const char *pszPoints)
 		maxs.Init(Max(maxs.x, hull[i].x), Max(maxs.y, hull[i].y));
 	}
 	const Vector2D centre = (mins + maxs) * 0.5f;
-	m_vecIronOpticWindowCircle.Init(centre.x, centre.y, (maxs.x - mins.x) * 0.5f);
-	m_flIronOpticWindowRadiusV = (maxs.y - mins.y) * 0.5f;
+	m_vecIronOpticWindowCentre = centre;
 	for (int i = 0; i < size; ++i)
 	{
 		m_vecIronOpticWindowGlass[i] = hull[i] - centre;

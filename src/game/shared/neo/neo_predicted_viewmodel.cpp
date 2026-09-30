@@ -323,46 +323,35 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
 	const bool bThermal = NeoIronsightInThermals(pPlayer);
 
-	// Clear sight glass in the cloaked or thermal gun: the gun in slices around the glass, so the world already on
-	// screen shows through it (see NeoIronsightGlassSplit).
-	NeoIronsightGlassSplit split;
-	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, split))
+	// See-through glass (drawn over by the cloak or thermals, or a scope on the sights): its outline into depth
+	// before the gun, so the world already on screen shows through it (see NeoIronsightGlassClear).
+	NeoIronsightGlassClear clear;
+	const bool bClear = bDrawn && NeoIronsightBeginGlassClear(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend,
+		clear);
+	CMatRenderContextPtr pRenderContext(materials);
+	int ret = 0;
+	if (bClear && clear.bFarFirst)
 	{
-		int ret = 0;
-		CMatRenderContextPtr pRenderContext(materials);
-		for (int slice = 0; slice < split.slices; ++slice)
-		{
-			if (slice == split.depthBefore)
-			{
-				NeoIronsightDrawGlassDepth(*pWeaponData);
-			}
-			for (int i = 0; i < split.planeCount[slice]; ++i)
-			{
-				pRenderContext->PushCustomClipPlane(split.planes[slice][i]);
-			}
-			ret = Max(ret, DrawGun(flags));
-			for (int i = 0; i < split.planeCount[slice]; ++i)
-			{
-				pRenderContext->PopCustomClipPlane();
-			}
-		}
-		if (bOverlays)
-		{
-			NeoIronsightDrawGlassArt(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
-			NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
-		}
-		return ret;
+		pRenderContext->PushCustomClipPlane(clear.farPlane);
+		ret = DrawGun(flags);
+		pRenderContext->PopCustomClipPlane();
 	}
-
-	// A scope on the sights: its lens and the housing behind it left out, so the world shows through.
-	if (bDrawn)
+	if (bClear)
 	{
-		NeoIronsightDrawScopeHole(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
+		NeoIronsightDrawGlassClearDepth(*pWeaponData);
 	}
-	const int ret = DrawGun(flags);
+	if (bClear && clear.bFarFirst)
+	{
+		pRenderContext->PushCustomClipPlane(clear.nearPlane);
+	}
+	ret = Max(ret, DrawGun(flags));
+	if (bClear && clear.bFarFirst)
+	{
+		pRenderContext->PopCustomClipPlane();
+	}
 
 	// On top of the gun, both pinned to it: the glass's art where the gun's own glass doesn't show it (hidden, or
-	// left out by the scope's hole), and the glowing sight dots.
+	// left out by the clear glass), and the glowing sight dots.
 	if (ret && bOverlays)
 	{
 		NeoIronsightDrawGlassArt(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);

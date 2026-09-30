@@ -1,6 +1,6 @@
 #pragma once
 
-// Where a weapon's lens is ("lens_bone", "lens_map", "lens_map2", "lens_circle" in its IronsightOptic
+// Where a weapon's lens is ("lens_bone", "lens_map", "lens_map2" in its IronsightOptic
 // block), for the glass drawing (neo_ironsight_optic_disc.cpp) and the collimated dots.
 
 class C_BaseAnimating;
@@ -14,7 +14,7 @@ struct NeoLensPane
 
 	// The point at lens UV (u, v).
 	Vector At(float lensU, float lensV) const { return origin + u * lensU + v * lensV; }
-	// The centre of the lens ("lens_circle").
+	// The centre of the glass ("window_glass", else "lens_circle").
 	Vector Centre(const CNEOWeaponInfo &data) const;
 };
 
@@ -27,4 +27,3 @@ bool NeoIronsightLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 // half field of view over the viewmodel's. A point of the gun appears on screen where the world along its
 // eye-space ray, scaled sideways by this, does.
 float NeoIronsightFovScale(const CViewSetup &view);
-
