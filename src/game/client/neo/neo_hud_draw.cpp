@@ -8,7 +8,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_hud_text_baked("cl_neo_hud_text_baked", "0", FCVAR_ARCHIVE,
+ConVar cl_neo_hud_text_baked("cl_neo_hud_text_baked", "1", FCVAR_ARCHIVE,
 	"The HUD's text edge: 0 = printed as copies of the text (a shadow, or five for the edge all round), 1 = baked into"
 	" the font (the scheme's _Outline and _Shadow faces), one print a string.", true, 0, true, 1);
 

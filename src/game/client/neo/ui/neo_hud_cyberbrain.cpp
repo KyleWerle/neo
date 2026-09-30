@@ -187,6 +187,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	m_lastStyle = style;
 
 	NeoCyberbrainPlaceChat();
+	CNeoHudProfileScope part(NEO_HUD_PROFILE_VITALS_SENSE);	// the vitals in parts, the bench's v.* columns
 	NC::Sense(pPlayer, dt, now, bBoot, m_senses);
 	s_pPublished = &m_senses;
 	s_publishedColor = m_color;
@@ -230,7 +231,9 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		f.ringCentre += NC::Inside(f, centre, half);
 	}
 
+	part.Switch(NEO_HUD_PROFILE_VITALS_BRIGHT);
 	NC::MeasureBrightness(pPlayer, f, dt, bBoot);
+	part.Switch(NEO_HUD_PROFILE_VITALS_BACKING);
 	NC::PaintBackings(f);
 	NC::PaintChassis(f);
 	// The compact ring sits under the groups; the ring on the body goes over it (the body stands in front of where
@@ -238,8 +241,10 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	const bool bRingOnBody = style == NEO_HUD_STYLE_BODY;
 	if (!bRingOnBody)
 	{
+		part.Switch(NEO_HUD_PROFILE_VITALS_RING);
 		NC::PaintRing(NC::ForGroup(f, NC::BRIGHT_RING));
 	}
+	part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
 	NC::Group order[NC::GROUP__COUNT] = { NC::GROUP_BODY, NC::GROUP_OPTICS, NC::GROUP_WEAPON, NC::GROUP_LINK, NC::GROUP_MOTION };
 	std::sort(order, order + NC::GROUP__COUNT, [&](NC::Group a, NC::Group b) { return m_places[a].att < m_places[b].att; });
 	for (const NC::Group g : order)
@@ -255,10 +260,12 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	}
 	if (bRingOnBody)
 	{
+		part.Switch(NEO_HUD_PROFILE_VITALS_RING);
 		NC::Frame ring = NC::ForGroup(f, NC::BRIGHT_RING);
 		ring.contrast = Max(ring.contrast, 0.8f);
 		NeoGhostOutline(0.8f);
 		NC::PaintRing(ring);
+		part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
 	}
 	NeoGhostFlush();
 	NeoGhostOutline(-1.0f);	// back to the setting for everything else

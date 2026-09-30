@@ -32,7 +32,7 @@ static const HudBenchScenario s_hudBenchScenarios[] = {
 	{ "1 compact", "cl_neo_hud_style 1" },
 	{ "2 on the body", "cl_neo_hud_style 2" },
 	{ "2 body, no backing", "cl_neo_hud_style 2; cl_neo_hud_backing 0" },
-	{ "2 body, baked text", "cl_neo_hud_style 2; cl_neo_hud_text_baked 1" },
+	{ "2 body, copied text", "cl_neo_hud_style 2; cl_neo_hud_text_baked 0" },
 	{ "3 racer", "cl_neo_hud_style 3" },
 	{ "4 competitive", "cl_neo_hud_style 4" },
 };
@@ -152,7 +152,7 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 void CNeoHudBench::BeginRun()
 {
 	// Back to the player's own settings, then the scenario's on top.
-	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; cl_neo_hud_text_baked 0; %s", m_savedStyle,
+	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; cl_neo_hud_text_baked 1; %s", m_savedStyle,
 		m_savedBacking, s_hudBenchScenarios[ScenarioOf(m_run)].commands);
 	m_phase = SETTLE;
 	m_phaseStart = Plat_FloatTime();

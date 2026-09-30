@@ -18,6 +18,14 @@ CNeoHudProfileScope::~CNeoHudProfileScope()
 	s_hudAccumulated[m_section] += Plat_FloatTime() - m_start;
 }
 
+void CNeoHudProfileScope::Switch(NeoHudProfileSection next)
+{
+	const double now = Plat_FloatTime();
+	s_hudAccumulated[m_section] += now - m_start;
+	m_section = next;
+	m_start = now;
+}
+
 void NeoHudCount(NeoHudCounter counter, int amount)
 {
 	s_hudCounts[counter] += amount;
@@ -39,7 +47,8 @@ int NeoHudProfileTakeCount(NeoHudCounter counter)
 
 const char *NeoHudProfileSectionName(NeoHudProfileSection section)
 {
-	static const char *const s_hudNames[NEO_HUD_PROFILE__COUNT] = { "crosshair", "vitals", "team", "gun" };
+	static const char *const s_hudNames[NEO_HUD_PROFILE__COUNT] = { "crosshair", "vitals", "team", "gun", "v.sense", "v.bright",
+		"v.backing", "v.ring", "v.groups" };
 	return (section >= 0 && section < NEO_HUD_PROFILE__COUNT) ? s_hudNames[section] : "";
 }
 

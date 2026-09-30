@@ -12,6 +12,13 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_VITALS,			// the style's own vitals: the cyberbrain's groups and ring, the racer band, Competitive's
 	NEO_HUD_PROFILE_TEAM,			// score, squad and kill feed (the cyberbrain's team side, Competitive's)
 	NEO_HUD_PROFILE_GUN,			// the cyberbrain's viewmodel pass: its prep every frame, the reload scan
+	// The cyberbrain's vitals in parts, timed inside NEO_HUD_PROFILE_VITALS (so they don't add to it): what it reads
+	// and where the groups go, the brightness rays, the backings and chassis, the ring, the groups and the last flush.
+	NEO_HUD_PROFILE_VITALS_SENSE,
+	NEO_HUD_PROFILE_VITALS_BRIGHT,
+	NEO_HUD_PROFILE_VITALS_BACKING,
+	NEO_HUD_PROFILE_VITALS_RING,
+	NEO_HUD_PROFILE_VITALS_GROUPS,
 	NEO_HUD_PROFILE__COUNT,
 };
 
@@ -31,6 +38,8 @@ class CNeoHudProfileScope
 public:
 	explicit CNeoHudProfileScope(NeoHudProfileSection section);
 	~CNeoHudProfileScope();
+	// Closes this section's time and goes on timing the next, for a block in parts.
+	void Switch(NeoHudProfileSection next);
 private:
 	NeoHudProfileSection m_section;
 	double m_start;
