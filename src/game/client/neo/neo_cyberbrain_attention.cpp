@@ -38,6 +38,7 @@ constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
 // The focus zone: a group's whole extent kept outside this ellipse round the crosshair (pixels at 1080p, about the
 // spread at the hip), and the gun's knock it rides, followed in full while small, to at most KICK_MAX.
 constexpr float FOCUS_X = 110.0f, FOCUS_Y = 80.0f, KICK_MAX = 14.0f;
+constexpr float LAYER_HYSTERESIS = 0.03f;		// how far under a layer's floor its group drops back
 
 static struct { Vector2D offset, vel; } s_ringDeep;
 
@@ -134,6 +135,20 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 			const float omega = 5.0f / comfort.letGo;
 			NeoHudSpring(p.att, p.attVel, p.sal, omega, 1.0f, dt);
 			p.att = clamp(p.att, p.sal, 1.0f);
+		}
+		// Its layer, by its attention: up on reaching a layer's floor, down a little under it (no flicker at the line).
+		int layer = p.layer;
+		while (layer < LAYER_CRITICAL && p.att >= LAYER_FLOOR[layer + 1])
+			++layer;
+		while (layer > LAYER_AMBIENT && p.att < LAYER_FLOOR[layer] - LAYER_HYSTERESIS)
+			--layer;
+		if (bBoot)
+			layer = LAYER_AMBIENT;
+		if (layer != p.layer)
+		{
+			p.lastLayer = p.layer;
+			p.layer = layer;
+			p.layerChanged = bBoot ? -100.0f : f.now;
 		}
 	}
 	// The balance: the gun and each group, weighted by how present it is, about the screen's centre line.

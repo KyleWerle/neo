@@ -118,17 +118,23 @@ struct Home { Vector2D far, nearer; float weight; bool bLeft = false; };
 // One group's attention and placement.
 // The deep layer (its registration crosses and etched rail) trails the group on a softer spring and drifts a few
 // pixels as you turn: the depth.
+// The perception layers (neo_cyberbrain_perceive.cpp) and the priority each starts at; from critical's a group comes
+// into the focus zone by the crosshair.
+enum Layer { LAYER_AMBIENT, LAYER_NOTABLE, LAYER_URGENT, LAYER_CRITICAL, LAYER__COUNT };
+constexpr float LAYER_FLOOR[LAYER__COUNT] = { 0.0f, 0.25f, 0.55f, 0.85f };
+constexpr float FOCUS_FROM = LAYER_FLOOR[LAYER_CRITICAL];
+
 // focus: how far into the focus zone by the crosshair (0 out, 1 all the way; neo_cyberbrain_attention.cpp); kick: the
-// gun's knock it rides there, as it was last frame.
+// gun's knock it rides there, as it was last frame. layer: the perception layer its attention is in now, lastLayer
+// the one before, layerChanged when (the marks' shift, neo_cyberbrain_layers.cpp).
 struct Place
 {
 	float att = 0.0f, attVel = 0.0f, sal = 0.0f, balance = 0.0f, focus = 0.0f;
 	Vector2D pos, vel, deep, deepVel, kick = Vector2D(0.0f, 0.0f);
+	int layer = LAYER_AMBIENT, lastLayer = LAYER_AMBIENT;
+	float layerChanged = -100.0f;
 	bool bPlaced = false;
 };
-
-// The priority from which a group is critical and comes into the focus zone (neo_cyberbrain_perceive.cpp's layers).
-constexpr float FOCUS_FROM = 0.85f;
 // A group's priority now, 0 to 1, from its signals in layers (neo_cyberbrain_perceive.cpp).
 float Perceive(const Senses &senses, Group group, float now);
 
@@ -222,6 +228,8 @@ struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; bool 
 void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const CellStyle &style, float alpha);
 
 // The groups and the ring.
+// The marks of a group's perception layer round its extent, and their shift as it changes layer.
+void PaintLayer(const Frame &f, Group group);
 void PaintBody(const Frame &f);
 void PaintRing(const Frame &f);
 void PaintOptics(const Frame &f);

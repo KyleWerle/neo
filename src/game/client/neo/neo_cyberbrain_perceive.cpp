@@ -15,8 +15,8 @@
 
 namespace NeoCyberbrain
 {
-enum Layer { LAYER_AMBIENT, LAYER_NOTABLE, LAYER_URGENT, LAYER_CRITICAL, LAYER__COUNT };
-static const float s_floor[LAYER__COUNT + 1] = { 0.0f, 0.25f, 0.55f, FOCUS_FROM, 1.0f };
+static const float s_floor[LAYER__COUNT + 1] = { 0.0f, LAYER_FLOOR[LAYER_NOTABLE], LAYER_FLOOR[LAYER_URGENT],
+	LAYER_FLOOR[LAYER_CRITICAL], 1.0f };
 constexpr float SPILL = 0.35f;		// how much of a full layer below fills this one
 constexpr float HOLD = 0.2f;		// a layer's strongest signal at this takes its band fully
 

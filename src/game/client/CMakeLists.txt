@@ -1693,6 +1693,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_sense.cpp
     neo/neo_cyberbrain_hearing.cpp
     neo/neo_cyberbrain_perceive.cpp
+    neo/neo_cyberbrain_layers.cpp
     neo/neo_cyberbrain_attention.cpp
     neo/neo_cyberbrain_paint.cpp
     neo/neo_cyberbrain_body.cpp

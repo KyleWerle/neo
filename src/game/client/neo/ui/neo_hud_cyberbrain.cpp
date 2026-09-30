@@ -249,14 +249,16 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	std::sort(order, order + NC::GROUP__COUNT, [&](NC::Group a, NC::Group b) { return m_places[a].att < m_places[b].att; });
 	for (const NC::Group g : order)
 	{
+		const NC::Frame gf = NC::ForGroup(f, g);
 		switch (g)
 		{
-		case NC::GROUP_BODY:	NC::PaintBody(NC::ForGroup(f, g)); break;
-		case NC::GROUP_OPTICS:	NC::PaintOptics(NC::ForGroup(f, g)); break;
-		case NC::GROUP_WEAPON:	NC::PaintWeapon(NC::ForGroup(f, g)); break;
-		case NC::GROUP_MOTION:	NC::PaintMotion(NC::ForGroup(f, g)); break;
-		default:			NC::PaintLink(NC::ForGroup(f, g)); break;
+		case NC::GROUP_BODY:	NC::PaintBody(gf); break;
+		case NC::GROUP_OPTICS:	NC::PaintOptics(gf); break;
+		case NC::GROUP_WEAPON:	NC::PaintWeapon(gf); break;
+		case NC::GROUP_MOTION:	NC::PaintMotion(gf); break;
+		default:			NC::PaintLink(gf); break;
 		}
+		NC::PaintLayer(gf, g);
 	}
 	if (bRingOnBody)
 	{
