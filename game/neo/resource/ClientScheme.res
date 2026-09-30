@@ -2568,6 +2568,104 @@ Scheme
 				//"additive"	"1"
 			}
 		}
+		// The Competitive HUD's text (cl_neo_hud_style 4): NT's NOCR, lowercase, one face.
+		NHudCompText
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The Competitive HUD's large values (integrity, rounds, the clock).
+		NHudCompLarge
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
 		// The cyberbrain HUD (neo_cyberbrain_paint.cpp): values in NT's NOCR, labels in Zrnic, plates in Alpha Flight.
 		NHudCyberValue
 		{

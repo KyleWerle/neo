@@ -1658,6 +1658,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_cyberbrain.cpp
     neo/ui/neo_hud_cyberbrain_team.cpp
     neo/ui/neo_hud_cyberbrain_team.h
+    neo/ui/neo_hud_competitive.cpp
+    neo/ui/neo_hud_competitive.h
     neo/neo_ironsight_bench.cpp
     neo/neo_ironsight_augment.cpp
     neo/neo_ironsight_augment.h
@@ -1699,6 +1701,9 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_score.cpp
     neo/neo_cyberbrain_squad.cpp
     neo/neo_cyberbrain_team.h
+    neo/neo_competitive.h
+    neo/neo_competitive_team.cpp
+    neo/neo_competitive_vitals.cpp
     neo/neo_cyberbrain_ring.cpp
     neo/neo_cyberbrain_groups.cpp
     neo/neo_cyberbrain_backing.cpp

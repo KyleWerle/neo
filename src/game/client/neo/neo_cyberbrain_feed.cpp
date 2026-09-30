@@ -21,11 +21,9 @@
 
 namespace NeoCyberbrain
 {
-constexpr int FEED_MAX = 8, FEED_SEGMENTS = 12;
 constexpr float FEED_Y = 16.0f, FEED_ROW = 30.0f, FEED_RIGHT = 16.0f;
 
-struct Segment { wchar_t text[64]; Font font; Color color; };
-struct Entry { Segment seg[FEED_SEGMENTS]; int count; float hide; bool bInvolved; };
+using Entry = FeedEntry;
 
 static Entry s_feed[FEED_MAX];
 static int s_feedCount = 0;
@@ -39,7 +37,7 @@ static void Add(Entry &e, const wchar_t *pText, Font font, const Color &c)
 {
 	if (e.count >= FEED_SEGMENTS || !pText || !pText[0])
 		return;
-	Segment &seg = e.seg[e.count++];
+	FeedSegment &seg = e.seg[e.count++];
 	V_wcsncpy(seg.text, pText, sizeof(seg.text));
 	seg.font = font;
 	seg.color = c;
@@ -198,9 +196,8 @@ void FeedEvent(IGameEvent *pEvent)
 	s_feed[s_feedCount++] = e;
 }
 
-void PaintFeed(const Frame &f)
+int FeedEntries(const FeedEntry **ppEntries)
 {
-	// Expired entries go; the scoreboard hides the feed as it does the stock one.
 	int kept = 0;
 	for (int i = 0; i < s_feedCount; ++i)
 	{
@@ -208,14 +205,22 @@ void PaintFeed(const Frame &f)
 			s_feed[kept++] = s_feed[i];
 	}
 	s_feedCount = kept;
+	*ppEntries = s_feed;
+	// The scoreboard hides the feed as it does the stock one.
 	static ConVarRef cl_neo_hud_scoreboard_hide_others("cl_neo_hud_scoreboard_hide_others");
 	if (cl_neo_hud_scoreboard_hide_others.GetBool() && g_pNeoScoreBoard && g_pNeoScoreBoard->IsVisible())
-		return;
+		return 0;
+	return s_feedCount;
+}
 
+void PaintFeed(const Frame &f)
+{
+	const FeedEntry *pFeed;
+	const int count = FeedEntries(&pFeed);
 	const float s = f.s, right = f.wide - FEED_RIGHT * s;
-	for (int i = 0; i < s_feedCount; ++i)
+	for (int i = 0; i < count; ++i)
 	{
-		const Entry &e = s_feed[i];
+		const Entry &e = pFeed[i];
 		float width = 0.0f;
 		for (int k = 0; k < e.count; ++k)
 			width += TextWidth(e.seg[k].text, e.seg[k].font);

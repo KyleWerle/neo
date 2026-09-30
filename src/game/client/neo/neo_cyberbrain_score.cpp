@@ -92,116 +92,125 @@ static void AlivePips(const Frame &f, float x, float y, int dir, int alive, int 
 	}
 }
 
-void PaintScore(const Frame &f)
+void ReadRound(RoundReadout &out)
 {
-	const float cx = f.centre.x, s = f.s;
+	out = RoundReadout();
 	const NeoRoundStatus status = NEORules()->GetRoundStatus();
 	const int gameType = NEORules()->GetGameType();
+	out.pStatus = Status();
 	float left = NEORules()->GetRoundRemainingTime();
-
-	// The status, always (the stock element shows it even when there's no time limit).
-	const wchar_t *pStatus = Status();
-	if (pStatus[0])
-		Text(f, pStatus, cx, STATUS_Y * s, 0, FONT_LABEL, f.color, 0.95f);
 	// Exactly no time left means no time limit: nothing else, as the stock element.
 	if (left == 0.0f)
 		return;
+	out.bTimed = true;
 	left = Max(left, 0.0f);
-
-	// The round's plate.
-	wchar_t round[32];
-	if (status == NeoRoundStatus::Pause)
+	out.bPaused = status == NeoRoundStatus::Pause;
+	if (out.bPaused)
 	{
-		V_wcsncpy(round, L"PAUSED", sizeof(round));
+		V_wcsncpy(out.round, L"PAUSED", sizeof(out.round));
 		left = NEORules()->m_flPauseEnd.Get() - gpGlobals->curtime;
 	}
 	else if (status == NeoRoundStatus::Countdown)
-		V_wcsncpy(round, L"STARTING", sizeof(round));
+		V_wcsncpy(out.round, L"STARTING", sizeof(out.round));
 	else if (status == NeoRoundStatus::Overtime)
-		V_wcsncpy(round, L"OVERTIME", sizeof(round));
+		V_wcsncpy(out.round, L"OVERTIME", sizeof(out.round));
 	else if (gameType == NEO_GAME_TYPE_DM)
-		V_wcsncpy(round, L"DEATHMATCH", sizeof(round));
+		V_wcsncpy(out.round, L"DEATHMATCH", sizeof(out.round));
 	else
-		V_snwprintf(round, ARRAYSIZE(round), L"ROUND %02d", NEORules()->roundNumber());
-	if (status == NeoRoundStatus::Pause)
-		Text(f, round, cx, SCORE_Y * s, 0, FONT_LABEL, CRIT, 1.0f);
-	else
-		Plate(f, round, cx, SCORE_Y * s, 0, 0.85f);
+		V_snwprintf(out.round, ARRAYSIZE(out.round), L"ROUND %02d", NEORules()->roundNumber());
 
 	// The clock (the freeze's own, CTG's overtime), red as the stock one goes.
 	if (status == NeoRoundStatus::PreRoundFreeze)
 		left = NEORules()->GetRemainingPreRoundFreezeTime(true);
 	const int secs = (status == NeoRoundStatus::Overtime && gameType == NEO_GAME_TYPE_CTG) ? RoundFloatToInt(NEORules()->GetCTGOverTime())
 		: RoundFloatToInt(Max(left, 0.0f));
-	wchar_t clock[16];
-	V_snwprintf(clock, ARRAYSIZE(clock), L"%02d:%02d", secs / 60, secs % 60);
+	V_snwprintf(out.clock, ARRAYSIZE(out.clock), L"%02d:%02d", secs / 60, secs % 60);
 	static ConVarRef sv_neo_ctg_ghost_overtime_grace("sv_neo_ctg_ghost_overtime_grace");
 	const bool bOvertime = status == NeoRoundStatus::Overtime;
-	const bool bRed = (status == NeoRoundStatus::PreRoundFreeze || status == NeoRoundStatus::Countdown || gameType == NEO_GAME_TYPE_CTG)
+	out.bRed = (status == NeoRoundStatus::PreRoundFreeze || status == NeoRoundStatus::Countdown || gameType == NEO_GAME_TYPE_CTG)
 		? (bOvertime && NEORules()->GetRoundRemainingTime() < sv_neo_ctg_ghost_overtime_grace.GetFloat()) : bOvertime;
-	Text(f, clock, cx, CLOCK_Y * s, 0, FONT_VALUE_LARGE, bRed ? CRIT : f.color, 1.0f);
 
-	// The frame: registration crosses at the corners, a rule under the clock.
-	Cross(f, Vector2D(cx - 172.0f * s, 6.0f * s), 5.0f * s, 0.45f);
-	Cross(f, Vector2D(cx + 172.0f * s, 6.0f * s), 5.0f * s, 0.45f);
-	Line(f, Vector2D(cx - 60.0f * s, 64.0f * s), Vector2D(cx + 60.0f * s, 64.0f * s), NEO_GHOST_LIGHT, f.color, 0.3f);
-
-	int leftTeam, rightTeam;
-	TeamSides(leftTeam, rightTeam);
-	const bool bTeamplay = NEORules()->IsTeamplay();
-	if (bTeamplay)
+	TeamSides(out.teams[0], out.teams[1]);
+	out.bTeamplay = NEORules()->IsTeamplay();
+	for (int i = 0; i < 2 && out.bTeamplay; ++i)
 	{
-		// The rounds each team has won.
-		const int teams[2] = { leftTeam, rightTeam };
-		for (int i = 0; i < 2; ++i)
-		{
-			const float x = cx + (i ? TEAM_X : -TEAM_X) * s;
-			TeamPlate(f, teams[i], Vector2D(x, (CLOCK_Y - 2.0f) * s));
-			C_Team *pTeam = GetGlobalTeam(teams[i]);
-			wchar_t won[8];
-			V_snwprintf(won, ARRAYSIZE(won), L"%d", pTeam ? pTeam->GetRoundsWon() : 0);
-			Text(f, won, x, (CLOCK_Y - 2.0f) * s, 0, FONT_INTEGRITY, TeamColour(teams[i]), 0.95f);
-		}
+		C_Team *pTeam = GetGlobalTeam(out.teams[i]);
+		out.won[i] = pTeam ? pTeam->GetRoundsWon() : 0;
 	}
-
-	// The tally.
-	wchar_t tally[32] = L"";
 	if (gameType == NEO_GAME_TYPE_DM)
 	{
 		int highestTotal = 0, highestXP = 0;
 		NEORules()->GetDMHighestScorers(&highestTotal, &highestXP);
 		static ConVarRef sv_neo_dm_win_xp("sv_neo_dm_win_xp");
 		if (sv_neo_dm_win_xp.GetInt() > 0)
-			V_snwprintf(tally, ARRAYSIZE(tally), L"LEAD %d/%d", highestXP, sv_neo_dm_win_xp.GetInt());
+			V_snwprintf(out.tally, ARRAYSIZE(out.tally), L"LEAD %d/%d", highestXP, sv_neo_dm_win_xp.GetInt());
 		else
-			V_snwprintf(tally, ARRAYSIZE(tally), L"LEAD %d", highestXP);
+			V_snwprintf(out.tally, ARRAYSIZE(out.tally), L"LEAD %d", highestXP);
 	}
 	else if (gameType == NEO_GAME_TYPE_TDM || gameType == NEO_GAME_TYPE_JGR)
 	{
-		C_Team *pLeft = GetGlobalTeam(leftTeam), *pRight = GetGlobalTeam(rightTeam);
-		V_snwprintf(tally, ARRAYSIZE(tally), L"%d : %d", pLeft ? pLeft->Get_Score() : 0, pRight ? pRight->Get_Score() : 0);
-	}
-	if (tally[0])
-	{
-		Text(f, tally, cx, TALLY_Y * s, 0, FONT_VALUE, f.color, 0.9f);
+		C_Team *pLeft = GetGlobalTeam(out.teams[0]), *pRight = GetGlobalTeam(out.teams[1]);
+		V_snwprintf(out.tally, ARRAYSIZE(out.tally), L"%d : %d", pLeft ? pLeft->Get_Score() : 0, pRight ? pRight->Get_Score() : 0);
 	}
 	else if (g_PR)
 	{
 		// Players alive, as the stock "N vs M": the right side is everyone connected who isn't on the left.
-		int alive[2] = {}, total[2] = {};
 		for (int i = 1; i <= gpGlobals->maxClients; ++i)
 		{
 			if (!g_PR->IsConnected(i))
 				continue;
 			const int team = g_PR->GetTeam(i);
-			const int side = team == leftTeam ? 0 : 1;
-			if (team == leftTeam || team == rightTeam)
-				++total[side];
+			const int side = team == out.teams[0] ? 0 : 1;
+			if (team == out.teams[0] || team == out.teams[1])
+				++out.total[side];
 			if (g_PR->IsAlive(i))
-				++alive[side];
+				++out.alive[side];
 		}
-		AlivePips(f, cx - 20.0f * s, TALLY_Y * s, -1, alive[0], Max(total[0], alive[0]), TeamColour(leftTeam));
-		AlivePips(f, cx + 20.0f * s, TALLY_Y * s, 1, alive[1], Max(total[1], alive[1]), TeamColour(rightTeam));
+		for (int i = 0; i < 2; ++i)
+			out.total[i] = Max(out.total[i], out.alive[i]);
+	}
+}
+
+void PaintScore(const Frame &f)
+{
+	const float cx = f.centre.x, s = f.s;
+	RoundReadout r;
+	ReadRound(r);
+	if (r.pStatus[0])
+		Text(f, r.pStatus, cx, STATUS_Y * s, 0, FONT_LABEL, f.color, 0.95f);
+	if (!r.bTimed)
+		return;
+	if (r.bPaused)
+		Text(f, r.round, cx, SCORE_Y * s, 0, FONT_LABEL, CRIT, 1.0f);
+	else
+		Plate(f, r.round, cx, SCORE_Y * s, 0, 0.85f);
+	Text(f, r.clock, cx, CLOCK_Y * s, 0, FONT_VALUE_LARGE, r.bRed ? CRIT : f.color, 1.0f);
+
+	// The frame: registration crosses at the corners, a rule under the clock.
+	Cross(f, Vector2D(cx - 172.0f * s, 6.0f * s), 5.0f * s, 0.45f);
+	Cross(f, Vector2D(cx + 172.0f * s, 6.0f * s), 5.0f * s, 0.45f);
+	Line(f, Vector2D(cx - 60.0f * s, 64.0f * s), Vector2D(cx + 60.0f * s, 64.0f * s), NEO_GHOST_LIGHT, f.color, 0.3f);
+
+	if (r.bTeamplay)
+	{
+		// The rounds each team has won.
+		for (int i = 0; i < 2; ++i)
+		{
+			const float x = cx + (i ? TEAM_X : -TEAM_X) * s;
+			TeamPlate(f, r.teams[i], Vector2D(x, (CLOCK_Y - 2.0f) * s));
+			wchar_t won[8];
+			V_snwprintf(won, ARRAYSIZE(won), L"%d", r.won[i]);
+			Text(f, won, x, (CLOCK_Y - 2.0f) * s, 0, FONT_INTEGRITY, TeamColour(r.teams[i]), 0.95f);
+		}
+	}
+	if (r.tally[0])
+	{
+		Text(f, r.tally, cx, TALLY_Y * s, 0, FONT_VALUE, f.color, 0.9f);
+	}
+	else if (r.total[0] + r.total[1] > 0)
+	{
+		AlivePips(f, cx - 20.0f * s, TALLY_Y * s, -1, r.alive[0], r.total[0], TeamColour(r.teams[0]));
+		AlivePips(f, cx + 20.0f * s, TALLY_Y * s, 1, r.alive[1], r.total[1], TeamColour(r.teams[1]));
 		Text(f, L"VS", cx, TALLY_Y * s, 0, FONT_LABEL, f.color, 0.5f);
 	}
 }

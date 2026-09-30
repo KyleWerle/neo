@@ -137,19 +137,15 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 	return y + h;
 }
 
-void PaintSquad(const Frame &f)
+int SquadOrder(SquadEntry out[MAX_PLAYERS])
 {
-	if (!g_PR || !NEORules()->IsTeamplay())
-		return;
 	C_NEO_Player *pLocal = C_NEO_Player::GetLocalNEOPlayer();
 	const int team = GetLocalPlayerTeam(), self = GetLocalPlayerIndex();
-	if (!pLocal || (team != TEAM_JINRAI && team != TEAM_NSF))
-		return;
-	PaintStar(f, pLocal->GetStar(), team);
-
+	if (!g_PR || !pLocal || !NEORules()->IsTeamplay() || (team != TEAM_JINRAI && team != TEAM_NSF))
+		return 0;
 	static ConVarRef cl_neo_hud_scoreboard_hide_others("cl_neo_hud_scoreboard_hide_others");
 	if (cl_neo_hud_scoreboard_hide_others.GetBool() && g_pNeoScoreBoard && g_pNeoScoreBoard->IsVisible())
-		return;
+		return 0;
 	static ConVarRef sv_neo_bot_cmdr_enable("sv_neo_bot_cmdr_enable");
 	const bool bCommander = sv_neo_bot_cmdr_enable.IsValid() && sv_neo_bot_cmdr_enable.GetBool();
 	const int star = g_PR->GetStar(self);
@@ -173,15 +169,32 @@ void PaintSquad(const Frame &f)
 			rest[nRest++] = i;
 		}
 	}
+	int count = 0;
+	for (int i = 0; i < nCommanded; ++i)
+		out[count++] = { commanded[i], false, true, false };
+	for (int i = 0; i < nSquad; ++i)
+		out[count++] = { squad[i], false, false, false };
+	for (int i = 0; i < nRest; ++i)
+		out[count++] = { rest[i], true, false, i == 0 && count > 0 };
+	return count;
+}
+
+void PaintSquad(const Frame &f)
+{
+	C_NEO_Player *pLocal = C_NEO_Player::GetLocalNEOPlayer();
+	const int team = GetLocalPlayerTeam();
+	if (!g_PR || !pLocal || !NEORules()->IsTeamplay() || (team != TEAM_JINRAI && team != TEAM_NSF))
+		return;
+	PaintStar(f, pLocal->GetStar(), team);
+	SquadEntry order[MAX_PLAYERS];
+	const int count = SquadOrder(order);
 	const Color teamColour = TeamColour(team);
 	float y = LIST_Y * f.s;
-	for (int i = 0; i < nCommanded; ++i)
-		y = Row(f, commanded[i], y, false, &teamColour);
-	for (int i = 0; i < nSquad; ++i)
-		y = Row(f, squad[i], y, false, nullptr);
-	if (nCommanded + nSquad > 0)
-		y += SQUAD_GAP * f.s;
-	for (int i = 0; i < nRest; ++i)
-		y = Row(f, rest[i], y, true, nullptr);
+	for (int i = 0; i < count; ++i)
+	{
+		if (order[i].bGapBefore)
+			y += SQUAD_GAP * f.s;
+		y = Row(f, order[i].player, y, order[i].bSmall, order[i].bCommanded ? &teamColour : nullptr);
+	}
 }
 } // namespace NeoCyberbrain

@@ -291,7 +291,7 @@ void CNEOHud_Ammo::DrawNeoHudElement()
 	}
 
 	// The quick info band carries the ammo while it shows.
-	if (cl_neo_hud_ammo_enabled.GetBool() && !NeoQuickInfoShowing() && !NeoCyberbrainShowing())
+	if (cl_neo_hud_ammo_enabled.GetBool() && !NeoQuickInfoShowing() && !NeoCyberbrainShowing() && !NeoCompetitiveVitalsShowing())
 	{
 		DrawAmmo();
 	}

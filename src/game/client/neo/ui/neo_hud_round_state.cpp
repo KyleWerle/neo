@@ -502,11 +502,11 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 		return;
 	}
 
-	// The cyberbrain's score and squad list replace the drawing; the player order below is still kept for the
+	// The cyberbrain's (or Competitive's) score and squad list replace the drawing; the player order is still kept for the
 	// spectator commands.
-	const bool bCyberbrain = NeoCyberbrainTeamShowing();
+	const bool bReplaced = NeoCyberbrainTeamShowing() || NeoCompetitiveTeamShowing();
 	int fontWidth, fontHeight;
-	if (!bCyberbrain)
+	if (!bReplaced)
 	{
 	surface()->DrawSetTextFont(m_hOCRFont);
 	surface()->GetTextSize(m_hOCRFont, m_wszTime, fontWidth, fontHeight);
@@ -539,7 +539,7 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 	const auto leftTeamInfo = m_teamLogoColors[leftTeam];
 	const auto rightTeamInfo = m_teamLogoColors[rightTeam];
 
-	if (!bCyberbrain)
+	if (!bReplaced)
 	{
 	// Draw total players alive (or score)
 	surface()->DrawSetTextFont(m_hOCRSmallerFont);
@@ -657,7 +657,7 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 		m_nPlayerList.Sort([](const playerIndexAndTheirValue *first, const playerIndexAndTheirValue *second)->int{return second->playerValue - first->playerValue;});
 	}
 
-	if (bCyberbrain)
+	if (bReplaced)
 	{
 		return;
 	}
@@ -1214,8 +1214,8 @@ void CNEOHud_RoundState::CheckActiveStar()
 	auto player = C_NEO_Player::GetLocalNEOPlayer();
 	Assert(player);
 
-	// The cyberbrain draws its own star with its squad list.
-	if (NeoCyberbrainTeamShowing())
+	// The cyberbrain (or Competitive) HUD draws its own squad list.
+	if (NeoCyberbrainTeamShowing() || NeoCompetitiveTeamShowing())
 	{
 		for (auto *ipStar : m_ipStars)
 		{

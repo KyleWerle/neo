@@ -203,7 +203,7 @@ void CNEOHud_DeathNotice::SetColorForNoticePlayer( int iTeamNumber )
 void CNEOHud_DeathNotice::DrawNeoHudElement()
 {
 	// The cyberbrain's feed draws its own copy; the entries still retire below.
-	int iCount = NeoCyberbrainTeamShowing() ? 0 : m_DeathNotices.Count();
+	int iCount = (NeoCyberbrainTeamShowing() || NeoCompetitiveTeamShowing()) ? 0 : m_DeathNotices.Count();
 	for (int i = 0; i < iCount; i++)
 	{
 		if (m_DeathNotices[i].bRankChange)

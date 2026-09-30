@@ -1854,7 +1854,7 @@ static const wchar_t *NEOSCOREBOARDPADDING_LABELS[NEOSCOREBOARDPADDING__TOTAL] =
 };
 
 // cl_neo_hud_style (neo_cyberbrain.h) and cl_neo_hud_motion.
-static const wchar_t *HUDSTYLE_LABELS[] = { L"Original", L"Cyberbrain: compact", L"Cyberbrain: on the body", L"Racer band", };
+static const wchar_t *HUDSTYLE_LABELS[] = { L"Original", L"Cyberbrain: compact", L"Cyberbrain: on the body", L"Racer band", L"Competitive", };
 static const wchar_t *HUDMOTION_LABELS[] = { L"Still", L"Calm", L"Full", };
 
 void NeoSettings_HUD(NeoSettings *ns)

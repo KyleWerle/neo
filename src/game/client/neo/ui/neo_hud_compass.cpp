@@ -193,7 +193,7 @@ void CNEOHud_Compass::UpdateStateForNeoHudElementDraw()
 void CNEOHud_Compass::DrawNeoHudElement(void)
 {
 	// The cyberbrain's surround ring replaces the compass (and the rangefinder) while it shows.
-	if (!ShouldDraw() || NeoCyberbrainShowing())
+	if (!ShouldDraw() || NeoCyberbrainShowing() || NeoCompetitiveVitalsShowing())
 	{
 		return;
 	}

@@ -22,7 +22,7 @@ using vgui::surface;
 
 ConVar cl_neo_hud_style("cl_neo_hud_style", "2", FCVAR_ARCHIVE,
 	"The HUD's style: 0 = original (the stock NT panels), 1 = cyberbrain with the compact ring, 2 = cyberbrain with the"
-	" ring on the body, 3 = the racer band.", true, 0, true, NEO_HUD_STYLE__COUNT - 1);
+	" ring on the body, 3 = the racer band, 4 = competitive (the original layout as lowercase text).", true, 0, true, NEO_HUD_STYLE__COUNT - 1);
 ConVar cl_neo_hud_kanji("cl_neo_hud_kanji", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD's kanji beside its plate labels (needs a Japanese font: NHudCyberKanji in ClientScheme.res).",
 	true, 0, true, 1);

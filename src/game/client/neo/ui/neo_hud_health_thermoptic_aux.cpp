@@ -253,7 +253,7 @@ void CNEOHud_HTA::DrawNeoHudElement()
 	}
 
 	// The quick info band below the crosshair replaces this panel while it shows.
-	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoShowing() && !NeoCyberbrainShowing())
+	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoShowing() && !NeoCyberbrainShowing() && !NeoCompetitiveVitalsShowing())
 	{
 		DrawHTA();
 	}
