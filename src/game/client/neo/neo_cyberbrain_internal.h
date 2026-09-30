@@ -34,7 +34,8 @@ const wchar_t *SoundName(SoundKind kind);
 
 // A sound someone else made that you can hear: when it started, where from (world yaw, degrees), how loud at your
 // ears (0 to 1).
-struct Heard { float time; float bearing; float loud; SoundKind kind; };
+// bFriendly: a teammate made it (drawn faint, never leading; Kyle: team sounds crowded the ring).
+struct Heard { float time; float bearing; float loud; SoundKind kind; bool bFriendly; };
 // A sound you made: when, and about how far it carries (metres; placeholders until the in-game calibration).
 struct Noise { float time; float metres; SoundKind kind; };
 // An enemy the ghost called out: where (world yaw, degrees), how far (metres), how long ago, and how much of its time

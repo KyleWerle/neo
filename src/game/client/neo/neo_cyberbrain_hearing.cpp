@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
 #include "c_neo_player.h"
+#include "neo_gamerules.h"
 #include "weapon_neobasecombatweapon.h"
 #include "view.h"
 #include "filesystem.h"
@@ -170,9 +171,23 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		s_hearing.seen[s_hearing.seenNext] = snd.m_nGuid;
 		s_hearing.seenNext = (s_hearing.seenNext + 1) % ARRAYSIZE(s_hearing.seen);
 		const bool bYours = pOwner == pPlayer;
-		if (!bYours && (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < AUDIBLE || out.heardCount == MAX_HEARD))
+		const bool bFriendly = !bYours && NEORules()->IsTeamplay() && pOwner->GetTeamNumber() == pPlayer->GetTeamNumber();
+		if (!bYours && (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < AUDIBLE))
 		{
 			continue;
+		}
+		// Full: an enemy's sound takes a teammate's slot (the oldest), so a squad walking together can't crowd them out.
+		int slot = out.heardCount;
+		if (!bYours && slot == MAX_HEARD)
+		{
+			slot = -1;
+			for (int i = 0; i < out.heardCount && !bFriendly; ++i)
+			{
+				if (out.heard[i].bFriendly && (slot < 0 || out.heard[i].time < out.heard[slot].time))
+					slot = i;
+			}
+			if (slot < 0)
+				continue;
 		}
 		char file[MAX_PATH] = "";
 		g_pFullFileSystem->String(snd.m_filenameHandle, file, sizeof(file));
@@ -195,7 +210,9 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		}
 		const Vector from = snd.m_pOrigin ? *snd.m_pOrigin : pOwner->GetAbsOrigin();
 		const Vector delta = from - MainViewOrigin();
-		out.heard[out.heardCount++] = { now, RAD2DEG(atan2f(delta.y, delta.x)), clamp(snd.m_flLastSpatializedVolume / 0.5f, 0.0f, 1.0f), kind };
+		out.heard[slot] = { now, RAD2DEG(atan2f(delta.y, delta.x)), clamp(snd.m_flLastSpatializedVolume / 0.5f, 0.0f, 1.0f), kind,
+			bFriendly };
+		out.heardCount = Max(out.heardCount, slot + 1);
 	}
 }
 

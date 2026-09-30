@@ -146,12 +146,14 @@ static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel, floa
 // Which heard sound matters most (Kyle: in a real fight the marks crowded; weight them to the highest priority): danger
 // first (gunfire, blasts), then someone close (steps), reloads, landings, the rest; louder and fresher above quieter
 // and older.
+// Kyle's order, strict: explosions, shots, landings, reloads, steps, then anything else; loudness and freshness only
+// rank sounds of one kind. A teammate's sound comes after every enemy's (and never leads, below).
 static float SoundPriority(const Heard &h, float now)
 {
-	static const float s_weight[SOUND__COUNT] = { 0.7f, 1.0f, 0.55f, 0.45f, 1.0f, 0.25f };	// SoundKind's order
+	static const float s_rank[SOUND__COUNT] = { 1.0f, 4.0f, 2.0f, 3.0f, 5.0f, 0.0f };	// SoundKind's order
 	const float fresh = 1.0f - clamp((now - h.time) / 2.0f, 0.0f, 1.0f);
-	return s_weight[clamp(static_cast<int>(h.kind), 0, static_cast<int>(SOUND__COUNT) - 1)] * (0.4f + 0.6f * h.loud)
-		* (0.5f + 0.5f * fresh);
+	return s_rank[clamp(static_cast<int>(h.kind), 0, static_cast<int>(SOUND__COUNT) - 1)]
+		+ 0.99f * (0.4f + 0.6f * h.loud) * (0.5f + 0.5f * fresh) - (h.bFriendly ? 10.0f : 0.0f);
 }
 
 constexpr int SOUNDS_LEADING = 4;	// full marks at most at once
@@ -241,6 +243,8 @@ void PaintRing(const Frame &f)
 	for (int n = 0; n < s.heardCount && leading < SOUNDS_LEADING; ++n)
 	{
 		const int i = order[n];
+		if (s.heard[i].bFriendly)
+			break;	// ordered last: none of the rest are enemies'
 		bool bClear = true;
 		for (int m = 0; m < n && bClear; ++m)
 		{
@@ -259,7 +263,10 @@ void PaintRing(const Frame &f)
 			continue;
 		const Heard &h = s.heard[i];
 		const float fade = 1.0f - (f.now - h.time) / 2.0f, b = rel(h.bearing);
-		Arc(f, f.ringCentre, f.ringRadii, b - span * 0.7f, b + span * 0.7f, NEO_GHOST_LIGHT, f.color, 0.3f * fade);
+		// A teammate's: shorter and fainter still, so it reads as ours and not a threat.
+		const float reach = h.bFriendly ? 0.4f : 0.7f;
+		Arc(f, f.ringCentre, f.ringRadii, b - span * reach, b + span * reach, NEO_GHOST_LIGHT, f.color,
+			(h.bFriendly ? 0.15f : 0.3f) * fade);
 	}
 	for (int i = 0; i < s.heardCount; ++i)
 	{
