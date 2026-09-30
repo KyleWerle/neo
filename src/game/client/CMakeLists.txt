@@ -1739,6 +1739,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_model_view.h
     neo/neo_hud_profile.cpp
     neo/neo_hud_profile.h
+    neo/neo_hud_spring.h
     neo/neo_hud_style.cpp
     neo/neo_hud_style.h
     neo/neo_ironsight_dots.cpp

@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
 #include "neo_ironsights.h"
+#include "neo_hud_spring.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -18,7 +19,6 @@ ConVar cl_neo_hud_motion("cl_neo_hud_motion", "1", FCVAR_ARCHIVE,
 namespace NeoCyberbrain
 {
 constexpr float OMEGA = 12.0f;					// the placement spring (critically damped)
-constexpr float STEP = 1.0f / 240.0f;
 constexpr float KEEPOUT_X = 300.0f, KEEPOUT_Y = 220.0f, KEEPOUT_MARGIN = 1.15f;	// pixels at 1080p round the centre
 constexpr float GUN_WEIGHT = 1.2f;
 constexpr float SCREEN_MARGIN = 6.0f;				// pixels at 1080p every group keeps from the screen's edges
@@ -34,12 +34,7 @@ static struct { Vector2D offset, vel; } s_ringDeep;
 // Moves `at` toward `goal` on the deep spring.
 static void DeepSpring(Vector2D &at, Vector2D &vel, const Vector2D &goal, float dt)
 {
-	for (float left = dt; left > 0.0f; left -= STEP)
-	{
-		const float h = Min(left, STEP);
-		vel += ((goal - at) * (DEEP_OMEGA * DEEP_OMEGA) - vel * (2.0f * DEEP_DAMPING * DEEP_OMEGA)) * h;
-		at += vel * h;
-	}
+	NeoHudSpring(at, vel, goal, DEEP_OMEGA, DEEP_DAMPING, dt);
 	if (!at.IsValid() || !vel.IsValid())
 	{
 		at = goal;
@@ -140,12 +135,7 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		{
 			// Out: a critically damped spring from rest, easing off, then settling over about letGo seconds.
 			const float omega = 5.0f / comfort.letGo;
-			for (float left = dt; left > 0.0f; left -= STEP)
-			{
-				const float h = Min(left, STEP);
-				p.attVel += ((p.sal - p.att) * (omega * omega) - p.attVel * (2.0f * omega)) * h;
-				p.att += p.attVel * h;
-			}
+			NeoHudSpring(p.att, p.attVel, p.sal, omega, 1.0f, dt);
 			p.att = clamp(p.att, p.sal, 1.0f);
 		}
 	}
@@ -191,12 +181,7 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		}
 		else
 		{
-			for (float left = dt; left > 0.0f; left -= STEP)
-			{
-				const float h = Min(left, STEP);
-				p.vel += ((target - p.pos) * (OMEGA * OMEGA) - p.vel * (2.0f * OMEGA)) * h;
-				p.pos += p.vel * h;
-			}
+			NeoHudSpring(p.pos, p.vel, target, OMEGA, 1.0f, dt);
 			if (!p.pos.IsValid() || !p.vel.IsValid())
 			{
 				p.pos = target;

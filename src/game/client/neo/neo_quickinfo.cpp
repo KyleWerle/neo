@@ -9,6 +9,7 @@
 #include "weapon_neobasecombatweapon.h"
 #include "neo_ironsight_profile.h"
 #include "neo_hud_profile.h"
+#include "neo_hud_spring.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -30,7 +31,6 @@ static constexpr float BOOT_HOLD = 3.4f;		// everything stays full this long aft
 static constexpr float FADE_UP = 0.06f, FADE_DOWN = 0.6f;	// a part's rise and settle, seconds
 static constexpr float SWAY_MAX = 4.0f;			// pixels at 1080p
 static constexpr float SWAY_GAIN = 0.022f;		// pixels per degree a second of turning (180 deg/s reaches the cap)
-static constexpr float STEP = 1.0f / 240.0f;	// spring substeps
 
 struct LayerSpring { float depth, omega, damping, phase; Vector2D offset, velocity; };
 
@@ -119,12 +119,7 @@ static void Sway(C_NEO_Player *pPlayer, float dt, float now, bool bBoot)
 		const float bob = s_qi.bSprinting ? sinf(now * 11.0f - layer.depth * 1.6f) * 0.9f : 0.0f;
 		const Vector2D goal = (trail + breath + Vector2D(0.0f, bob)) * layer.depth;
 		const float omega = layer.omega, damping = layer.damping;
-		for (float left = dt; left > 0.0f; left -= STEP)
-		{
-			const float h = Min(left, STEP);
-			layer.velocity += ((goal - layer.offset) * (omega * omega) - layer.velocity * (2.0f * damping * omega)) * h;
-			layer.offset += layer.velocity * h;
-		}
+		NeoHudSpring(layer.offset, layer.velocity, goal, omega, damping, dt);
 		if (!layer.offset.IsValid() || !layer.velocity.IsValid())
 		{
 			layer.offset.Init(0.0f, 0.0f);
