@@ -198,10 +198,14 @@ void FeedEvent(IGameEvent *pEvent)
 
 int FeedEntries(const FeedEntry **ppEntries)
 {
+	// Expired entries go, and any that would outlive their lifetime (left over from a map whose game time ran higher).
+	static ConVarRef hud_deathnotice_time("hud_deathnotice_time");
+	const float longest = hud_deathnotice_time.GetFloat() + 1.0f;
 	int kept = 0;
 	for (int i = 0; i < s_feedCount; ++i)
 	{
-		if (s_feed[i].hide > gpGlobals->curtime)
+		const float left = s_feed[i].hide - gpGlobals->curtime;
+		if (left > 0.0f && left <= longest)
 			s_feed[kept++] = s_feed[i];
 	}
 	s_feedCount = kept;

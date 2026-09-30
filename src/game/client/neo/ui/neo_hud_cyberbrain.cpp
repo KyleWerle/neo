@@ -75,8 +75,6 @@ NEO_HUD_ELEMENT_DECLARE_FREQ_CVAR(Cyberbrain, 0.0)
 namespace NC = NeoCyberbrain;
 
 static constexpr float CYBERBRAIN_REVEAL = 0.45f;		// seconds to come up on spawn
-static int s_iCyberbrainDrawnFrame = -100;
-
 static const NC::Senses *s_pPublished = nullptr;
 static Color s_publishedColor;
 
@@ -91,10 +89,16 @@ NeoHudStyle NeoHudStyleCurrent()
 	return static_cast<NeoHudStyle>(clamp(cl_neo_hud_style.GetInt(), 0, NEO_HUD_STYLE__COUNT - 1));
 }
 
+// Whether the cyberbrain draws its vitals now: asked directly (the style, you alive and in your own eyes), not "did
+// it draw last frame", which let the stock panels flash through on the first frame after a spawn or whenever they
+// painted before it (Kyle: stock HUD returning at weird parts of game start).
 bool NeoCyberbrainShowing()
 {
 	const NeoHudStyle style = NeoHudStyleCurrent();
-	return (style == NEO_HUD_STYLE_COMPACT || style == NEO_HUD_STYLE_BODY) && s_iCyberbrainDrawnFrame >= gpGlobals->framecount - 1;
+	if (style != NEO_HUD_STYLE_COMPACT && style != NEO_HUD_STYLE_BODY)
+		return false;
+	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	return pPlayer && pPlayer->IsAlive() && !pPlayer->IsObserver();
 }
 
 CNEOHud_Cyberbrain::CNEOHud_Cyberbrain(const char *pElementName, vgui::Panel *parent)
@@ -188,7 +192,6 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		return;
 	}
 	// Held back under a fade to black (the stock panels stay down meanwhile); comes up again after it.
-	s_iCyberbrainDrawnFrame = gpGlobals->framecount;
 	if (NeoHudFadedOut())
 	{
 		m_lastFrame = -1;

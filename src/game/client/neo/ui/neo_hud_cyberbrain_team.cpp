@@ -23,12 +23,13 @@ NEO_HUD_ELEMENT_DECLARE_FREQ_CVAR(CyberbrainTeam, 0.0)
 
 namespace NC = NeoCyberbrain;
 
-static int s_iTeamDrawnFrame = -100;
-
+// Asked directly, as NeoCyberbrainShowing: the style and you on a team (dead included).
 bool NeoCyberbrainTeamShowing()
 {
 	const NeoHudStyle style = NeoHudStyleCurrent();
-	return (style == NEO_HUD_STYLE_COMPACT || style == NEO_HUD_STYLE_BODY) && s_iTeamDrawnFrame >= gpGlobals->framecount - 1;
+	const int team = GetLocalPlayerTeam();
+	return (style == NEO_HUD_STYLE_COMPACT || style == NEO_HUD_STYLE_BODY) && (team == TEAM_JINRAI || team == TEAM_NSF)
+		&& C_NEO_Player::GetLocalNEOPlayer();
 }
 
 void NC::TeamSides(int &left, int &right)
@@ -82,6 +83,12 @@ void CNEOHud_CyberbrainTeam::VidInit()
 	NC::ResetFeed();
 }
 
+// Every map starts its feed empty (the entries' lifetimes are on game time, which restarts with the map).
+void CNEOHud_CyberbrainTeam::LevelInit()
+{
+	NC::ResetFeed();
+}
+
 void CNEOHud_CyberbrainTeam::FireGameEvent(IGameEvent *pEvent)
 {
 	NC::FeedEvent(pEvent);
@@ -108,7 +115,6 @@ void CNEOHud_CyberbrainTeam::DrawNeoHudElement()
 	{
 		return;
 	}
-	s_iTeamDrawnFrame = gpGlobals->framecount;
 	NeoCyberbrainPlaceChat();
 
 	NC::Frame f;
