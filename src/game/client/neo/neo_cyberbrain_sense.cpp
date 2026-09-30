@@ -56,6 +56,8 @@ static struct
 	int rounds = -1;
 	int seen[64] = {};				// sounds already taken (guids), a ring
 	int seenNext = 0;
+	int worldSeen[64] = {};			// the world's sounds already passed over, their own ring (so they never push out a
+	int worldNext = 0;				// player's sound still playing, which would then be taken twice)
 	float lastShotMark = -100.0f;	// the last shot marked from the magazine (the sound path mustn't count it again)
 } s_sense;
 
@@ -83,9 +85,9 @@ static float MetresOf(SoundKind kind, float volume)
 	static const float s_base[] = { 14.0f, 90.0f, 9.0f, 20.0f, 120.0f, 6.0f };
 	return s_base[kind] * clamp(volume, 0.2f, 1.0f);
 }
-static bool Seen(int guid)
+static bool InRing(const int (&ring)[64], int guid)
 {
-	for (const int id : s_sense.seen)
+	for (const int id : ring)
 	{
 		if (id == guid)
 		{
@@ -93,6 +95,10 @@ static bool Seen(int guid)
 		}
 	}
 	return false;
+}
+static bool Seen(int guid)
+{
+	return InRing(s_sense.seen, guid) || InRing(s_sense.worldSeen, guid);
 }
 static C_BasePlayer *OwnerPlayer(int entIndex)
 {
@@ -148,9 +154,10 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 	}
 	out.noiseCount = kept;
 
-	CUtlVector<SndInfo_t> sounds;
-	enginesound->GetActiveSounds(sounds);
-	for (const SndInfo_t &snd : sounds)
+	static CUtlVector<SndInfo_t> s_sounds;	// kept, not allocated every frame
+	s_sounds.RemoveAll();
+	enginesound->GetActiveSounds(s_sounds);
+	for (const SndInfo_t &snd : s_sounds)
 	{
 		// Taken once, when it first reaches your ears (a sound starts before it's spatialised).
 		if (snd.m_nSoundSource <= 0 || snd.m_flLastSpatializedVolume <= 0.0f || Seen(snd.m_nGuid))
@@ -167,14 +174,22 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		C_BasePlayer *pOwner = OwnerPlayer(snd.m_nSoundSource);
 		if (!pOwner)
 		{
-			continue;	// the world's own sounds: ambience, doors, props
+			// The world's own sounds (ambience, doors, props): passed over once, not looked at again every frame.
+			s_sense.worldSeen[s_sense.worldNext] = snd.m_nGuid;
+			s_sense.worldNext = (s_sense.worldNext + 1) % ARRAYSIZE(s_sense.worldSeen);
+			continue;
 		}
 		s_sense.seen[s_sense.seenNext] = snd.m_nGuid;
 		s_sense.seenNext = (s_sense.seenNext + 1) % ARRAYSIZE(s_sense.seen);
+		const bool bYours = pOwner == pPlayer;
+		if (!bYours && (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < AUDIBLE || out.heardCount == MAX_HEARD))
+		{
+			continue;
+		}
 		char file[MAX_PATH] = "";
 		g_pFullFileSystem->String(snd.m_filenameHandle, file, sizeof(file));
 		const SoundKind kind = KindOf(file);
-		if (pOwner == pPlayer)
+		if (bYours)
 		{
 			if (cl_neo_hud_hearing_debug.GetBool())
 				Msg("[cyberbrain] yours %s: kind %d\n", file, static_cast<int>(kind));
@@ -185,10 +200,6 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 				const float metres = kind == SOUND_GUNFIRE ? ShotMetres(pPlayer) : MetresOf(kind, snd.m_flVolume);
 				out.noise[out.noiseCount++] = { now, metres, kind };
 			}
-			continue;
-		}
-		if (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < AUDIBLE || out.heardCount == MAX_HEARD)
-		{
 			continue;
 		}
 		const Vector from = snd.m_pOrigin ? *snd.m_pOrigin : pOwner->GetAbsOrigin();
