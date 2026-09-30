@@ -231,22 +231,6 @@ void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, con
 	}
 }
 
-// Your noise state as an icon: a dot and 0 to 3 arcs (silent struck through, loud in amber).
-void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a)
-{
-	Rect(f, p + Vector2D(-2, -2) * f.s, p + Vector2D(2, 2) * f.s, c, a);
-	for (int i = 1; i <= arcs; ++i)
-	{
-		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 45.0f, 135.0f, NEO_GHOST_MEDIUM, c, a);
-		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 225.0f, 315.0f, NEO_GHOST_MEDIUM, c, a);
-	}
-	if (bSilent)
-	{
-		Arc(f, p, Vector2D(9.0f, 9.0f) * f.s, 0.0f, 360.0f, NEO_GHOST_LIGHT, c, a);
-		Line(f, p + Vector2D(-7, 7) * f.s, p + Vector2D(7, -7) * f.s, NEO_GHOST_LIGHT, c, a);
-	}
-}
-
 int NoiseArcs(const Senses &s)
 {
 	float loudest = 0.0f;

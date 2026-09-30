@@ -8,7 +8,7 @@
 // tendon. Stamina (assault, juggernaut) as four loose cells, or recon's two jump cells filling as each recharges;
 // speed as a short trace of the last eight seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
 // speed, the scale growing for bunny hops; chevrons for walk, run, sprint. Its attention: sprinting, recovering,
-// recharging, going faster than a run, landing. Beside the trace, your noise state: what you're sending out.
+// recharging, going faster than a run, landing. Beside the trace, your noise as a waveform: what you're sending out.
 
 namespace NeoCyberbrain
 {
@@ -17,6 +17,8 @@ constexpr int SAMPLES = 80;							// eight seconds at ten a second
 constexpr float SAMPLE_EVERY = 0.1f;
 constexpr float TRACE_W = 90.0f, TRACE_TOP = -8.0f, TRACE_BOTTOM = 28.0f;
 constexpr float SCALE_GROW = 0.12f, SCALE_SHRINK = 0.8f;
+constexpr int WAVE_STROKES = 11;
+constexpr float WAVE_PITCH = 4.0f, WAVE_HEIGHT = 16.0f, WAVE_SETTLE = 0.6f;	// pixels at 1080p; seconds
 
 static struct
 {
@@ -43,6 +45,62 @@ static void Record(const Senses &s, float now)
 		s_motion.lastSample += SAMPLE_EVERY;
 		s_motion.peak = s.speed;
 	}
+}
+
+// A small whole-number hash, for each noise event's own stroke pattern (steady for the event, no flicker).
+static float Hash01(unsigned int x)
+{
+	x ^= x >> 16;
+	x *= 0x7feb352du;
+	x ^= x >> 15;
+	x *= 0x846ca68bu;
+	x ^= x >> 16;
+	return (x & 0xffffu) / 65535.0f;
+}
+
+// Your noise as a waveform (Kyle's pick: "just too clear"), kept minimal: a row of mirrored strokes, a stick
+// waveform rather than a drawn line, so it can't be mistaken for the speed trace beside it. It moves only for events:
+// each noise you make kicks the strokes up at once, then they settle with a small damped bounce over half a second;
+// each event gets its own stroke pattern from when it happened. Flat with its centre block when silent or quiet;
+// amber from 16 m.
+static void NoiseWave(const Frame &f, const Local &L, const Vector2D &at, float alpha)
+{
+	const Senses &s = *f.pSenses;
+	float amp = 0.0f;
+	unsigned int seed = 0;
+	for (int i = 0; i < s.noiseCount; ++i)
+	{
+		const Noise &n = s.noise[i];
+		const float age = f.now - n.time;
+		if (age < 0.0f || age > WAVE_SETTLE)
+			continue;
+		const float level = clamp(log10f(1.0f + n.metres) / 2.0f, 0.2f, 1.0f);
+		const float bounce = expf(-age / 0.16f) * (0.8f + 0.2f * cosf(age * 28.0f));
+		if (level * bounce > amp)
+		{
+			amp = level * bounce;
+			seed = static_cast<unsigned int>(n.time * 1000.0f);
+		}
+	}
+	const int arcs = NoiseArcs(s);
+	const Color c = arcs >= 2 ? WARN : f.color;
+	const float strength = (amp > 0.02f || s.bSilent ? 0.9f : 0.4f) * alpha;
+	const float mid = (WAVE_STROKES - 1) * 0.5f;
+	for (int i = 0; i < WAVE_STROKES; ++i)
+	{
+		const float x = (i - mid) * WAVE_PITCH;
+		const float window = 1.0f - fabsf(i - mid) / (mid + 1.0f);
+		const float h = WAVE_HEIGHT * amp * window * (0.35f + 0.65f * Hash01(seed * 31u + i));
+		if (h < 1.0f)
+		{
+			// The flat line: short dashes between the strokes' places.
+			Line(f, at + Vector2D(x - WAVE_PITCH * 0.3f, 0.0f) * L.k, at + Vector2D(x + WAVE_PITCH * 0.3f, 0.0f) * L.k,
+				NEO_GHOST_LIGHT, c, 0.6f * strength);
+			continue;
+		}
+		Line(f, at + Vector2D(x, -h) * L.k, at + Vector2D(x, h) * L.k, NEO_GHOST_MEDIUM, c, strength);
+	}
+	Rect(f, at + Vector2D(-2.5f, -1.5f) * L.k, at + Vector2D(2.5f, 1.5f) * L.k, c, strength);
 }
 
 void PaintMotion(const Frame &f)
@@ -135,13 +193,12 @@ void PaintMotion(const Frame &f)
 		Line(f, L.At(cx, y - 6.0f), L.At(cx + 7.0f, y), NEO_GHOST_MEDIUM, cc, ca);
 	}
 	// What you're sending out: your noise state beside the trace, away from the body (the ring shows only where).
-	const int arcs = NoiseArcs(s);
-	const Vector2D np = L.At(d > 0.0f ? left - 22.0f : right + 22.0f, TRACE_BOTTOM - 10.0f);
-	NoiseIcon(f, np, arcs, s.bSilent && arcs == 0, arcs >= 2 ? WARN : f.color, ((arcs > 0 || s.bSilent) ? 0.9f : 0.35f) * Max(a, 0.6f));
+	const Vector2D np = L.At(d > 0.0f ? left - 32.0f : right + 32.0f, TRACE_BOTTOM - 10.0f);
+	NoiseWave(f, L, np, Max(a, 0.6f));
 	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
 	if (cl_neo_hud_kanji.GetBool() && look.labels > 0.02f)
 	{
-		Text(f, L"\u9a12\u97f3", np.x, np.y + 20.0f * L.k, 0, FONT_KANJI, f.color, 0.4f * look.labels);
+		Text(f, L"\u9a12\u97f3", np.x, np.y + 28.0f * L.k, 0, FONT_KANJI, f.color, 0.4f * look.labels);
 	}
 	if (look.labels > 0.02f)
 	{

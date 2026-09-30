@@ -184,9 +184,7 @@ float TextWidth(const wchar_t *pText, Font font);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
-// Your noise state as an icon: a dot and 0 to 3 arcs (silent struck through).
-void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a);
-// How loud you are now, as the icon's arcs (0 to 3).
+// How loud you are now, 0 (nothing) to 3 (60 m and more): the noise waveform's colour, the ring's ticks.
 int NoiseArcs(const Senses &s);
 // Loose cells (Kyle's pick for stamina and jumps, in place of the tanks): `count` separate cells stacked bottom up in
 // the box from a (top left) to b (bottom right), each with its top corner cut on the `chamfer` side (1 right, -1
