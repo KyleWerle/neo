@@ -49,10 +49,10 @@ public:
 	// Materials hidden while on the sights, e.g. an optic's lens (";"-separated, "IronsightHideMaterials").
 	char	m_szIronHideMaterials[256] = "";
 
-	// Optic on the sights ("IronsightOptic" block); m_flIronOpticFov <= 0 means none. See neo_ironsight_optic.h.
-	float	m_flIronOpticFov = 0.0f;		// field of view of the live view, when no magnification can be used
-	float	m_flIronOpticMagnification = 0.0f;	// zoom relative to the lens's size on screen (1 = like empty glass); needs "lens_map"
-	char	m_szIronOpticLens[MAX_WEAPON_STRING] = "";	// the lens's material; empty = overlay only
+	// Optic on the sights ("IronsightOptic" block): glass the gun is seen through, never a zoom (aiming zooms
+	// as stock does, with the camera's field of view). See neo_ironsight_optic.h.
+	bool	m_bHasIronOptic = false;
+	char	m_szIronOpticLens[MAX_WEAPON_STRING] = "";	// the glass's material
 	// The lens surface on its bone, for drawing the optic ourselves: point(u, v) = origin + u * uAxis +
 	// v * vAxis in "lens_bone" space ("lens_map", extracted from the model).
 	bool	m_bHasIronOpticLensMap = false;
@@ -68,15 +68,18 @@ public:
 	Vector	m_vecIronOpticLens2V = Vector(0.0f, 0.0f, 0.0f);
 	// The lens within that surface in UV ("lens_circle" "u v radius [vradius]", default the whole square):
 	// centre (x, y), radius across (z) and down (m_flIronOpticLensRadiusV). Its shape is a superellipse
-	// ("lens_shape": 2 = round, higher = squarer). With "lens_disc", the lens keeps its own material and the
-	// optic is drawn as this shape over it, fading in on the sights, with the reticle on top.
+	// ("lens_shape": 2 = round, higher = squarer).
 	Vector	m_vecIronOpticLensCircle = Vector(0.5f, 0.5f, 0.5f);
 	float	m_flIronOpticLensRadiusV = 0.5f;
 	float	m_flIronOpticLensShape = 2.0f;
-	bool	m_bIronOpticLensDisc = false;
-	// "window": clear sight glass (red dots, holo sights). While the gun is drawn over (cloak, thermals), the
-	// glass shows the world behind it exactly (no zoom), with the glass's own texture on top.
+	// "window": the gun's own glass, see-through in its own material (every optic is one). While the gun is
+	// drawn over (cloak, thermals), the glass is left out of it, so the world already on screen shows through,
+	// with the glass's own texture on top.
 	bool	m_bIronOpticWindow = false;
+	// "scope": glass with a housing behind it (the Jittes' sight, the MX's eyepiece): on the sights, the gun
+	// behind the glass is hidden inside its outline in every state, not only while drawn over, so the view
+	// through the glass is clear.
+	bool	m_bIronOpticScope = false;
 	// "window_skip": how deep behind the glass, in viewmodel units, the gun is hidden inside its outline while
 	// drawn over: sight parts there, see-through in their own material, would be solid. The gun further
 	// back (its front, seen through the sight at the hip) shows. Without it, all of the gun behind the glass
@@ -106,15 +109,11 @@ public:
 	// neo_ironsight_collimator.h.
 	bool	m_bIronOpticCollimated = false;
 	Vector	m_vecIronOpticDot = Vector(0.5f, 0.5f, 0.02f);
-	char	m_szIronOpticOverlay[MAX_WEAPON_STRING] = "";	// full-screen scope texture when the live view is off
-	char	m_szIronOpticReticle[MAX_WEAPON_STRING] = "";	// reticle material over the live view
-
-	// Augmented aim ("IronsightAugment" block), for weapons kept on the classic zoom: while aiming, a
-	// magnified window around the crosshair. See neo_ironsight_augment.h.
-	float	m_flIronAugmentMagnification = 0.0f;	// <= 0: none; zoom on top of the aim's own
-	float	m_flIronAugmentSize = 0.0f;		// window width and height, as a fraction of the screen's
-	float	m_flIronAugmentEdge = 0.0f;		// how far in from the rim it fades to translucent, fraction of its half-size
-	float	m_flIronAugmentAlpha = 0.0f;		// opacity inside the fade
+	// "dot_color" "r g b": the dot's colour, for its afterimage (neo_ironsight_dot_trail.h); alpha 0 when unset,
+	// for cl_neo_ironsight_dot_trail_color.
+	Color	m_clrIronOpticDot = Color(0, 0, 0, 0);
+	// The glass's art, drawn by us wherever the gun's own glass doesn't show it (hidden, or drawn over).
+	char	m_szIronOpticReticle[MAX_WEAPON_STRING] = "";
 
 	// Glowing sight dots while cloaked ("IronsightDots" block). See neo_ironsight_dots.h.
 	bool	m_bHasIronDots = false;

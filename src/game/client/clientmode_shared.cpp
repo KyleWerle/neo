@@ -69,7 +69,6 @@ extern ConVar replay_rendersetting_renderglow;
 
 #ifdef NEO
 #include "c_neo_player.h"
-#include "neo/neo_ironsight_optic.h"
 #include <GameUI/IGameUI.h>
 #include "ui/neo_loading.h"
 #include "neo_gamerules.h"
@@ -588,10 +587,6 @@ void ClientModeShared::OverrideMouseInput( float *x, float *y )
 bool ClientModeShared::ShouldDrawViewModel()
 {
 #ifdef NEO
-	if (NeoGetIronsightOpticMode() == NEO_OPTIC_OVERLAY)
-	{
-		return false; // The full-screen scope replaces the gun.
-	}
 	auto pWeapon = static_cast<C_NEOBaseCombatWeapon *>(GetActiveWeapon());
 	if (pWeapon && pWeapon->GetNeoWepBits() & NEO_WEP_SCOPEDWEAPON)
 	{

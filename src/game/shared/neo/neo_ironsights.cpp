@@ -500,7 +500,7 @@ CON_COMMAND(cl_neo_ironsight_restinfo, "Print the gun's position across the acti
 #ifdef CLIENT_DLL
 bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked)
 {
-	const bool bHasCloakedAimAid = data.m_bHasIronDots || data.m_flIronOpticFov > 0.0f;
+	const bool bHasCloakedAimAid = data.m_bHasIronDots || data.m_bHasIronOptic;
 	// Hidden from halfway into the ADS style (Z eases between them).
 	return NeoIronsightsActive(data) && NeoIronsightStyleBlend() >= 0.5f && !cl_neo_ironsight_crosshair.GetBool()
 		&& !(bAiming && bCloaked && !bHasCloakedAimAid);
@@ -556,7 +556,7 @@ NeoIronsightHiddenMaterials::NeoIronsightHiddenMaterials(const CNEOWeaponInfo *p
 		Hide(s_hidden.pLens);
 	}
 	// The listed materials once the gun is most of the way onto the sights.
-	if (ironsightBlend >= 0.5f)
+	if (ironsightBlend >= NEO_IRONSIGHT_ON_SIGHTS)
 	{
 		for (int i = 0; i < s_hidden.onSightsCount; ++i)
 		{

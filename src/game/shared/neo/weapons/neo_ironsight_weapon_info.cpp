@@ -43,8 +43,7 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 	V_strncpy(m_szIronHideMaterials, pKeyValuesData->GetString("IronsightHideMaterials", ""), sizeof(m_szIronHideMaterials));
 
 	KeyValues* pOptic = pKeyValuesData->FindKey("IronsightOptic");
-	m_flIronOpticFov = pOptic ? pOptic->GetFloat("fov", 15) : 0.f;
-	m_flIronOpticMagnification = pOptic ? pOptic->GetFloat("magnification", 0) : 0.f;
+	m_bHasIronOptic = pOptic != nullptr;
 	V_strncpy(m_szIronOpticLens, pOptic ? pOptic->GetString("lens", "") : "", sizeof(m_szIronOpticLens));
 	if (pOptic)
 	{
@@ -74,19 +73,17 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 	m_bIronOpticWindow = pOptic && pOptic->GetBool("window") && m_bHasIronOpticLensMap;
 	m_flIronOpticWindowSkip = pOptic ? pOptic->GetFloat("window_skip", -1.0f) : -1.0f;
 	ParseWindowGlass(pOptic ? pOptic->GetString("window_glass", "") : "");
-	m_bIronOpticLensDisc = pOptic && (pOptic->GetBool("lens_disc") || m_bIronOpticWindow) && m_bHasIronOpticLensMap;
+	m_bIronOpticScope = m_bIronOpticWindow && pOptic->GetBool("scope");
 	m_bIronOpticOnePane = pOptic && pOptic->GetBool("one_pane") && m_bHasIronOpticLensMap2 && m_szIronOpticLens[0];
 	m_bIronOpticReticleInLens = pOptic && pOptic->GetBool("reticle_in_lens");
 	// (The reticle name is read at the end, so look it up here.)
 	m_bIronOpticCollimated = m_bIronOpticWindow && m_szIronOpticLens[0] && pOptic->GetString("reticle", "")[0]
 		&& sscanf(pOptic->GetString("collimated_dot", ""), "%f %f %f", &m_vecIronOpticDot.x, &m_vecIronOpticDot.y,
 			&m_vecIronOpticDot.z) == 3 && m_vecIronOpticDot.z > 0.0f;
-
-	KeyValues* pAugment = pKeyValuesData->FindKey("IronsightAugment");
-	m_flIronAugmentMagnification = pAugment ? pAugment->GetFloat("magnification", 1.5f) : 0.f;
-	m_flIronAugmentSize = pAugment ? clamp(pAugment->GetFloat("size", 0.4f), 0.05f, 1.0f) : 0.f;
-	m_flIronAugmentEdge = pAugment ? clamp(pAugment->GetFloat("edge", 0.35f), 0.01f, 1.0f) : 0.f;
-	m_flIronAugmentAlpha = pAugment ? clamp(pAugment->GetFloat("alpha", 0.85f), 0.0f, 1.0f) : 0.f;
+	// Read by hand: KeyValues::GetColor leaves a three-number colour with alpha 0, which means unset here.
+	int dotR = 0, dotG = 0, dotB = 0;
+	m_clrIronOpticDot = (pOptic && sscanf(pOptic->GetString("dot_color", ""), "%d %d %d", &dotR, &dotG, &dotB) == 3)
+		? Color(dotR, dotG, dotB, 255) : Color(0, 0, 0, 0);
 
 	KeyValues* pDots = pKeyValuesData->FindKey("IronsightDots");
 	m_bHasIronDots = pDots != nullptr;
@@ -99,7 +96,6 @@ void CNEOIronsightWeaponInfo::ParseIronsights(KeyValues *pKeyValuesData)
 		m_clrIronDotFront = pDots->FindKey("front_color") ? pDots->GetColor("front_color") : Color(60, 255, 60, 255);
 		m_clrIronDotRear = pDots->FindKey("rear_color") ? pDots->GetColor("rear_color") : Color(255, 110, 20, 255);
 	}
-	V_strncpy(m_szIronOpticOverlay, pOptic ? pOptic->GetString("overlay", "vgui/hud/scopes/scope03") : "", sizeof(m_szIronOpticOverlay));
 	V_strncpy(m_szIronOpticReticle, pOptic ? pOptic->GetString("reticle", "") : "", sizeof(m_szIronOpticReticle));
 
 	KeyValues* pGhost = pKeyValuesData->FindKey("IronsightGhost");

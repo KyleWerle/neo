@@ -4,7 +4,7 @@
 // fading as they go, each the spread cone's size where it is: where the shots can land at every range. The cone
 // is the eye's, so seen down the aim line every slice of it is the same size on screen; starting at the muzzle,
 // beside the gun and small, is what gives the tunnel its depth. The muzzle moves with the gun's knock and pivot,
-// so the tunnel bends with them. Part of the crosshair layer, aimed; the MPN45's window reuses it.
+// so the tunnel bends with them. Part of the crosshair layer, aimed.
 // Stubbed for now: the implementation is parked on the branch gunplay-tunnel.
 
 class C_NEO_Player;

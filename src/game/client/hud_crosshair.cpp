@@ -33,7 +33,6 @@
 #include "weapon_srs.h"
 #include "neo_gamerules.h"
 #include "neo_ironsights.h"
-#include "neo/neo_ironsight_augment.h"
 #include "neo/neo_ironsight_sight_ghost.h"
 #include "neo/neo_ironsight_dot_trail.h"
 #include "neo/neo_gunplay_crosshair.h"
@@ -608,12 +607,6 @@ void CHudCrosshair::Paint( void )
 	if (!bScopedIn)
 	{
 		NeoQuickInfoPaint(pPlayer, crh->color);
-	}
-
-	// Augmented aim (e.g. the MPN45 with ironsights on) replaces the crosshair while it is up.
-	if (!bHideCrosshair && NeoIronsightPaintAugment(pWeapon, crh->color, iX, iY))
-	{
-		return;
 	}
 
 	if (bIsScopedWep && pPlayer->m_bInAim)

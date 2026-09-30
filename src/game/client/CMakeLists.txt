@@ -1661,8 +1661,6 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_competitive.cpp
     neo/ui/neo_hud_competitive.h
     neo/neo_ironsight_bench.cpp
-    neo/neo_ironsight_augment.cpp
-    neo/neo_ironsight_augment.h
     neo/neo_ironsight_collimator.cpp
     neo/neo_ironsight_collimator.h
     neo/neo_ironsight_dot_trail.cpp

@@ -312,7 +312,8 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 {
 	const auto *pWeapon = static_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
 	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
-	// On the sights, hide what the weapon lists as blocking the view (e.g. the MX optic's lens).
+	// Hide the glass whose art we draw (one pane, a collimated dot) and, on the sights, what the weapon lists as
+	// blocking the view.
 	const NeoIronsightHiddenMaterials hiddenMaterials(pWeaponData, m_flIronsightBlend);
 
 	auto pPlayer = static_cast<C_NEO_Player*>(GetOwner());
@@ -323,14 +324,13 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
 	const bool bThermal = NeoIronsightInThermals(pPlayer);
 
-	// Clear sight glass over the cloaked or thermal gun: the clear view, then the gun in slices around the
-	// glass (see NeoIronsightGlassSplit).
+	// Clear sight glass in the cloaked or thermal gun: the gun in slices around the glass, so the world already on
+	// screen shows through it (see NeoIronsightGlassSplit).
 	NeoIronsightGlassSplit split;
 	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
 	{
 		int ret = 0;
 		CMatRenderContextPtr pRenderContext(materials);
-		NeoIronsightDrawGlassView(*pWeaponData);
 		for (int slice = 0; slice < split.slices; ++slice)
 		{
 			if (slice == split.depthBefore)
@@ -349,20 +349,25 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 		}
 		if (bOverlays)
 		{
-			NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
+			NeoIronsightDrawGlassArt(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
 			NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
 			DrawCyberbrainGun(flags);
 		}
 		return ret;
 	}
 
+	// A scope on the sights: its lens and the housing behind it left out, so the world shows through.
+	if (bDrawn)
+	{
+		NeoIronsightDrawScopeHole(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
+	}
 	const int ret = DrawGun(flags);
 
-	// On top of the gun, both pinned to it: the optic as a disc when cloaked or in thermals (the override
-	// took the lens with it) or for disc lenses and sight glass; and the glowing sight dots.
+	// On top of the gun, both pinned to it: the glass's art where the gun's own glass doesn't show it (hidden, or
+	// left out by the scope's hole), and the glowing sight dots.
 	if (ret && bOverlays)
 	{
-		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
+		NeoIronsightDrawGlassArt(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
 		NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
 		DrawCyberbrainGun(flags);
 	}

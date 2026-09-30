@@ -98,9 +98,13 @@ class IMaterial;
 // has its own aiming aid that stays visible while cloaked (glowing sight dots or an optic).
 bool NeoIronsightsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked);
 
+// How far onto the sights (the viewmodel's ironsight blend) the gun counts as on them: its listed materials
+// hide and a scope's housing behind the glass stops drawing from here.
+constexpr float NEO_IRONSIGHT_ON_SIGHTS = 0.5f;
+
 // Hides the weapon's "IronsightHideMaterials" (e.g. an optic's lens) for its lifetime while the gun
-// is on the sights, and "one_pane" glass always. Wrap the viewmodel draw in one; the materials are
-// restored when it goes out of scope.
+// is on the sights, and "one_pane" or collimated glass always. Wrap the viewmodel draw in one; the materials
+// are restored when it goes out of scope.
 class NeoIronsightHiddenMaterials
 {
 public:

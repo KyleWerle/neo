@@ -9,6 +9,7 @@
 #include "view.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
+#include "materialsystem/MaterialSystemUtil.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -19,6 +20,13 @@ static constexpr int DOT_RINGS = 3;			// the dot patch and the hole's fill
 static constexpr float DOT_SOFT_EDGE = 0.6f;		// the dot patch fades out from this fraction of its radius
 static constexpr float DOT_HARD_EDGE = 0.97f;		// the same for additive art (no tint to hide; the M41's chevron
 												// fills its patch right to the edge)
+static constexpr float CORE_RADIUS = 0.6f;			// the white-hot core, as a fraction of the dot's radius
+static constexpr float CORE_SOFT_EDGE = 0.3f;		// it fades out from this fraction of its own radius
+
+ConVar cl_neo_ironsight_dot_vision_core("cl_neo_ironsight_dot_vision_core", "0.9", FCVAR_ARCHIVE,
+	"In vision modes, how white-hot the collimated dot's core burns (0 = off). The vision filters keep only"
+	" brightness, and a pure red or green dot has little of it, so without the core the dot sinks into the"
+	" filter's colour.", true, 0, true, 1);
 
 // The glass's own frame (right along its u, the normal away from the eye, up completing them), turned from the
 // gun's drawn angles to others: the unswayed ones (no bob, sway lag or view shake, which the base viewmodel
@@ -207,6 +215,79 @@ static float InsideBy(const Vector2D &point, const Vector2D *pOutline, int point
 	return bInside ? nearest : -nearest;
 }
 
+// Whether the view on screen goes through a vision filter (night, motion or thermal vision), as DoNEOVision
+// decides it.
+static bool InVisionMode()
+{
+	const C_NEO_Player *pPlayer = C_NEO_Player::GetVisionTargetNEOPlayer();
+	return pPlayer && pPlayer->IsInVision();
+}
+
+// In a vision mode, a white core added over the dot (at UV floating on the pane, radius in viewmodel units), so
+// it lands at the top of the filter's ramp, the brightest thing in the sight, like a real sight's night-vision
+// setting. The filters map brightness alone, and a pure red dot has little: it came out as dim as the walls.
+static void DrawVisionCore(const NeoLensPane &pane, const Vector2D &floating, float radius, float lengthU,
+	float lengthV, float dotAlpha)
+{
+	const float strength = cl_neo_ironsight_dot_vision_core.GetFloat() * dotAlpha;
+	if (strength <= 0.0f || !InVisionMode())
+	{
+		return;
+	}
+	static CMaterialReference s_material;
+	if (!s_material.IsValid())
+	{
+		KeyValues *pVMT = new KeyValues("UnlitGeneric");
+		pVMT->SetString("$basetexture", "vgui/white");
+		pVMT->SetInt("$additive", 1);
+		pVMT->SetInt("$vertexcolor", 1);
+		pVMT->SetInt("$nocull", 1);
+		// Wins against the glass art it sits on (a depth bias, like bullet decals).
+		pVMT->SetInt("$decal", 1);
+		s_material.Init("__neo_ironsight_dot_core", TEXTURE_GROUP_OTHER, pVMT);
+	}
+	const Vector eye = CurrentViewOrigin();
+	CMatRenderContextPtr pRenderContext(materials);
+	pRenderContext->Bind(s_material);
+	IMesh *pMesh = pRenderContext->GetDynamicMesh();
+	CMeshBuilder meshBuilder;
+	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLES, COLLIMATOR_SEGMENTS * (DOT_RINGS + 1), COLLIMATOR_SEGMENTS * DOT_RINGS * 6);
+	for (int ring = 0; ring <= DOT_RINGS; ++ring)
+	{
+		const float r = Max(static_cast<float>(ring) / DOT_RINGS, 0.02f);
+		// Additive: it fades by darkening.
+		const float soft = 1.0f - NeoSmoothStep((r - CORE_SOFT_EDGE) / (1.0f - CORE_SOFT_EDGE));
+		const unsigned char level = static_cast<unsigned char>(255.0f * clamp(strength * soft, 0.0f, 1.0f));
+		for (int seg = 0; seg < COLLIMATOR_SEGMENTS; ++seg)
+		{
+			const float angle = 2.0f * M_PI_F * seg / COLLIMATOR_SEGMENTS;
+			const float distance = radius * CORE_RADIUS * r;
+			const Vector world = pane.At(floating.x + cosf(angle) * distance / lengthU, floating.y + sinf(angle) * distance / lengthV);
+			// Lifted a hair toward the eye, as the dot is.
+			Vector lift = eye - world;
+			VectorNormalize(lift);
+			const Vector position = world + lift * 0.01f;
+			meshBuilder.Color4ub(level, level, level, 255);
+			meshBuilder.TexCoord2f(0, 0.5f, 0.5f);
+			meshBuilder.Position3fv(position.Base());
+			meshBuilder.AdvanceVertex();
+		}
+	}
+	for (int ring = 0; ring < DOT_RINGS; ++ring)
+	{
+		for (int seg = 0; seg < COLLIMATOR_SEGMENTS; ++seg)
+		{
+			const int next = (seg + 1) % COLLIMATOR_SEGMENTS;
+			const int a = ring * COLLIMATOR_SEGMENTS + seg, b = ring * COLLIMATOR_SEGMENTS + next;
+			const int c = a + COLLIMATOR_SEGMENTS, d = b + COLLIMATOR_SEGMENTS;
+			meshBuilder.FastIndex(a); meshBuilder.FastIndex(c); meshBuilder.FastIndex(d);
+			meshBuilder.FastIndex(a); meshBuilder.FastIndex(d); meshBuilder.FastIndex(b);
+		}
+	}
+	meshBuilder.End();
+	pMesh->Draw();
+}
+
 bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt, const NeoLensPane &pane,
 	const CNEOWeaponInfo &data, const Vector2D *pOutline, int points, float alpha, float fadeStart)
 {
@@ -253,7 +334,7 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 		dotAlpha = alpha * NeoSmoothStep(InsideBy(floating, pOutline, points, lengthU, lengthV) / radius);
 		if (dotAlpha > 0.0f)
 		{
-			NeoIronsightRecordDotTrail(axis, radius / Max(crossing.DistTo(eye), 0.001f), dotAlpha);
+			NeoIronsightRecordDotTrail(axis, radius / Max(crossing.DistTo(eye), 0.001f), dotAlpha, data.m_clrIronOpticDot);
 		}
 	}
 
@@ -353,5 +434,10 @@ bool NeoIronsightDrawCollimatedArt(C_BaseAnimating *pViewModel, IMaterial *pArt,
 	}
 	meshBuilder.End();
 	pMesh->Draw();
+
+	if (bDot)
+	{
+		DrawVisionCore(pane, floating, radius, lengthU, lengthV, dotAlpha);
+	}
 	return true;
 }
