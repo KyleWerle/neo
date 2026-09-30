@@ -5,9 +5,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// The other receptor groups, in shapes rather than numbers. Optics: how visible you are (an iris that opens with the
-// light you stand in, the therm-optic cells round it, hollow while cloaked, vision mode lighting its centre).
-// Nothing loops: motion is for events. Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
+// The other receptor groups, in shapes rather than numbers. Optics: how visible you are (a halftone patch that fills
+// with the light you stand in, hollow and displaced while cloaked, vision mode lighting its brackets; the therm-optic
+// tank under it). Nothing loops: motion is for events. Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
 // aim settle as a bar, the range while aiming; a shot flicks its tick out, a reload sweeps them back. The count hangs
 // from the gun's own magazine on a short leader (neo_cyberbrain_gun.h), in the group only when it can't. Link: ping as signal bars, neural load
 // as cells, the squad as pips. Words and plates only come in with attention.
@@ -15,19 +15,9 @@
 namespace NeoCyberbrain
 {
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
+constexpr int HALFTONE_CELLS = 5;
+constexpr float HALFTONE_PITCH = 13.0f, HALFTONE_MIN = 1.5f;	// pixels at 1080p: a cell, and a square in the dark
 
-static void FillCircle(const Frame &f, const Vector2D &c, float r, const Color &col, float a)
-{
-	NeoGhostBegin(col, Alpha(f, a));
-	constexpr int SIDES = 12;
-	for (int i = 0; i < SIDES; ++i)
-	{
-		const float q0 = 2.0f * M_PI_F * i / SIDES, q1 = 2.0f * M_PI_F * (i + 1) / SIDES;
-		const Vector2D p0 = c + Vector2D(cosf(q0), sinf(q0)) * r, p1 = c + Vector2D(cosf(q1), sinf(q1)) * r;
-		const Vector2D quad[4] = { c, p0, p1, p1 };
-		NeoGhostFill(quad);
-	}
-}
 void PaintOptics(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -35,31 +25,42 @@ void PaintOptics(const Frame &f)
 	const Local L = { f.pPlaces[GROUP_OPTICS].pos, f.s * look.scale, f.hand };
 	const float a = look.alpha, m = static_cast<float>(L.m);
 	const int side = L.m > 0 ? 1 : -1;
-	const Vector2D c = L.origin;
-	// The opening all but shuts in the dark and all but fills the iris in bright light (Kyle: grow and shrink more).
-	const float outer = 34.0f * L.k, aperture = (3.0f + 28.0f * s.light) * L.k;
+	// The halftone patch (Kyle's pick over the lens): a grid of squares that grow with the light you stand in, so a
+	// dense block reads as solid to other eyes. A slight diagonal ramp makes it read as print halftone rather than a
+	// uniform grid. Exposed, it goes amber. Cloaked, the squares go hollow and alternate rows sit displaced, as the
+	// therm-optic's shimmer, without moving. Vision mode lights the brackets round it (a flash as it comes on).
 	const bool bExposed = s.bExposed;
-	const Color iris = bExposed ? WARN : f.color;
-	// The iris, dashed while cloaked; its blades close in the dark and open in the light.
-	for (int i = 0; i < 24; i += (s.bCloaked ? 2 : 1))
+	const Color dot = bExposed ? WARN : f.color;
+	const float half = HALFTONE_CELLS * HALFTONE_PITCH * 0.5f;
+	for (int row = 0; row < HALFTONE_CELLS; ++row)
 	{
-		Arc(f, c, Vector2D(outer, outer), i * 15.0f, i * 15.0f + (s.bCloaked ? 10.0f : 15.0f), NEO_GHOST_MEDIUM, iris, 0.7f * a);
+		const float shift = s.bCloaked && (row & 1) ? 3.0f * m : 0.0f;
+		for (int col = 0; col < HALFTONE_CELLS; ++col)
+		{
+			const float ramp = (row + (m > 0.0f ? col : HALFTONE_CELLS - 1 - col)) / (2.0f * (HALFTONE_CELLS - 1));
+			const float t = clamp(s.light * 1.25f - 0.25f * ramp, 0.0f, 1.0f);
+			const float size = HALFTONE_MIN + (HALFTONE_PITCH - 2.0f - HALFTONE_MIN) * t;
+			const float cx = -half + (col + 0.5f) * HALFTONE_PITCH + shift, cy = -half + (row + 0.5f) * HALFTONE_PITCH;
+			const Vector2D p0 = L.At(cx - size * 0.5f, cy - size * 0.5f), p1 = L.At(cx + size * 0.5f, cy + size * 0.5f);
+			if (s.bCloaked)
+				RectOutline(f, p0, p1, NEO_GHOST_LIGHT, dot, 0.6f * a);
+			else
+				Rect(f, p0, p1, dot, 0.85f * a);
+		}
 	}
-	for (int i = 0; i < 6; ++i)
-	{
-		const float q = i * M_PI_F / 3.0f + 0.3f;
-		Line(f, c + Vector2D(cosf(q), sinf(q)) * aperture, c + Vector2D(cosf(q + 0.9f), sinf(q + 0.9f)) * outer, NEO_GHOST_LIGHT, iris, 0.45f * a);
-	}
-	Arc(f, c, Vector2D(aperture, aperture), 0.0f, 360.0f, NEO_GHOST_LIGHT, iris, 0.6f * a);
 	const bool bJuggernaut = s.neoClass == NEO_CLASS_JUGGERNAUT;
-	if (s.bVision || bJuggernaut)
+	const float flash = expf(-Max(0.0f, f.now - s.visionChanged) / 0.25f);
+	const float bracket = (s.bVision || bJuggernaut) ? 0.75f + 0.25f * flash : 0.25f;
+	const float edge = half + 4.0f, arm = 7.0f;
+	for (int corner = 0; corner < 4; ++corner)
 	{
-		// Steady while it's on; one flash as it comes on (motion only for events).
-		const float flash = expf(-Max(0.0f, f.now - s.visionChanged) / 0.25f);
-		FillCircle(f, c, aperture, f.color, (0.24f + 0.2f * flash) * a);
+		const float sx = (corner & 1) ? 1.0f : -1.0f, sy = (corner & 2) ? 1.0f : -1.0f;
+		const Vector2D at = L.At(sx * edge, sy * edge);
+		Line(f, at, L.At(sx * (edge - arm), sy * edge), NEO_GHOST_MEDIUM, f.color, bracket * a);
+		Line(f, at, L.At(sx * edge, sy * (edge - arm)), NEO_GHOST_MEDIUM, f.color, bracket * a);
 	}
-	// The therm-optic as a tank under the iris, eight segments, filling from the gun side's far end: hollow while
-	// cloaked (it's draining), its edge pulsing as it recharges.
+	// The therm-optic as a tank under the patch, eight segments, filling from the gun side's far end: hollow while
+	// cloaked (it's draining).
 	if (s.bHasCloak)
 	{
 		const Vector2D p0 = L.At(-44.0f, 46.0f), p1 = L.At(44.0f, 57.0f);
