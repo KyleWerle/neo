@@ -10,12 +10,17 @@
 class C_NEO_Player;
 class Color;
 
-// The setting: the racer style (cl_neo_hud_style 3, neo_cyberbrain.h).
+// The setting: the racer style (cl_neo_hud_style 3, neo_hud_style.h).
 bool NeoQuickInfoOn();
 
 // On and drawn (or held back only by a screen fade) this frame or the last: the ammo panel gives way to it. Off, or
 // hidden (dead, spectating, the rules), the stock panels stay.
 bool NeoQuickInfoShowing();
 
-// Paints the band in the crosshair's HUD pass, in the crosshair's colour.
+// Paints the band, in color (its HUD element, ui/neo_hud_quickinfo.*).
 void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color);
+
+// The band is drawn in the crosshair's colour: the crosshair hands it over each frame it paints (the band keeps the
+// last one when it doesn't).
+void NeoQuickInfoFollowColour(const Color &color);
+Color NeoQuickInfoColour();

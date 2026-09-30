@@ -582,6 +582,8 @@ void CHudCrosshair::Paint( void )
 		bHideCrosshair = true;
 	}
 	CrosshairWepInfo *crh = &m_crosshairInfo.wep[eNeoXHairWep];
+	// The quick info band (its own HUD element) is drawn in the crosshair's colour.
+	NeoQuickInfoFollowColour(crh->color);
 	const int iTexXHId = m_iTexXHId[clamp(crh->iStyle, 0, CROSSHAIR_STYLE__TOTAL - 1)];
 
 	bool showFriendlyFireCrosshair = false;
@@ -600,13 +602,6 @@ void CHudCrosshair::Paint( void )
 	{
 		NeoIronsightPaintSightGhost(crh->color);
 		NeoIronsightPaintDotTrail();
-	}
-	// The quick info band below the crosshair (its own setting, Settings > HUD), on the sights too; scoped in, it
-	// waits for the scope's black borders below and goes over them (the panels it replaces stay up in a scope).
-	const bool bScopedIn = bIsScopedWep && pPlayer->m_bInAim;
-	if (!bScopedIn)
-	{
-		NeoQuickInfoPaint(pPlayer, crh->color);
 	}
 
 	if (bIsScopedWep && pPlayer->m_bInAim)
@@ -723,7 +718,6 @@ void CHudCrosshair::Paint( void )
 
 		// Reset corner rounding.
 		SetRoundedCorners(prevCornerFlags);
-		NeoQuickInfoPaint(pPlayer, crh->color);
 	}
 }
 

@@ -256,6 +256,18 @@ bool NeoQuickInfoShowing()
 	return NeoQuickInfoOn() && NeoQuickInfo::s_qi.wantedFrame >= gpGlobals->framecount - 1;
 }
 
+static Color s_quickInfoColour(255, 255, 255, 255);
+
+void NeoQuickInfoFollowColour(const Color &color)
+{
+	s_quickInfoColour = color;
+}
+
+Color NeoQuickInfoColour()
+{
+	return s_quickInfoColour;
+}
+
 void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 {
 	NEO_HUD_PROFILE(NEO_HUD_PROFILE_VITALS, "NeoQuickInfoPaint");

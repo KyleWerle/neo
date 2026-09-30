@@ -1660,6 +1660,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_cyberbrain_team.h
     neo/ui/neo_hud_competitive.cpp
     neo/ui/neo_hud_competitive.h
+    neo/ui/neo_hud_quickinfo.cpp
+    neo/ui/neo_hud_quickinfo.h
     neo/neo_ironsight_bench.cpp
     neo/neo_ironsight_collimator.cpp
     neo/neo_ironsight_collimator.h
