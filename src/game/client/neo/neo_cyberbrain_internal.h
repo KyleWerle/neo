@@ -61,6 +61,11 @@ struct Senses
 	float light = 0.3f;					// the light you stand in, 0 dark to 1 bright
 	// The weapon, as the ammo panel counts it.
 	NeoQuickInfo::Ammo ammo;
+	// The rules the groups show, decided here once (attention and paint only read them): low on rounds, how hot the
+	// BALC runs (0 fine, 1 warm, 2 critical), standing in bright light uncloaked.
+	bool bAmmoLow = false;
+	int heatLevel = 0;
+	bool bExposed = false;
 	bool bReloading = false;
 	float reloadStart = -100.0f;
 	float sync = 1.0f;					// aim settle: 1 settled, dips on each shot
@@ -143,6 +148,8 @@ const Senses *PublishedSenses(Color &color);
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &frame, float dt, bool bBoot, Place places[GROUP__COUNT]);
 // The ring's deep layer offset (it doesn't move, but its chassis drifts as you turn), pixels.
 Vector2D RingDeepOffset();
+// Whether a screen point is in the keep-out round the crosshair (nothing of the HUD's goes there).
+bool InKeepout(const Frame &frame, const Vector2D &p);
 // A group's look at its attention: scale, strength, and how far its numbers and labels have come in.
 struct Look { float scale, alpha, numbers, labels; };
 Look LookOf(const Frame &frame, Group group);
@@ -168,9 +175,13 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
+// Your noise state as an icon: a dot and 0 to 3 arcs (silent struck through).
+void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a);
+// How loud you are now, as the icon's arcs (0 to 3).
+int NoiseArcs(const Senses &s);
 // A tank: a box-shaped vessel, screen pixels from a (top left) to b (bottom right), filled to `fill` (0 to 1) from the
 // bottom (dir 0), the left (1) or the right (-1), with a hard edge, gaps between `segments`, the empty part hatched,
-// a cap on its top (or its outer end); a charging tank's edge pulses.
+// a cap on its top (or its outer end); a charging tank's edge flares as each segment fills.
 struct TankStyle { int segments = 1; int dir = 0; bool bCharging = false; bool bHollow = false; Color fill; };
 void Tank(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const TankStyle &style, float alpha);
 

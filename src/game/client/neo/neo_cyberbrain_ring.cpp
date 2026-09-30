@@ -7,9 +7,10 @@
 // The surround ring: the compass as a ring on the ground round you, in perspective. Ahead is its far (top) edge,
 // behind its near (bottom) edge; it opens toward a full circle as you look down, and turns with you as the world does.
 // On it: the heading, the objective, the ghost's callouts, squadmates, every sound you can hear (the full circle), and your own noise as
-// short ticks pushed out from it (short and local: nothing flows across the view). Compact: small at the bottom
+// short ticks pushed out from it (short and local: nothing flows across the view). It says where things are, not
+// everything about them: your noise state and the range live in the motion and weapon groups. Compact: small at the bottom
 // centre. On the body: it is the body group's ground disc, so sounds land round your own feet. Glyphs, not numbers: a
-// sound's kind is a mark beside its arc, your noise state an icon, the objective's distance a line's length.
+// sound's kind is a mark beside its arc, the objective's distance a line's length.
 // Headings follow NT's compass (neo_hud_compass.cpp): a world yaw Y reads as 180 - Y degrees, north up.
 
 namespace NeoCyberbrain
@@ -49,22 +50,6 @@ static void KindGlyph(const Frame &f, const Vector2D &p, SoundKind kind, const C
 		break;
 	default:
 		break;
-	}
-}
-
-// Your noise state as an icon: a dot and 0 to 3 arcs (silent struck through, loud in amber).
-static void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a)
-{
-	Rect(f, p + Vector2D(-2, -2) * f.s, p + Vector2D(2, 2) * f.s, c, a);
-	for (int i = 1; i <= arcs; ++i)
-	{
-		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 45.0f, 135.0f, NEO_GHOST_MEDIUM, c, a);
-		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 225.0f, 315.0f, NEO_GHOST_MEDIUM, c, a);
-	}
-	if (bSilent)
-	{
-		Arc(f, p, Vector2D(9.0f, 9.0f) * f.s, 0.0f, 360.0f, NEO_GHOST_LIGHT, c, a);
-		Line(f, p + Vector2D(-7, 7) * f.s, p + Vector2D(7, -7) * f.s, NEO_GHOST_LIGHT, c, a);
 	}
 }
 
@@ -233,29 +218,6 @@ void PaintRing(const Frame &f)
 			Line(f, ring.At(b, 3.0f), ring.At(b, 3.0f + 36.0f * reach * grow), bLoud ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT,
 				bLoud ? WARN : f.color, 0.7f * fade);
 		}
-	}
-	// Your noise state as an icon on the ring's outer side, the range (while aiming) on the other.
-	float loudest = 0.0f;
-	for (int i = 0; i < s.noiseCount; ++i)
-		loudest = Max(loudest, s.noise[i].metres);
-	const int arcs = loudest >= 60.0f ? 3 : loudest >= 16.0f ? 2 : loudest > 0.0f ? 1 : 0;
-	const float side = static_cast<float>(-f.hand);	// away from the gun
-	const Vector2D sp(f.ringCentre.x + side * (f.ringRadii.x + (bBody ? 70.0f : 34.0f) * f.s), f.ringCentre.y);
-	NoiseIcon(f, sp, arcs, s.bSilent && arcs == 0, arcs >= 2 ? WARN : f.color, (arcs > 0 || s.bSilent) ? 0.9f : 0.35f);
-	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
-	if (cl_neo_hud_kanji.GetBool())
-	{
-		Text(f, L"\u9a12\u97f3", sp.x + side * 22.0f * f.s, sp.y, f.hand > 0 ? -1 : 1, FONT_KANJI, f.color, 0.4f);
-	}
-	if (s.bRange)
-	{
-		wchar_t range[24];
-		if (s.rangeMetres < 0.0f)
-			V_wcsncpy(range, L"RNG ---", sizeof(range));
-		else
-			V_snwprintf(range, ARRAYSIZE(range), L"RNG %.0f M", s.rangeMetres);
-		const Vector2D rp(f.ringCentre.x - side * (f.ringRadii.x + 30.0f * f.s), f.ringCentre.y);
-		Text(f, range, rp.x, rp.y, f.hand > 0 ? 1 : -1, FONT_VALUE, f.color, 0.7f);
 	}
 }
 } // namespace NeoCyberbrain

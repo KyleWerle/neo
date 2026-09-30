@@ -217,8 +217,10 @@ void Tank(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, cons
 					Rect(f, Vector2D(x - 0.75f * s, in0.y), Vector2D(x + 0.75f * s, in1.y), Color(0, 0, 0, 255), 0.6f * alpha);
 			}
 		}
-		// The leading edge: bright, pulsing while it charges.
-		const float pulse = style.bCharging ? 0.55f + 0.45f * sinf(f.now * 7.0f) : 0.9f;
+		// The leading edge: steady and dimmer while it charges, flaring as each segment fills (an event, not a loop;
+		// read from the fill itself, just past a segment's line).
+		const float seg = fill * style.segments, past = seg - floorf(seg);
+		const float pulse = !style.bCharging ? 0.9f : (seg >= 1.0f && past < 0.08f) ? 1.0f : 0.6f;
 		if (bVertical)
 			Line(f, Vector2D(in0.x, f0.y), Vector2D(in1.x, f0.y), NEO_GHOST_MEDIUM, fc, pulse * alpha);
 		else
@@ -241,6 +243,30 @@ void Tank(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, cons
 			Line(f, Vector2D(x0, e1.y - (x0 - c)), Vector2D(x1, e1.y - (x1 - c)), NEO_GHOST_LIGHT, f.color, 0.22f * alpha);
 		}
 	}
+}
+
+// Your noise state as an icon: a dot and 0 to 3 arcs (silent struck through, loud in amber).
+void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a)
+{
+	Rect(f, p + Vector2D(-2, -2) * f.s, p + Vector2D(2, 2) * f.s, c, a);
+	for (int i = 1; i <= arcs; ++i)
+	{
+		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 45.0f, 135.0f, NEO_GHOST_MEDIUM, c, a);
+		Arc(f, p, Vector2D(5.0f + i * 5.0f, 5.0f + i * 5.0f) * f.s, 225.0f, 315.0f, NEO_GHOST_MEDIUM, c, a);
+	}
+	if (bSilent)
+	{
+		Arc(f, p, Vector2D(9.0f, 9.0f) * f.s, 0.0f, 360.0f, NEO_GHOST_LIGHT, c, a);
+		Line(f, p + Vector2D(-7, 7) * f.s, p + Vector2D(7, -7) * f.s, NEO_GHOST_LIGHT, c, a);
+	}
+}
+
+int NoiseArcs(const Senses &s)
+{
+	float loudest = 0.0f;
+	for (int i = 0; i < s.noiseCount; ++i)
+		loudest = Max(loudest, s.noise[i].metres);
+	return loudest >= 60.0f ? 3 : loudest >= 16.0f ? 2 : loudest > 0.0f ? 1 : 0;
 }
 
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha)

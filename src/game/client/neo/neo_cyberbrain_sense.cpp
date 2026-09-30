@@ -237,9 +237,12 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 		s_sense.lightRaw = light;
 	}
 	out.light = bBoot ? s_sense.lightRaw : out.light + (s_sense.lightRaw - out.light) * Min(1.0f, dt / 0.5f);
+	out.bExposed = out.light > 0.6f && !out.bCloaked;
 
 	// The weapon.
 	NeoQuickInfo::ReadAmmo(pPlayer, out.ammo);
+	out.bAmmoLow = !out.ammo.bHeat && out.ammo.maxRounds > 1 && out.ammo.rounds <= out.ammo.maxRounds / 5;
+	out.heatLevel = !out.ammo.bHeat ? 0 : out.ammo.heat > 0.8f ? 2 : out.ammo.heat > 0.5f ? 1 : 0;
 	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
 	out.bReloading = pWeapon && pWeapon->m_bInReload;
 	if (out.bReloading && !s_sense.bReloading)

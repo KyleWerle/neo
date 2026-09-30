@@ -51,6 +51,11 @@ Vector2D RingDeepOffset()
 	return s_ringDeep.offset;
 }
 
+bool InKeepout(const Frame &f, const Vector2D &p)
+{
+	return fabsf(p.x - f.centre.x) < KEEPOUT_X * f.s && fabsf(p.y - f.centre.y) < KEEPOUT_Y * f.s;
+}
+
 struct Comfort { float travel, pullIn, letGo; };
 static Comfort ComfortOf()
 {
@@ -80,12 +85,11 @@ static float Salience(const Senses &s, Group group, float now)
 	case GROUP_OPTICS:
 		return Max(Max(Pulse(now, s.cloakChanged, 1.0f), Pulse(now, s.visionChanged, 0.7f)),
 			Max(Max(Pulse(now, s.lightChanged, 0.6f), s.bCloaked ? 0.75f : 0.0f),
-				Max(Max(s.bHasCloak && s.cloak < 0.98f ? 0.3f : 0.0f, s.bVision ? 0.35f : 0.0f), s.light > 0.6f ? 0.4f : 0.0f)));
+				Max(Max(s.bHasCloak && s.cloak < 0.98f ? 0.3f : 0.0f, s.bVision ? 0.35f : 0.0f), s.bExposed ? 0.4f : 0.0f)));
 	case GROUP_WEAPON:
 	{
-		const bool bLow = (s.ammo.maxRounds > 1 && s.ammo.rounds <= s.ammo.maxRounds / 5) || (s.ammo.bHeat && s.ammo.heat > 0.7f);
 		return Max(Max(Pulse(now, s.ammoChanged, 0.8f), now - s.shotTime < 1.0f ? 0.6f : 0.0f),
-			Max(s.bReloading ? 0.85f : 0.0f, bLow ? 0.7f : 0.0f));
+			Max(s.bReloading ? 0.85f : 0.0f, s.bAmmoLow || s.heatLevel > 0 ? 0.7f : 0.0f));
 	}
 	default:
 		return 0.05f;

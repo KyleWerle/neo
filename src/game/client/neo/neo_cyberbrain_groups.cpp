@@ -6,10 +6,10 @@
 #include "tier0/memdbgon.h"
 
 // The other receptor groups, in shapes rather than numbers. Optics: how visible you are (an iris that opens with the
-// light you stand in, the therm-optic cells round it, shimmering hollow while cloaked, vision mode lighting its
-// centre). Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
-// aim settle as a bar; a shot flicks its tick out, a reload sweeps them back. Leaders hang the readout from the gun
-// itself: the rounds from its magazine, the settle from its muzzle (neo_cyberbrain_gun.h). Link: ping as signal bars, neural load
+// light you stand in, the therm-optic cells round it, hollow while cloaked, vision mode lighting its centre).
+// Nothing loops: motion is for events. Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
+// aim settle as a bar, the range while aiming; a shot flicks its tick out, a reload sweeps them back. The count hangs
+// from the gun's own magazine on a short leader (neo_cyberbrain_gun.h), in the group only when it can't. Link: ping as signal bars, neural load
 // as cells, the squad as pips. Words and plates only come in with attention.
 
 namespace NeoCyberbrain
@@ -35,7 +35,7 @@ void PaintOptics(const Frame &f)
 	const int side = L.m > 0 ? 1 : -1;
 	const Vector2D c = L.origin;
 	const float outer = 34.0f * L.k, aperture = (7.0f + 20.0f * s.light) * L.k;
-	const bool bExposed = s.light > 0.6f && !s.bCloaked;
+	const bool bExposed = s.bExposed;
 	const Color iris = bExposed ? WARN : f.color;
 	// The iris, dashed while cloaked; its blades close in the dark and open in the light.
 	for (int i = 0; i < 24; i += (s.bCloaked ? 2 : 1))
@@ -51,8 +51,9 @@ void PaintOptics(const Frame &f)
 	const bool bJuggernaut = s.neoClass == NEO_CLASS_JUGGERNAUT;
 	if (s.bVision || bJuggernaut)
 	{
-		const float pulse = 0.22f + 0.08f * sinf((f.now - s.visionChanged) * 4.0f);
-		FillCircle(f, c, aperture, f.color, pulse * a);
+		// Steady while it's on; one flash as it comes on (motion only for events).
+		const float flash = expf(-Max(0.0f, f.now - s.visionChanged) / 0.25f);
+		FillCircle(f, c, aperture, f.color, (0.24f + 0.2f * flash) * a);
 	}
 	// The therm-optic as a tank under the iris, eight segments, filling from the gun side's far end: hollow while
 	// cloaked (it's draining), its edge pulsing as it recharges.
@@ -118,23 +119,23 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 	}
 }
 
-// A leader from the group's edge to a point on the gun: out a little level, then straight to it, ending in an open
-// bracket round the point.
-static void GunLeader(const Frame &f, const Local &L, const Vector2D &halfSize, NeoCyberGunPoint point, const Color &c, float a)
+// The rounds on the gun itself: a short leader out from the magazine (level, toward the screen's centre side, then a
+// drop), the count at its end. It rides with the magazine, reloads included. False when the magazine isn't on screen
+// or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
+static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a)
 {
-	Vector2D to;
-	if (a <= 0.01f || !NeoCyberGunPointOnScreen(point, to))
-		return;
-	const Vector2D local = (to - L.origin) / L.k;
-	const Vector2D from = L.At(clamp(local.x, -halfSize.x, halfSize.x), clamp(local.y, -halfSize.y, halfSize.y));
-	if ((to - from).Length() < 24.0f * f.s)
-		return;
-	const Vector2D elbow = from + Vector2D(to.x > from.x ? 14.0f : -14.0f, 0.0f) * f.s;
-	Line(f, from, elbow, NEO_GHOST_LIGHT, c, a);
-	Line(f, elbow, to, NEO_GHOST_LIGHT, c, a);
-	const float b = 5.0f * f.s;
-	Line(f, to + Vector2D(-b, -b), to + Vector2D(-b, b), NEO_GHOST_LIGHT, c, a);
-	Line(f, to + Vector2D(b, -b), to + Vector2D(b, b), NEO_GHOST_LIGHT, c, a);
+	Vector2D mag;
+	if (!NeoCyberGunPointOnScreen(NEO_GUN_MAG, mag) || InKeepout(f, mag))
+		return false;
+	const float out = static_cast<float>(-f.hand) * f.s;
+	const Vector2D elbow = mag + Vector2D(out * 20.0f, 0.0f), end = elbow + Vector2D(out * 8.0f, 10.0f * f.s);
+	const float b = 4.0f * f.s;
+	Line(f, mag + Vector2D(-b, -b), mag + Vector2D(-b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
+	Line(f, mag + Vector2D(b, -b), mag + Vector2D(b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
+	Line(f, mag, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
+	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
+	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_VALUE_LARGE, c, a);
+	return true;
 }
 
 void PaintWeapon(const Frame &f)
@@ -151,7 +152,7 @@ void PaintWeapon(const Frame &f)
 	const int side = L.m > 0 ? 1 : -1;
 	if (ammo.bHeat)
 	{
-		const Color hc = ammo.heat > 0.8f ? CRIT : ammo.heat > 0.5f ? WARN : f.color;
+		const Color hc = s.heatLevel == 2 ? CRIT : s.heatLevel == 1 ? WARN : f.color;
 		const float w = 150.0f, hw = w * ammo.heat;
 		Rect(f, L.At(-w * 0.5f, 6.0f), L.At(w * 0.5f, 15.0f), f.color, 0.12f * a);
 		Rect(f, L.At(m > 0.0f ? -w * 0.5f : w * 0.5f - hw, 6.0f), L.At(m > 0.0f ? -w * 0.5f + hw : w * 0.5f, 15.0f), hc,
@@ -161,7 +162,7 @@ void PaintWeapon(const Frame &f)
 	{
 		const int n = Min(ammo.maxRounds, 30);
 		const float pitch = Min(6.0f, 150.0f / n), w = n * pitch, per = static_cast<float>(ammo.maxRounds) / n;
-		const bool bLow = ammo.rounds <= ammo.maxRounds / 5;
+		const bool bLow = s.bAmmoLow;
 		// A reload sweeps the ticks back in; a shot flicks the tick it spent.
 		const float sweep = s.bReloading ? fmodf(f.now - s.reloadStart, 1.0f) : 1.0f;
 		const int shown = s.bReloading ? static_cast<int>(sweep * n) : static_cast<int>(ceilf(ammo.rounds / per - 0.001f));
@@ -176,8 +177,12 @@ void PaintWeapon(const Frame &f)
 		}
 		wchar_t count[16];
 		V_snwprintf(count, ARRAYSIZE(count), L"%d", ammo.rounds);
-		const Vector2D ca = L.At(m * 84.0f, 12.0f);
-		Text(f, count, ca.x, ca.y, side, FONT_VALUE_LARGE, col, Max(look.numbers, bLow ? 1.0f : 0.5f));
+		const float countAlpha = Max(look.numbers, bLow ? 1.0f : 0.5f);
+		if (!RoundsOnGun(f, count, col, countAlpha))
+		{
+			const Vector2D ca = L.At(m * 84.0f, 12.0f);
+			Text(f, count, ca.x, ca.y, side, FONT_VALUE_LARGE, col, countAlpha);
+		}
 		ModeGlyph(f, L, m > 0.0f ? 84.0f : -96.0f, 34.0f, ammo.pMode, 0.7f * a);
 		// Magazines as pips over the count (the Supa 7: shells, then slugs as taller pips).
 		int mags = 0, slugs = 0;
@@ -197,11 +202,17 @@ void PaintWeapon(const Frame &f)
 	const float sw = 120.0f;
 	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(sw * 0.5f, 31.0f), f.color, 0.1f * a);
 	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(-sw * 0.5f + sw * s.sync, 31.0f), s.sync < 0.5f ? WARN : f.color, 0.7f * a);
-	// The leaders: the rounds hang from the magazine while the group is pulled in (a reload lights it amber), the
-	// settle from the muzzle while it recovers from a shot.
-	const float magLeader = s.bReloading ? 0.8f : 0.5f * look.numbers;
-	GunLeader(f, L, Vector2D(80.0f, 36.0f), NEO_GUN_MAG, s.bReloading ? WARN : f.color, magLeader * a);
-	GunLeader(f, L, Vector2D(80.0f, 36.0f), NEO_GUN_MUZZLE, f.color, 0.6f * clamp((1.0f - s.sync) * 3.0f, 0.0f, 1.0f) * a);
+	// The range while aiming (the rangefinder's), under the settle: the ring only says where.
+	if (s.bRange)
+	{
+		wchar_t range[24];
+		if (s.rangeMetres < 0.0f)
+			V_wcsncpy(range, L"RNG ---", sizeof(range));
+		else
+			V_snwprintf(range, ARRAYSIZE(range), L"RNG %.0f M", s.rangeMetres);
+		const Vector2D rp = L.At(0.0f, 46.0f);
+		Text(f, range, rp.x, rp.y, 0, FONT_VALUE, f.color, Max(0.7f, look.numbers));
+	}
 	if (look.labels > 0.02f)
 	{
 		const Vector2D na = L.At(0.0f, -22.0f);

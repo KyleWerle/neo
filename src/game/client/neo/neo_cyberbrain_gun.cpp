@@ -178,7 +178,7 @@ bool NeoCyberGunPrepare(C_BaseAnimating *pViewModel, NeoCyberGunPass &pass)
 	if (s.ammo.bHeat && s.ammo.heat > 0.05f)
 	{
 		const float heat = s.ammo.heat, pulse = s.ammo.bOverheated ? 0.6f + 0.4f * sinf(now * 12.0f) : 1.0f;
-		AddBand(pass, front - heat * (front - rear), front + 2.0f, heat > 0.8f ? NC::CRIT : NC::WARN, 0.3f * heat * pulse);
+		AddBand(pass, front - heat * (front - rear), front + 2.0f, s.heatLevel == 2 ? NC::CRIT : NC::WARN, 0.3f * heat * pulse);
 	}
 	return pass.count > 0;
 }

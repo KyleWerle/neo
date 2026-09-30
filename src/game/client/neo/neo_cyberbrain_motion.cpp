@@ -8,7 +8,7 @@
 // tendon. Stamina (assault, juggernaut) as a four-segment tank, or recon's two jump tanks filling as each recharges;
 // speed as a short trace of the last eight seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
 // speed, the scale growing for bunny hops; chevrons for walk, run, sprint. Its attention: sprinting, recovering,
-// recharging, going faster than a run, landing.
+// recharging, going faster than a run, landing. Beside the trace, your noise state: what you're sending out.
 
 namespace NeoCyberbrain
 {
@@ -129,6 +129,15 @@ void PaintMotion(const Frame &f)
 		const float ca = (i < chevrons ? 0.9f : 0.12f) * a;
 		Line(f, L.At(cx - 7.0f, y), L.At(cx, y - 6.0f), NEO_GHOST_MEDIUM, cc, ca);
 		Line(f, L.At(cx, y - 6.0f), L.At(cx + 7.0f, y), NEO_GHOST_MEDIUM, cc, ca);
+	}
+	// What you're sending out: your noise state beside the trace, away from the body (the ring shows only where).
+	const int arcs = NoiseArcs(s);
+	const Vector2D np = L.At(d > 0.0f ? left - 22.0f : right + 22.0f, TRACE_BOTTOM - 10.0f);
+	NoiseIcon(f, np, arcs, s.bSilent && arcs == 0, arcs >= 2 ? WARN : f.color, ((arcs > 0 || s.bSilent) ? 0.9f : 0.35f) * Max(a, 0.6f));
+	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
+	if (cl_neo_hud_kanji.GetBool() && look.labels > 0.02f)
+	{
+		Text(f, L"騒音", np.x, np.y + 20.0f * L.k, 0, FONT_KANJI, f.color, 0.4f * look.labels);
 	}
 	if (look.labels > 0.02f)
 	{
