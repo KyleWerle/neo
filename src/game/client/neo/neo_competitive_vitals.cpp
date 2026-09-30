@@ -107,8 +107,9 @@ static void Compass(const Pen &pen, C_NEO_Player *pPlayer)
 {
 	static const wchar_t *s_rose[] = { L"s", L"sw", L"w", L"nw", L"n", L"ne", L"e", L"se" };
 	const float s = pen.s, y = COMPASS_Y * s - Height(FACE_TEXT) * 0.5f, yaw = MainViewAngles()[YAW], pad = BOX_PAD * s;
-	Box(pen.wide * 0.5f - COMPASS_W * 0.5f * s - pad, y - pad * 0.5f, pen.wide * 0.5f + COMPASS_W * 0.5f * s + pad,
-		y + Height(FACE_TEXT) + pad * 0.5f);
+	const float over = (Height(FACE_LARGE) - Height(FACE_TEXT)) * 0.5f;	// the cardinals stand above and below the line
+	Box(pen.wide * 0.5f - COMPASS_W * 0.5f * s - pad, y - over - pad * 0.5f, pen.wide * 0.5f + COMPASS_W * 0.5f * s + pad,
+		y + Height(FACE_TEXT) + over + pad * 0.5f);
 	// The stock rose: S at world yaw 0's opposite; each point's bearing from where you look.
 	for (int i = 0; i < 8; ++i)
 	{
@@ -116,12 +117,15 @@ static void Compass(const Pen &pen, C_NEO_Player *pPlayer)
 		float x;
 		if (!CompassX(pen, bearing, x))
 			continue;
+		// The cardinals large and full white; the points between smaller, fading toward the ends (as stock).
 		const float edge = 1.0f - fabsf(bearing) / (COMPASS_FOV * 0.5f);
-		const Color c(255, 255, 255, static_cast<int>(90 + 165 * edge));
-		Print(pen, s_rose[i], x, y, 0, FACE_TEXT, c);
+		if (i % 2 == 0)
+			Print(pen, s_rose[i], x, y - (Height(FACE_LARGE) - Height(FACE_TEXT)) * 0.5f, 0, FACE_LARGE, WHITE);
+		else
+			Print(pen, s_rose[i], x, y, 0, FACE_TEXT, Color(255, 255, 255, static_cast<int>(90 + 165 * edge)));
 	}
-	Print(pen, L"|", pen.wide * 0.5f, y - Height(FACE_TEXT), 0, FACE_TEXT, FADED);
-	const float markY = y - Height(FACE_TEXT) - 2.0f * s;
+	Print(pen, L"|", pen.wide * 0.5f, y - over - Height(FACE_TEXT), 0, FACE_TEXT, FADED);
+	const float markY = y - over - Height(FACE_TEXT) - 2.0f * s;
 	const auto bearingTo = [&](const Vector &at) { const Vector d = at - MainViewOrigin(); return AngleNormalize(yaw - RAD2DEG(atan2f(d.y, d.x))); };
 
 	// The objective, clamped to the edge as the stock arrow, in its carrier's colour; not while you carry it.

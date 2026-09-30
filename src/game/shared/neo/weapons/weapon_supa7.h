@@ -33,6 +33,8 @@ public:
 #endif
 
 	CWeaponSupa7();
+	// When the next shell goes in (or the reload's start ends), for the HUD's reload readout.
+	float GetNextReload() const { return m_flNextReload; }
 
 	NEO_WEP_BITS_UNDERLYING_TYPE WeaponIndex() const override { return NEO_WIDX_SUPA7; }
 	virtual NEO_WEP_BITS_UNDERLYING_TYPE GetNeoWepBits(void) const OVERRIDE { return NEO_WEP_SUPA7 | NEO_WEP_FIREARM; }

@@ -137,12 +137,12 @@ void PaintMotion(const Frame &f)
 	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
 	if (cl_neo_hud_kanji.GetBool() && look.labels > 0.02f)
 	{
-		Text(f, L"騒音", np.x, np.y + 20.0f * L.k, 0, FONT_KANJI, f.color, 0.4f * look.labels);
+		Text(f, L"\u9a12\u97f3", np.x, np.y + 20.0f * L.k, 0, FONT_KANJI, f.color, 0.4f * look.labels);
 	}
 	if (look.labels > 0.02f)
 	{
 		const Vector2D pa = L.At(left, TRACE_TOP - 18.0f);
-		Plate(f, L"MOTION", pa.x, pa.y, 1, look.labels, L"機動");
+		Plate(f, L"MOTION", pa.x, pa.y, 1, look.labels, L"\u6a5f\u52d5");
 	}
 }
 } // namespace NeoCyberbrain

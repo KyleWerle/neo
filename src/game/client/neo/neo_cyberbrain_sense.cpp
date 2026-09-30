@@ -4,6 +4,7 @@
 #include "c_playerresource.h"
 #include "neo_gamerules.h"
 #include "weapon_neobasecombatweapon.h"
+#include "weapon_supa7.h"
 #include "view.h"
 #include "filesystem.h"
 #include "engine/IEngineSound.h"
@@ -42,6 +43,7 @@ const wchar_t *SoundName(SoundKind kind)
 
 static struct
 {
+	float reloadFrom = 0.0f, shellNext = 0.0f, shellFrom = 0.0f;	// game time (curtime): the reload's clock
 	float hpRaw = 1.0f, lightAt = -100.0f, lightRaw = 0.3f, lastYaw = 0.0f, lastPitch = 0.0f;
 	bool bAir = false, bCloaked = false, bVision = false, bReloading = false;
 	wchar_t ammoKey[96] = L"";
@@ -254,8 +256,31 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	auto *pWeapon = static_cast<C_NEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon());
 	out.bReloading = pWeapon && pWeapon->m_bInReload;
 	if (out.bReloading && !s_sense.bReloading)
+	{
 		out.reloadStart = now;
+		s_sense.reloadFrom = gpGlobals->curtime;
+	}
 	s_sense.bReloading = out.bReloading;
+	// The reload's progress on the weapon's own clock. A magazine: DefaultReload sets the next attack to the reload
+	// animation's end. Shells: the Supa 7 times each shell (and the start) with its next reload.
+	out.bReloadShells = pWeapon && (pWeapon->GetNeoWepBits() & NEO_WEP_SUPA7);
+	out.reloadProgress = 0.0f;
+	if (out.bReloading && out.bReloadShells)
+	{
+		const float next = static_cast<CWeaponSupa7 *>(pWeapon)->GetNextReload();
+		if (next != s_sense.shellNext)
+		{
+			s_sense.shellNext = next;
+			s_sense.shellFrom = gpGlobals->curtime;
+		}
+		const float span = s_sense.shellNext - s_sense.shellFrom;
+		out.reloadProgress = span > 0.01f ? clamp((gpGlobals->curtime - s_sense.shellFrom) / span, 0.0f, 1.0f) : 1.0f;
+	}
+	else if (out.bReloading)
+	{
+		const float span = pWeapon->m_flNextPrimaryAttack - s_sense.reloadFrom;
+		out.reloadProgress = span > 0.01f ? clamp((gpGlobals->curtime - s_sense.reloadFrom) / span, 0.0f, 1.0f) : 1.0f;
+	}
 	out.sync = pWeapon ? 1.0f - clamp(pWeapon->GetAccuracyPenaltyFraction(), 0.0f, 1.0f) : 1.0f;
 	wchar_t key[ARRAYSIZE(s_sense.ammoKey)];
 	V_snwprintf(key, ARRAYSIZE(key), L"%ls|%ls|%ls", out.ammo.name, out.ammo.mags, out.ammo.pMode ? out.ammo.pMode : L"");

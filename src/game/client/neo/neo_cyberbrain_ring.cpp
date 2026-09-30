@@ -143,19 +143,22 @@ void PaintRing(const Frame &f)
 		Line(f, ring.At(b), ring.At(b, 10.0f), NEO_GHOST_LIGHT, f.color, 0.45f * (0.3f + 0.7f * Ring::Front(b)) * a);
 	}
 	static const wchar_t *s_cardinals[] = { L"N", L"E", L"S", L"W" };
-	// The cardinals, pronounced (Kyle: more than the original compass): a heavy tick through the ring at each, the
-	// letter large and never faded far, north with its own pointer outward.
+	// The cardinals, pronounced (Kyle: more than the original compass, and readable): a heavy tick through the ring at
+	// each; the letter large, at full strength whatever the body's attention, on its own small dark backing so it reads
+	// over the capsule and bright scenes alike; north with its own pointer outward.
 	for (int i = 0; i < 4; ++i)
 	{
 		const float b = AngleNormalize(i * 90.0f - view), front = Ring::Front(b), ca = (0.5f + 0.5f * front) * a;
 		Line(f, ring.At(b, -6.0f), ring.At(b, 14.0f), NEO_GHOST_HEAVY, f.color, ca);
-		const Vector2D at = ring.At(b, bBody ? 26.0f : 32.0f);
-		Text(f, s_cardinals[i], at.x, at.y, 0, bBody ? FONT_LABEL : FONT_VALUE_LARGE, f.color, Max(0.55f, ca));
+		const Vector2D at = ring.At(b, bBody ? 30.0f : 34.0f);
+		const float w = TextWidth(s_cardinals[i], FONT_VALUE_LARGE) * 0.5f + 5.0f * f.s, h = 11.0f * f.s;
+		Rect(f, at - Vector2D(w, h), at + Vector2D(w, h), Color(0, 0, 0, 255), 0.55f);
+		Text(f, s_cardinals[i], at.x, at.y, 0, FONT_VALUE_LARGE, f.color, 0.8f + 0.2f * front);
 		if (i == 0)
 		{
-			const Vector2D tip = ring.At(b, bBody ? 40.0f : 50.0f), base = ring.At(b, bBody ? 34.0f : 43.0f);
+			const Vector2D tip = ring.At(b, bBody ? 52.0f : 56.0f), base = ring.At(b, bBody ? 45.0f : 49.0f);
 			const Vector2D across = Vector2D(base.y - tip.y, tip.x - base.x) * 0.8f;
-			NeoGhostBegin(f.color, Alpha(f, Max(0.55f, ca)));
+			NeoGhostBegin(f.color, Alpha(f, 0.9f));
 			const Vector2D pointer[4] = { tip, base + across, base - across, tip };
 			NeoGhostFill(pointer);
 		}

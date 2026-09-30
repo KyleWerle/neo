@@ -154,7 +154,8 @@ bool NeoCyberGunPrepare(C_BaseAnimating *pViewModel, NeoCyberGunPass &pass)
 	// The points, as drawn: this frame's pose (attachment bones included).
 	pViewModel->SetupBones(nullptr, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime);
 	static const char *const s_muzzle[] = { "muzzle", "1" }, *const s_eject[] = { "eject", "2" };
-	static const char *const s_mag[] = { "Clip", "Clip01", "clip", "mag", "v_weapon.MP5_Clip", "ValveBiped.clip" };
+	// Magazine bones: the AA13's drum, the Supa 7's "Shell" (the shell going in).
+	static const char *const s_mag[] = { "Clip", "Clip01", "clip", "mag", "Drum", "Shell", "v_weapon.MP5_Clip", "ValveBiped.clip" };
 	Vector world[NEO_GUN__COUNT];
 	bool bHas[NEO_GUN__COUNT];
 	bHas[NEO_GUN_MUZZLE] = AttachmentAt(pViewModel, hdr, s_muzzle, ARRAYSIZE(s_muzzle), world[NEO_GUN_MUZZLE]);

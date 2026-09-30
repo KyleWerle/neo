@@ -36,7 +36,8 @@ void PaintOptics(const Frame &f)
 	const float a = look.alpha, m = static_cast<float>(L.m);
 	const int side = L.m > 0 ? 1 : -1;
 	const Vector2D c = L.origin;
-	const float outer = 34.0f * L.k, aperture = (7.0f + 20.0f * s.light) * L.k;
+	// The opening all but shuts in the dark and all but fills the iris in bright light (Kyle: grow and shrink more).
+	const float outer = 34.0f * L.k, aperture = (3.0f + 28.0f * s.light) * L.k;
 	const bool bExposed = s.bExposed;
 	const Color iris = bExposed ? WARN : f.color;
 	// The iris, dashed while cloaked; its blades close in the dark and open in the light.
@@ -171,9 +172,12 @@ void PaintWeapon(const Frame &f)
 		const int n = Min(ammo.maxRounds, 30);
 		const float pitch = Min(6.0f, 150.0f / n), w = n * pitch, per = static_cast<float>(ammo.maxRounds) / n;
 		const bool bLow = s.bAmmoLow;
-		// A reload sweeps the ticks back in; a shot flicks the tick it spent.
-		const float sweep = s.bReloading ? fmodf(f.now - s.reloadStart, 1.0f) : 1.0f;
-		const int shown = s.bReloading ? static_cast<int>(sweep * n) : static_cast<int>(ceilf(ammo.rounds / per - 0.001f));
+		// A reload fills the ticks back in on the weapon's own clock (a magazine over its whole reload; shells as the
+		// real count, the next one filling as it goes in); a shot flicks the tick it spent.
+		const bool bSweep = s.bReloading && !s.bReloadShells;
+		const int loaded = static_cast<int>(ceilf(ammo.rounds / per - 0.001f));
+		const int shown = bSweep ? static_cast<int>(s.reloadProgress * n) : loaded;
+		const int filling = s.bReloading && s.bReloadShells && loaded < n ? loaded : -1;
 		const float flick = 1.0f - clamp((f.now - s.shotTime) / 0.25f, 0.0f, 1.0f);
 		const Color col = bLow && !s.bReloading ? WARN : s.bReloading ? WARN : f.color;
 		for (int i = 0; i < n; ++i)
@@ -181,7 +185,8 @@ void PaintWeapon(const Frame &f)
 			const float x = m > 0.0f ? -w * 0.5f + i * pitch : w * 0.5f - i * pitch - 3.0f;
 			const bool bSpent = !s.bReloading && i == shown && flick > 0.0f;
 			const float lift = bSpent ? -4.0f * flick : 0.0f;
-			Rect(f, L.At(x, 6.0f + lift), L.At(x + 3.0f, 19.0f + lift), col, (i < shown ? 0.85f : bSpent ? 0.85f * flick : 0.13f) * a);
+			const float tick = i < shown ? 0.85f : i == filling ? 0.13f + 0.72f * s.reloadProgress : bSpent ? 0.85f * flick : 0.13f;
+			Rect(f, L.At(x, 6.0f + lift), L.At(x + 3.0f, 19.0f + lift), col, tick * a);
 		}
 		wchar_t count[16];
 		V_snwprintf(count, ARRAYSIZE(count), L"%d", ammo.rounds);

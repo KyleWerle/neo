@@ -69,6 +69,10 @@ struct Senses
 	bool bExposed = false;
 	bool bReloading = false;
 	float reloadStart = -100.0f;
+	// How far the reload has come, on the weapon's own clock: a magazine's whole reload (to its end time, the
+	// animation's length), or with shells (the Supa 7) the next shell going in. 0 to 1.
+	float reloadProgress = 0.0f;
+	bool bReloadShells = false;
 	float sync = 1.0f;					// aim settle: 1 settled, dips on each shot
 	// Link.
 	int ping = 0, load = 1, squadAlive = 0, squadTotal = 0;
@@ -149,6 +153,8 @@ const Senses *PublishedSenses(Color &color);
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &frame, float dt, bool bBoot, Place places[GROUP__COUNT]);
 // The ring's deep layer offset (it doesn't move, but its chassis drifts as you turn), pixels.
 Vector2D RingDeepOffset();
+// How far to move something with this centre and half size (pixels) to keep it inside the screen's edges.
+Vector2D Inside(const Frame &frame, const Vector2D &centre, const Vector2D &half);
 // Whether a screen point is in the keep-out round the crosshair (nothing of the HUD's goes there).
 bool InKeepout(const Frame &frame, const Vector2D &p);
 // A group's look at its attention: scale, strength, and how far its numbers and labels have come in.

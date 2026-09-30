@@ -197,6 +197,10 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	{
 		f.ringCentre.Init(f.centre.x, m_ringY - clamp(m_senses.pitch, -30.0f, 60.0f) * 1.5f * f.s);
 		f.ringRadii.Init(m_ringRadius, m_ringRadius * clamp(0.24f + 0.45f * down, 0.12f, 0.66f));
+		// Opening as you look down, it mustn't swing past the screen's bottom: held inside with its marks.
+		Vector2D centre, half;
+		NC::GroupExtent(f, NC::BRIGHT_RING, centre, half);
+		f.ringCentre += NC::Inside(f, centre, half);
 	}
 
 	NC::MeasureBrightness(pPlayer, f, dt, bBoot);

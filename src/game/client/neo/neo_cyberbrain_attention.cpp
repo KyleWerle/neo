@@ -21,6 +21,7 @@ constexpr float OMEGA = 12.0f;					// the placement spring (critically damped)
 constexpr float STEP = 1.0f / 240.0f;
 constexpr float KEEPOUT_X = 300.0f, KEEPOUT_Y = 220.0f, KEEPOUT_MARGIN = 1.15f;	// pixels at 1080p round the centre
 constexpr float GUN_WEIGHT = 1.2f;
+constexpr float SCREEN_MARGIN = 6.0f;				// pixels at 1080p every group keeps from the screen's edges
 constexpr float GUN_X = 330.0f, GUN_Y = 150.0f;	// where the viewmodel's weight sits, from the gun hand's corner (1080p)
 constexpr float BALANCE_GAIN = 0.35f, BALANCE_MAX = 40.0f, BALANCE_EASE = 1.5f;
 // The deep layer: a softer spring (a touch under-damped, as the racer band's layers), and the drift as you turn,
@@ -49,6 +50,22 @@ static void DeepSpring(Vector2D &at, Vector2D &vel, const Vector2D &goal, float 
 Vector2D RingDeepOffset()
 {
 	return s_ringDeep.offset;
+}
+
+Vector2D Inside(const Frame &f, const Vector2D &centre, const Vector2D &half)
+{
+	const float margin = SCREEN_MARGIN * f.s;
+	const auto push = [margin](float c, float h, float size)
+	{
+		if (2.0f * h + 2.0f * margin >= size)
+			return size * 0.5f - c;	// bigger than the screen: centred
+		if (c - h < margin)
+			return margin - (c - h);
+		if (c + h > size - margin)
+			return size - margin - (c + h);
+		return 0.0f;
+	};
+	return Vector2D(push(centre.x, half.x, static_cast<float>(f.wide)), push(centre.y, half.y, static_cast<float>(f.tall)));
 }
 
 bool InKeepout(const Frame &f, const Vector2D &p)
@@ -135,7 +152,12 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		Place &p = places[g];
 		const Vector2D far = mirror(homes[g].far), nearer = mirror(homes[g].nearer);
 		p.balance = bBoot ? 0.0f : p.balance + (shift * (1.0f - p.att) * comfort.travel - p.balance) * Min(1.0f, dt / BALANCE_EASE);
-		const Vector2D target = far + (nearer - far) * (p.att * comfort.travel) + Vector2D(p.balance, 0.0f);
+		Vector2D target = far + (nearer - far) * (p.att * comfort.travel) + Vector2D(p.balance, 0.0f);
+		// Never past the screen's edges, whatever its size or shape: the group's extent (at its scale now, moved to the
+		// target) held inside, so the spring eases up to the edge rather than being stopped at it.
+		Vector2D centre, half;
+		GroupExtent(f, g, centre, half);
+		target += Inside(f, centre + (target - p.pos), half);
 		if (bBoot || !p.bPlaced || comfort.travel <= 0.0f)
 		{
 			p.pos = target;
@@ -175,6 +197,14 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 			p.pos.x = f.centre.x + e.x / d * KEEPOUT_MARGIN * KEEPOUT_X * f.s;
 			p.pos.y = f.centre.y + e.y / d * KEEPOUT_MARGIN * KEEPOUT_Y * f.s;
 		}
+		// A backstop for the keep-out's push: still inside the edges, the push's speed dropped.
+		GroupExtent(f, g, centre, half);
+		const Vector2D inside = Inside(f, centre, half);
+		if (inside.x != 0.0f)
+			p.vel.x = 0.0f;
+		if (inside.y != 0.0f)
+			p.vel.y = 0.0f;
+		p.pos += inside;
 	}
 }
 

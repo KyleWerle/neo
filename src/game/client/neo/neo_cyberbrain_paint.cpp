@@ -81,17 +81,25 @@ static vgui::HFont GetFont(Font font)
 
 void PrintFonts()
 {
+	// The engine gives no family name for these, and a missing face falls back silently at the asked height; what
+	// does tell: NOCR is fixed pitch (every glyph as wide), the fallbacks aren't, and the others are proportional.
 	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name" };
+	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, true, false, false };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));
-		const char *pFamily = (handle != vgui::INVALID_FONT) ? vgui::surface()->GetFontFamilyName(handle) : nullptr;
-		int wide = 0, tall = 0;
-		if (handle != vgui::INVALID_FONT)
+		if (handle == vgui::INVALID_FONT)
 		{
-			vgui::surface()->GetTextSize(handle, L"Ag", wide, tall);
+			Msg("[cyberbrain] %-12s missing (no scheme entry)\n", s_slots[i]);
+			continue;
 		}
-		Msg("[cyberbrain] %-12s %s (%d px tall)\n", s_slots[i], pFamily ? pFamily : "(none)", tall);
+		int narrow = 0, wide = 0, tall = 0;
+		vgui::surface()->GetTextSize(handle, L"iiii", narrow, tall);
+		vgui::surface()->GetTextSize(handle, L"MMMM", wide, tall);
+		const bool bFixed = narrow == wide;
+		const char *pVerdict = s_bNOCR[i] ? (bFixed ? "NOCR loaded (fixed pitch)" : "NOT NOCR: proportional, a fallback face")
+			: (bFixed ? "fixed pitch: a fallback?" : "proportional, as expected");
+		Msg("[cyberbrain] %-12s %2d px tall, iiii %3d px, MMMM %3d px: %s\n", s_slots[i], tall, narrow, wide, pVerdict);
 	}
 }
 CON_COMMAND(cl_neo_hud_fonts, "Prints which font each of the cyberbrain HUD's text slots resolved to.")
