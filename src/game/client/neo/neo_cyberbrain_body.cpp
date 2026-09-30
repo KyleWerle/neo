@@ -5,7 +5,7 @@
 #include "tier0/memdbgon.h"
 
 // The body group: proprioception. An abstracted capsule person in your posture (shorter crouched, tilted leaning,
-// lifted in the air) holds integrity as cells draining from the head, a hit leaving a red afterimage of what it took,
+// lifted in the air) holds integrity as a solid fill draining from the top, a hit leaving a red afterimage of what it took,
 // with integrity's number large beside it (the one number that matters most); the ground disc under it carries your
 // velocity (in the On the body style the surround ring is that disc); support's armour plates flank it. Speed and
 // stamina are the motion group beside it (neo_cyberbrain_motion.cpp). A hit flashes the whole outline: NT doesn't say
@@ -44,9 +44,10 @@ static void CutBox(const Frame &f, const Posture &p, float x0, float y0, float x
 		Line(f, pts[i], pts[(i + 1) % 8], weight, c, a);
 	}
 }
-// An integrity cell from y0 to y1, inset to follow the body's cut corners (the shoulders at the top, the smaller cut
-// at the bottom), so no cell pokes out past the outline.
-static void Cell(const Frame &f, const Posture &p, float bodyTop, float y0, float y1, const Color &c, float a)
+// A band of the body from y0 to y1, inset to follow the body's cut corners (the shoulders at the top, the smaller cut
+// at the bottom), so nothing pokes out past the outline. The inset is linear between these corners only, so a band
+// is filled a piece at a time.
+static void Band(const Frame &f, const Posture &p, float bodyTop, float y0, float y1, const Color &c, float a)
 {
 	const auto inset = [&](float y)
 	{
@@ -61,6 +62,23 @@ static void Cell(const Frame &f, const Posture &p, float bodyTop, float y0, floa
 	NeoGhostBegin(c, Alpha(f, a));
 	const Vector2D corners[4] = { p.At(-half + i0, y0), p.At(half - i0, y0), p.At(half - i1, y1), p.At(-half + i1, y1) };
 	NeoGhostFill(corners);
+}
+
+// The integrity fill from y0 down to y1, split where the cut corners' insets change slope.
+static void Fill(const Frame &f, const Posture &p, float bodyTop, float y0, float y1, const Color &c, float a)
+{
+	const float breaks[2] = { bodyTop + SHOULDER + 1.5f, -(SHOULDER * 0.4f + 1.5f) };
+	float from = y0;
+	for (const float at : breaks)
+	{
+		if (at > from && at < y1)
+		{
+			Band(f, p, bodyTop, from, at, c, a);
+			from = at;
+		}
+	}
+	if (y1 - from > 0.25f)
+		Band(f, p, bodyTop, from, y1, c, a);
 }
 void PaintBody(const Frame &f)
 {
@@ -95,15 +113,14 @@ void PaintBody(const Frame &f)
 	const float top = -h, bodyTop = top + HEAD_R * 2.0f + 4.0f, bodyH = -bodyTop;
 	CutBox(f, p, -HEAD_R, top, HEAD_R, top + HEAD_R * 2.0f, 7.0f, outline, (bHit ? 1.0f : 0.95f) * a, NEO_GHOST_HEAVY);
 	CutBox(f, p, -BODY_W * 0.5f, bodyTop, BODY_W * 0.5f, 0.0f, SHOULDER, outline, (bHit ? 1.0f : 0.95f) * a, NEO_GHOST_HEAVY);
-	constexpr int CELLS = 10;
-	const float gap = 2.5f, cellH = (bodyH - 6.0f - gap * (CELLS - 1)) / CELLS;
-	const int lit = static_cast<int>(ceilf(s.hp * CELLS - 0.001f)), trail = static_cast<int>(ceilf(s_body.trail * CELLS - 0.001f));
-	for (int i = 0; i < CELLS; ++i)
-	{
-		const float y0 = bodyTop + 3.0f + i * (cellH + gap);
-		const bool bLit = i >= CELLS - lit, bLost = !bLit && i >= CELLS - trail;	// lost to the last hit, still fading
-		Cell(f, p, bodyTop, y0, y0 + cellH, bLost ? CRIT : col, (bLit ? 0.9f : bLost ? 0.7f : 0.12f) * a);
-	}
+	// Integrity as one solid fill (Kyle's pick over the cells): the torso drains from the top, the last hit's loss a red
+	// band above the fill that runs down to it.
+	const float inTop = bodyTop + 3.0f, inBottom = -3.0f, inH = inBottom - inTop;
+	const float level = inBottom - inH * clamp(s.hp, 0.0f, 1.0f), trailLevel = inBottom - inH * clamp(s_body.trail, 0.0f, 1.0f);
+	if (trailLevel < level - 0.25f)
+		Fill(f, p, bodyTop, trailLevel, level, CRIT, 0.7f * a);
+	if (inBottom - level > 0.25f)
+		Fill(f, p, bodyTop, level, inBottom, col, 0.9f * a);
 	if (s.bArmour)
 	{
 		for (int side = -1; side <= 1; side += 2)
