@@ -7,14 +7,14 @@ struct VS_INPUT
 	float4 vPos			: POSITION;
 	float4 vColor		: COLOR0;		// r: target brightness, g: glitch, b: blur, a: opacity
 	float2 vScreen		: TEXCOORD0;	// where the vertex sits in the frame copy (0 to 1)
-	float2 vTime		: TEXCOORD1;	// x: seconds (wrapped), y: the backing's seed
+	float3 vTime		: TEXCOORD1;	// x: seconds (wrapped), y: the backing's seed, z: motion (0 still to 1 full)
 };
 
 struct VS_OUTPUT
 {
 	float4 vProjPos		: POSITION;
 	float2 vScreen		: TEXCOORD0;
-	float2 vTime		: TEXCOORD1;
+	float3 vTime		: TEXCOORD1;
 	float4 vLook		: TEXCOORD2;
 };
 

@@ -37,7 +37,8 @@ SHADER_DRAW
 	SHADOW_STATE
 	{
 		pShaderShadow->EnableTexture(SHADER_SAMPLER0, true);
-		pShaderShadow->VertexShaderVertexFormat(VERTEX_POSITION | VERTEX_COLOR, 2, NULL, 0);
+		static int s_texCoordSizes[2] = { 2, 3 };	// where in the copy; seconds, seed and motion
+		pShaderShadow->VertexShaderVertexFormat(VERTEX_POSITION | VERTEX_COLOR, 2, s_texCoordSizes, 0);
 		pShaderShadow->EnableDepthWrites(false);
 		pShaderShadow->EnableDepthTest(false);
 		pShaderShadow->EnableCulling(false);

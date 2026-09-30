@@ -212,7 +212,9 @@ void NeoHudPaintBacking(const Vector2D &centre, const Vector2D &half, const Vect
 	int wide, tall;
 	vgui::surface()->GetScreenSize(wide, tall);
 	const float toU = 1.0f / Max(wide, 1), toV = 1.0f / Max(tall, 1);
-	const float time = fmodf(gpGlobals->realtime, 1000.0f);
+	// Still, nothing in it moves: the noise holds its place and the outline its shape.
+	const float motion = clamp(look.motion, 0.0f, 1.0f);
+	const float time = motion > 0.0f ? fmodf(gpGlobals->realtime, 1000.0f) : 0.0f;
 	const unsigned char target = clamp(RoundFloatToInt(255.0f * cl_neo_hud_backing_target.GetFloat()), 0, 255);
 	const unsigned char glitch = clamp(RoundFloatToInt(255.0f * look.glitch * cl_neo_hud_backing_glitch.GetFloat()), 0, 255);
 	const unsigned char blur = clamp(RoundFloatToInt(255.0f * look.blur * cl_neo_hud_backing_blur.GetFloat() * 0.5f), 0, 255);
@@ -226,19 +228,26 @@ void NeoHudPaintBacking(const Vector2D &centre, const Vector2D &half, const Vect
 	{
 		meshBuilder.Color4ub(target, glitch, blur, a);
 		meshBuilder.TexCoord2f(0, at.x * toU, at.y * toV);
-		meshBuilder.TexCoord2f(1, time, look.seed);
+		meshBuilder.TexCoord3f(1, time, look.seed, motion);
 		meshBuilder.Position3f(at.x, at.y, 0.0f);
 		meshBuilder.AdvanceVertex();
 	};
+	// The outline morphing with motion: a slow swell of two waves round it, the soft edge's outer rim more so.
+	Vector2D in[HUD_BACKING_MAX_POINTS], out[HUD_BACKING_MAX_POINTS];
+	for (int i = 0; i < points; ++i)
+	{
+		const float angle = 2.0f * M_PI_F * i / points;
+		const float swell = motion * (0.05f * sinf(3.0f * angle + time * 0.7f + look.seed)
+			+ 0.035f * sinf(5.0f * angle - time * 1.1f + 2.0f * look.seed));
+		in[i].Init(centre.x + pShape[i].x * half.x * (1.0f + swell), centre.y + pShape[i].y * half.y * (1.0f + swell));
+		out[i].Init(centre.x + pShape[i].x * (half.x + feather.x) * (1.0f + 1.6f * swell),
+			centre.y + pShape[i].y * (half.y + feather.y) * (1.0f + 1.6f * swell));
+	}
 	for (int i = 0; i < points; ++i)
 	{
 		const int j = (i + 1) % points;
-		const Vector2D inI(centre.x + pShape[i].x * half.x, centre.y + pShape[i].y * half.y);
-		const Vector2D inJ(centre.x + pShape[j].x * half.x, centre.y + pShape[j].y * half.y);
-		const Vector2D outI(centre.x + pShape[i].x * (half.x + feather.x), centre.y + pShape[i].y * (half.y + feather.y));
-		const Vector2D outJ(centre.x + pShape[j].x * (half.x + feather.x), centre.y + pShape[j].y * (half.y + feather.y));
-		vertex(centre, solid); vertex(inI, solid); vertex(inJ, solid); vertex(inJ, solid);
-		vertex(inI, solid); vertex(inJ, solid); vertex(outJ, 0); vertex(outI, 0);
+		vertex(centre, solid); vertex(in[i], solid); vertex(in[j], solid); vertex(in[j], solid);
+		vertex(in[i], solid); vertex(in[j], solid); vertex(out[j], 0); vertex(out[i], 0);
 	}
 	meshBuilder.End();
 	pMesh->Draw();

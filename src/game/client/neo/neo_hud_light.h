@@ -42,6 +42,7 @@ struct NeoHudBackingLook
 	float glitch = 0.4f;	// dither, cloud, scanlines and torn rows
 	float blur = 1.0f;		// how wide the blur reaches
 	float seed = 0.0f;		// so neighbours' noise differs
+	float motion = 0.0f;	// 0 still (nothing drifts or tears) to 1 full: the outline morphs, blocks glitch out of place
 };
 void NeoHudPaintBacking(const Vector2D &centre, const Vector2D &half, const Vector2D &feather, float alpha, int points,
 	const NeoHudBackingLook &look);
