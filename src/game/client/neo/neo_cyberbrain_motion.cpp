@@ -4,8 +4,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// The motion group: proprioception of movement, its own group but kept beside the body and tied to it by a faint
-// tendon. Stamina (assault, juggernaut) as four loose cells, or recon's two jump cells filling as each recharges;
+// The motion group: proprioception of movement, its own group, kept beside the body (the line that tied them was
+// dropped: Kyle found it weird; being side by side says it). Stamina (assault, juggernaut) as four loose cells, or recon's two jump cells filling as each recharges;
 // speed as a short trace of the last eight seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
 // speed, the scale growing for bunny hops; over it the stride waveform (neo_cyberbrain_stride.cpp: your steps and
 // sounds landing live, gait and noise in one strip). Its attention: sprinting, recovering, recharging, going faster
@@ -56,9 +56,6 @@ void PaintMotion(const Frame &f)
 	const Place &body = f.pPlaces[GROUP_BODY];
 	const float d = body.pos.x >= L.origin.x ? 1.0f : -1.0f;	// toward the body
 
-	// The tendon to the body, at the ground disc's level.
-	const float kBody = f.s * LookOf(f, GROUP_BODY).scale;
-	Line(f, L.At(d * 58.0f, 40.0f), body.pos + Vector2D(-d * 46.0f * kBody, 60.0f * kBody), NEO_GHOST_LIGHT, f.color, 0.3f * a);
 
 	// Cells on the body's side: stamina in four, recon's two jumps one each (each fills as it recharges).
 	const int chamfer = d > 0.0f ? -1 : 1;	// the cut corner away from the body
