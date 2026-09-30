@@ -14,6 +14,8 @@
 
 namespace NeoCyberbrain
 {
+constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
+
 static void FillCircle(const Frame &f, const Vector2D &c, float r, const Color &col, float a)
 {
 	NeoGhostBegin(col, Alpha(f, a));
@@ -157,6 +159,12 @@ void PaintWeapon(const Frame &f)
 		Rect(f, L.At(-w * 0.5f, 6.0f), L.At(w * 0.5f, 15.0f), f.color, 0.12f * a);
 		Rect(f, L.At(m > 0.0f ? -w * 0.5f : w * 0.5f - hw, 6.0f), L.At(m > 0.0f ? -w * 0.5f + hw : w * 0.5f, 15.0f), hc,
 			(ammo.bOverheated ? 0.6f + 0.35f * sinf(f.now * 12.0f) : 0.85f) * a);
+		// The stock panel's word, while it can't fire.
+		if (ammo.bOverheated)
+		{
+			const Vector2D oa = L.At(0.0f, -8.0f);
+			Plate(f, L"OVERHEAT", oa.x, oa.y, 0, 0.95f);
+		}
 	}
 	else if (ammo.maxRounds > 0)
 	{
@@ -190,12 +198,21 @@ void PaintWeapon(const Frame &f)
 		{
 			swscanf(ammo.mags, L"%d+%d", &mags, &slugs);
 		}
-		const int shownMags = Min(mags, 10), shownSlugs = Min(slugs, 6);
-		for (int i = 0; i < shownMags + shownSlugs; ++i)
+		// More than the pips hold (a Supa 7's reserve of shells): the stock panel's count instead, never fewer shown
+		// than you carry.
+		if (mags > MAX_MAG_PIPS || slugs > MAX_SLUG_PIPS)
 		{
-			const bool bSlug = i >= shownMags;
-			const float x = m * (84.0f + i * 6.0f) - (m < 0.0f ? 4.0f : 0.0f);
-			Rect(f, L.At(x, bSlug ? -16.0f : -12.0f), L.At(x + 4.0f, -4.0f), ammo.bMagsOut ? CRIT : f.color, 0.75f * a);
+			const Vector2D ma = L.At(m * 84.0f, -10.0f);
+			Text(f, ammo.mags, ma.x, ma.y, side, FONT_VALUE, f.color, 0.8f * a);
+		}
+		else
+		{
+			for (int i = 0; i < mags + slugs; ++i)
+			{
+				const bool bSlug = i >= mags;
+				const float x = m * (84.0f + i * 6.0f) - (m < 0.0f ? 4.0f : 0.0f);
+				Rect(f, L.At(x, bSlug ? -16.0f : -12.0f), L.At(x + 4.0f, -4.0f), ammo.bMagsOut ? CRIT : f.color, 0.75f * a);
+			}
 		}
 	}
 	// SYNC: the aim settle, dipping on each shot.
