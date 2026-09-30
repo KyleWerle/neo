@@ -151,6 +151,8 @@ Frame ForGroup(const Frame &f, int slot);
 
 // Sensing (neo_cyberbrain_sense.cpp): reads the player, the view, light and sounds into senses.
 void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &senses);
+// Sounds, yours and those you can hear, and your shots from the magazine (neo_cyberbrain_hearing.cpp), into senses.
+void SenseHearing(C_NEO_Player *pPlayer, float now, Senses &senses);
 // The ghost's enemy callouts (neo_hud_model_callouts.h) into senses.
 void SenseCallouts(float now, Senses &senses);
 using NeoHud::ResetCallouts;
