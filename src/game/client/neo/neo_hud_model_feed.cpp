@@ -202,7 +202,11 @@ int FeedEntries(const FeedEntry **ppEntries)
 	{
 		const float left = s_feed[i].hide - gpGlobals->curtime;
 		if (left > 0.0f && left <= longest)
-			s_feed[kept++] = s_feed[i];
+		{
+			if (kept != i)
+				s_feed[kept] = s_feed[i];
+			++kept;
+		}
 	}
 	s_feedCount = kept;
 	*ppEntries = s_feed;

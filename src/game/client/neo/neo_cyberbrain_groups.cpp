@@ -346,11 +346,7 @@ void PaintWeapon(const Frame &f)
 		PaintAmmoCall(f, s, ammo, callAt, callAlign);
 		ModeGlyph(f, L, m > 0.0f ? 84.0f : -96.0f, 34.0f, ammo.pMode, 0.7f * a);
 		// Magazines as pips over the count (the Supa 7: shells, then slugs as taller pips).
-		int mags = 0, slugs = 0;
-		if (ammo.mags[0])
-		{
-			swscanf(ammo.mags, L"%d+%d", &mags, &slugs);
-		}
+		const int mags = ammo.magCount, slugs = ammo.slugCount;
 		// More than the pips hold (a Supa 7's reserve of shells): the stock panel's count instead, never fewer shown
 		// than you carry.
 		if (mags > MAX_MAG_PIPS || slugs > MAX_SLUG_PIPS)

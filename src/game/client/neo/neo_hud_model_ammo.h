@@ -19,6 +19,7 @@ struct Ammo
 	float heat = 0.0f;				// 0 to 1
 	bool bOverheated = false;
 	wchar_t mags[16] = L"";			// magazines left, or the Supa 7's shells + slugs; empty for none
+	int magCount = 0, slugCount = 0;	// the same as numbers (the Supa 7: shells and slugs)
 	bool bMagsOut = false;
 };
 

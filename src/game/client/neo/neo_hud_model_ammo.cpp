@@ -63,12 +63,15 @@ void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo)
 	{
 		const int slugs = pWeapon->m_iSecondaryAmmoCount.Get();
 		V_snwprintf(ammo.mags, ARRAYSIZE(ammo.mags), L"%d+%d", reserve, slugs);
+		ammo.magCount = reserve;
+		ammo.slugCount = slugs;
 		ammo.bMagsOut = reserve + slugs <= 0;
 	}
 	else
 	{
 		const int mags = static_cast<int>(ceilf(fabsf(static_cast<float>(reserve) / ammo.maxRounds)));
 		V_snwprintf(ammo.mags, ARRAYSIZE(ammo.mags), L"%d", mags);
+		ammo.magCount = mags;
 		ammo.bMagsOut = mags <= 0;
 	}
 }

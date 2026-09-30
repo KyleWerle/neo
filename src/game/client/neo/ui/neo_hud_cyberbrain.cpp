@@ -35,6 +35,10 @@ static vgui::Panel *ChatPanel()
 // Moves the chat each frame the cyberbrain shows (its own layout would put it back on a scheme change).
 void NeoCyberbrainPlaceChat()
 {
+	static int s_placed = -1;	// the vitals and the team side both ask: once a frame
+	if (s_placed == gpGlobals->framecount)
+		return;
+	s_placed = gpGlobals->framecount;
 	vgui::Panel *pChat = ChatPanel();
 	if (!pChat)
 		return;
