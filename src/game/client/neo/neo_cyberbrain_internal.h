@@ -200,4 +200,7 @@ void PaintOptics(const Frame &f);
 void PaintWeapon(const Frame &f);
 void PaintLink(const Frame &f);
 void PaintMotion(const Frame &f);
+// The stride waveform over the speed trace (neo_cyberbrain_stride.cpp): each step, and each other sound you make,
+// landing live as a burst; from left to right at height y, in the motion group's local frame.
+void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha);
 } // namespace NeoCyberbrain
