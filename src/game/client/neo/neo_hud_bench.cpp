@@ -22,7 +22,7 @@
 struct HudBenchScenario
 {
 	const char *label;
-	const char *commands;	// on top of the player's own style and backing
+	const char *commands;	// on top of the player's own style and backing, the text edge as copies
 };
 
 static const HudBenchScenario s_hudBenchScenarios[] = {
@@ -31,6 +31,7 @@ static const HudBenchScenario s_hudBenchScenarios[] = {
 	{ "1 compact", "cl_neo_hud_style 1" },
 	{ "2 on the body", "cl_neo_hud_style 2" },
 	{ "2 body, no backing", "cl_neo_hud_style 2; cl_neo_hud_backing 0" },
+	{ "2 body, baked text", "cl_neo_hud_style 2; cl_neo_hud_text_baked 1" },
 	{ "3 racer", "cl_neo_hud_style 3" },
 	{ "4 competitive", "cl_neo_hud_style 4" },
 };
@@ -83,6 +84,7 @@ private:
 	char m_savedBacking[16] = "";
 	char m_savedDrawHud[16] = "";
 	char m_savedFpsMax[16] = "";
+	char m_savedTextBaked[16] = "";
 };
 static CNeoHudBench s_hudBench;
 
@@ -121,6 +123,7 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 	save("cl_neo_hud_backing", m_savedBacking, sizeof(m_savedBacking));
 	save("cl_drawhud", m_savedDrawHud, sizeof(m_savedDrawHud));
 	save("fps_max", m_savedFpsMax, sizeof(m_savedFpsMax));
+	save("cl_neo_hud_text_baked", m_savedTextBaked, sizeof(m_savedTextBaked));
 	m_angles = pPlayer->EyeAngles();
 
 	const ConVarRef vsync("mat_vsync");
@@ -145,8 +148,8 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 void CNeoHudBench::BeginRun()
 {
 	// Back to the player's own settings, then the scenario's on top.
-	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; %s", m_savedStyle, m_savedBacking,
-		s_hudBenchScenarios[ScenarioOf(m_run)].commands);
+	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; cl_neo_hud_text_baked 0; %s", m_savedStyle,
+		m_savedBacking, s_hudBenchScenarios[ScenarioOf(m_run)].commands);
 	m_phase = SETTLE;
 	m_phaseStart = Plat_FloatTime();
 }
@@ -263,8 +266,8 @@ void CNeoHudBench::Stop(const char *pszWhy)
 void CNeoHudBench::Restore()
 {
 	m_phase = IDLE;
-	Command("cl_drawhud %s; cl_neo_hud_style %s; cl_neo_hud_backing %s; fps_max %s", m_savedDrawHud, m_savedStyle,
-		m_savedBacking, m_savedFpsMax);
+	Command("cl_drawhud %s; cl_neo_hud_style %s; cl_neo_hud_backing %s; fps_max %s; cl_neo_hud_text_baked %s",
+		m_savedDrawHud, m_savedStyle, m_savedBacking, m_savedFpsMax, m_savedTextBaked);
 }
 
 void CNeoHudBench::Report()

@@ -2089,6 +2089,160 @@ Scheme
 				"additive"	"0"
 			}
 		}
+		// NHudKillfeedIcons with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudKillfeedIcons_Outline
+		{
+			"1"
+			{
+				"name"		"killfeedicons"
+				"tall"		"12"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"480 599"
+				"additive"	"0"
+			}
+			"2"
+			{
+				"name"		"killfeedicons"
+				"tall"		"14"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"600 767"
+				"additive"	"0"
+			}
+			"3"
+			{
+				"name"		"killfeedicons"
+				"tall"		"16"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+				"additive"	"0"
+			}
+			"4"
+			{
+				"name"		"killfeedicons"
+				"tall"		"20"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+				"additive"	"0"
+			}
+			"5"
+			{
+				"name"		"killfeedicons"
+				"tall"		"24"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1200 1440"
+				"antialias"	"1"
+				"outline"	"1"
+				"additive"	"0"
+			}
+			"6"
+			{
+				"name"		"killfeedicons"
+				"tall"		"26"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1441 1599"
+				"antialias"	"1"
+				"outline"	"1"
+				"additive"	"0"
+			}
+			"7"
+			{
+				"name"		"killfeedicons"
+				"tall"		"32"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1600 6000"
+				"antialias"	"1"
+				"outline"	"1"
+				"additive"	"0"
+			}
+		}
+		// NHudKillfeedIcons with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudKillfeedIcons_Shadow
+		{
+			"1"
+			{
+				"name"		"killfeedicons"
+				"tall"		"12"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"480 599"
+				"additive"	"0"
+			}
+			"2"
+			{
+				"name"		"killfeedicons"
+				"tall"		"14"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"600 767"
+				"additive"	"0"
+			}
+			"3"
+			{
+				"name"		"killfeedicons"
+				"tall"		"16"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+				"additive"	"0"
+			}
+			"4"
+			{
+				"name"		"killfeedicons"
+				"tall"		"20"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+				"additive"	"0"
+			}
+			"5"
+			{
+				"name"		"killfeedicons"
+				"tall"		"24"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1200 1440"
+				"antialias"	"1"
+				"dropshadow"	"1"
+				"additive"	"0"
+			}
+			"6"
+			{
+				"name"		"killfeedicons"
+				"tall"		"26"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1441 1599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+				"additive"	"0"
+			}
+			"7"
+			{
+				"name"		"killfeedicons"
+				"tall"		"32"
+				"weight"	"600"
+				"range"		"0x0000 0x017F" //	Basic Latin, Latin-1 Supplement, Latin Extended-A
+				"yres"	"1600 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+				"additive"	"0"
+			}
+		}
 		NHudOCRSmallerNoAdditive
 		{
 			"1"
@@ -2617,6 +2771,114 @@ Scheme
 				"antialias"	"1"
 			}
 		}
+		// NHudCyberBullets with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberBullets_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"32"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberBullets with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberBullets_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"32"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
 		// The Competitive HUD's text (cl_neo_hud_style 4): Neuropol2, the stock HUD's face, lowercase.
 		NHudCompText
 		{
@@ -2764,6 +3026,114 @@ Scheme
 				"antialias"	"1"
 			}
 		}
+		// NHudCyberValue with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValue_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberValue with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValue_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
 		// The cyberbrain's large values (integrity, rounds).
 		NHudCyberValueLarge
 		{
@@ -2813,6 +3183,114 @@ Scheme
 				"antialias"	"1"
 			}
 		}
+		// NHudCyberValueLarge with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValueLarge_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberValueLarge with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValueLarge_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
 		// The cyberbrain's labels.
 		NHudCyberLabel
 		{
@@ -2860,6 +3338,114 @@ Scheme
 				"range"		"0x0000 0x017F"
 				"yres"		"1200 6000"
 				"antialias"	"1"
+			}
+		}
+		// NHudCyberLabel with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberLabel_Outline
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberLabel with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberLabel_Shadow
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
 			}
 		}
 		// The cyberbrain's plates (dark text on NT's grey).
@@ -2961,6 +3547,114 @@ Scheme
 				"antialias"	"1"
 			}
 		}
+		// NHudCyberKanji with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberKanji_Outline
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"8"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberKanji with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberKanji_Shadow
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"8"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
 		// The cyberbrain's integrity number: the one big value (NOCR).
 		NHudCyberIntegrity
 		{
@@ -3008,6 +3702,114 @@ Scheme
 				"range"		"0x0000 0x017F"
 				"yres"		"1200 6000"
 				"antialias"	"1"
+			}
+		}
+		// NHudCyberIntegrity with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberIntegrity_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"42"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"57"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberIntegrity with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberIntegrity_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"42"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"57"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
 			}
 		}
 		NHudBullets

@@ -10,6 +10,7 @@ class Color;
 
 // The client scheme's face pName, looked up into cache the first time (pFallback if the scheme has no pName). The
 // HUD's faces live in the client scheme: the default scheme is the engine's, without them, and nothing would draw.
+// Its baked variants are looked up with it: pName_Outline and pName_Shadow, the edge drawn into the glyphs.
 vgui::HFont NeoHudSchemeFont(vgui::HFont &cache, const char *pName, const char *pFallback = nullptr);
 
 enum NeoHudTextEdge
@@ -20,6 +21,7 @@ enum NeoHudTextEdge
 };
 
 // count characters of pText with its top left at (x, y), whole pixels, in c (its alpha included), over a dark edge
-// at edgeAlpha (0 to 255). Queued strokes stay queued: flush first to put them under the text.
+// at edgeAlpha (0 to 255). Queued strokes stay queued: flush first to put them under the text. With
+// cl_neo_hud_text_baked 1, a face with baked variants prints once, its edge at the text's own alpha.
 void NeoHudPrintText(vgui::HFont font, const wchar_t *pText, int count, int x, int y, const Color &c, NeoHudTextEdge edge,
 	int edgeAlpha);
