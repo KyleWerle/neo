@@ -51,7 +51,6 @@ static constexpr float AIM_TIME = 0.15f;			// hip to aimed look
 static constexpr float TRACE_TIME = 0.11f;			// coming online, as the sight ghost does
 static constexpr float TUNNEL_OPACITY = 0.6f;		// of the layer's
 static constexpr float SHOT_TIME = 0.08f;			// a shot scrambles the layer this long
-static constexpr float FADE_HIDDEN = 0.05f;		// a screen fade darker than this hides the layer (it boots after)
 static constexpr float SCRAMBLE_CYCLE = 0.3f;		// fully on guns this slow; less on faster ones (no constant flicker)
 
 static struct
@@ -170,27 +169,6 @@ bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairSt
 	return LayerShown(pWeapon) && (crosshairStyle == CROSSHAIR_STYLE_DEFAULT || crosshairStyle == CROSSHAIR_STYLE_ALT_B);
 }
 
-// How much of the view shows through a screen fade (the spawn's fade in from black): 1 none, 0 fully faded.
-float NeoHudFadeVisible()
-{
-	// A map's black screen overlay counts as fully faded (the tutorials hold env_screenoverlay's tools/toolsblack over
-	// the view until you walk in: not a view fade, so the fade params don't see it).
-	IMaterial *pOverlay = view ? view->GetScreenOverlayMaterial() : nullptr;
-	if (pOverlay && !pOverlay->IsErrorMaterial() && V_stristr(pOverlay->GetName(), "toolsblack"))
-	{
-		return 0.0f;
-	}
-	byte r, g, b, a;
-	bool bBlend;
-	vieweffects->GetFadeParams(&r, &g, &b, &a, &bBlend);
-	return 1.0f - a / 255.0f;
-}
-
-bool NeoHudFadedOut()
-{
-	return NeoHudFadeVisible() < FADE_HIDDEN;
-}
-
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &colorIn, int x, int y, bool bCentre)
 {
 	NEO_HUD_PROFILE(NEO_HUD_PROFILE_CROSSHAIR, "NeoGunplayPaintCrosshairLayer");
@@ -198,7 +176,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	// Under a screen fade (the spawn's fade in from black): the HUD paints over the view's fade, so the layer fades
 	// with it, and isn't drawn at all while nearly black; drawn again, it boots and traces in as the view comes up.
 	const float visible = NeoHudFadeVisible();
-	if (visible < FADE_HIDDEN)
+	if (visible < NEO_HUD_FADE_HIDDEN)
 	{
 		return;
 	}

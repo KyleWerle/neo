@@ -17,7 +17,7 @@
 
 #include "c_team.h"
 
-#include "neo/neo_cyberbrain.h"
+#include "neo/neo_hud_style.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -193,7 +193,7 @@ void CNEOHud_Compass::UpdateStateForNeoHudElementDraw()
 void CNEOHud_Compass::DrawNeoHudElement(void)
 {
 	// The cyberbrain's surround ring replaces the compass (and the rangefinder) while it shows.
-	if (!ShouldDraw() || NeoCyberbrainShowing() || NeoCompetitiveVitalsShowing())
+	if (!ShouldDraw() || NeoHudCompassReplaced())
 	{
 		return;
 	}

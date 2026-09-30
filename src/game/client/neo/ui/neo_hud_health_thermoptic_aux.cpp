@@ -15,7 +15,7 @@
 
 #include "neo_version_info.h"
 #include "neo/neo_quickinfo.h"
-#include "neo/neo_cyberbrain.h"
+#include "neo/neo_hud_style.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -253,7 +253,7 @@ void CNEOHud_HTA::DrawNeoHudElement()
 	}
 
 	// The quick info band below the crosshair replaces this panel while it shows.
-	if (cl_neo_hud_hta_enabled.GetBool() && !NeoQuickInfoShowing() && !NeoCyberbrainShowing() && !NeoCompetitiveVitalsShowing())
+	if (cl_neo_hud_hta_enabled.GetBool() && !NeoHudVitalsReplaced())
 	{
 		DrawHTA();
 	}

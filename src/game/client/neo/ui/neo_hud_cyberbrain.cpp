@@ -5,7 +5,7 @@
 #include "iclientmode.h"
 #include "hud.h"
 #include "igameevents.h"
-#include "neo/neo_gunplay_crosshair.h"
+#include "neo/neo_hud_style.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_profile.h"
 #include "neo_hud_profile.h"
@@ -21,12 +21,6 @@ using vgui::surface;
 // The cyberbrain HUD (HUD-REDESIGN.md, "In game: the build"): each frame it senses, works out each receptor group's
 // attention and place, and draws the surround ring and the groups, most present on top. Its layout lives in its
 // HudLayout.res block (NHudCyberbrain).
-
-static void NeoHudStyleChanged(IConVar *pVar, const char *pOldValue, float flOldValue);
-ConVar cl_neo_hud_style("cl_neo_hud_style", "2", FCVAR_ARCHIVE,
-	"The HUD's style: 0 = original (the stock NT panels), 1 = cyberbrain with the compact ring, 2 = cyberbrain with the"
-	" ring on the body, 3 = the racer band, 4 = competitive (the original layout as lowercase text).", true, 0, true, NEO_HUD_STYLE__COUNT - 1,
-	NeoHudStyleChanged);
 
 // The chat's place in the cyberbrain styles: up under the squad list, narrower (proportional: x, y, wide, tall), off
 // the body group it covered at the bottom left (HUD-REDESIGN.md, "Layout check"). layout_check.py checks it.
@@ -56,15 +50,15 @@ void NeoCyberbrainPlaceChat()
 }
 
 // Leaving the cyberbrain styles, the chat goes back where its own layout puts it.
-static void NeoHudStyleChanged(IConVar *pVar, const char *pOldValue, float flOldValue)
+static void CyberbrainStyleChanged(NeoHudStyle style)
 {
-	const NeoHudStyle style = NeoHudStyleCurrent();
-	if (style != NEO_HUD_STYLE_COMPACT && style != NEO_HUD_STYLE_BODY)
+	if (!NeoHudCyberbrainStyle(style))
 	{
 		if (vgui::Panel *pChat = ChatPanel())
 			pChat->InvalidateLayout(false, true);
 	}
 }
+static const bool s_bListensForStyle = (NeoHudOnStyleChange(CyberbrainStyleChanged), true);
 ConVar cl_neo_hud_kanji("cl_neo_hud_kanji", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD's kanji beside its plate labels (needs a Japanese font: NHudCyberKanji in ClientScheme.res).",
 	true, 0, true, 1);
@@ -85,18 +79,12 @@ const NC::Senses *NC::PublishedSenses(Color &color)
 	return NeoCyberbrainShowing() ? s_pPublished : nullptr;
 }
 
-NeoHudStyle NeoHudStyleCurrent()
-{
-	return static_cast<NeoHudStyle>(clamp(cl_neo_hud_style.GetInt(), 0, NEO_HUD_STYLE__COUNT - 1));
-}
-
 // Whether the cyberbrain draws its vitals now: asked directly (the style, you alive and in your own eyes), not "did
 // it draw last frame", which let the stock panels flash through on the first frame after a spawn or whenever they
 // painted before it (Kyle: stock HUD returning at weird parts of game start).
 bool NeoCyberbrainShowing()
 {
-	const NeoHudStyle style = NeoHudStyleCurrent();
-	if (style != NEO_HUD_STYLE_COMPACT && style != NEO_HUD_STYLE_BODY)
+	if (!NeoHudCyberbrainStyle(NeoHudStyleCurrent()))
 		return false;
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
 	return pPlayer && pPlayer->IsAlive() && !pPlayer->IsObserver();
@@ -146,8 +134,7 @@ void CNEOHud_Cyberbrain::FireGameEvent(IGameEvent *pEvent)
 
 bool CNEOHud_Cyberbrain::ShouldDraw()
 {
-	const NeoHudStyle style = NeoHudStyleCurrent();
-	if (style != NEO_HUD_STYLE_COMPACT && style != NEO_HUD_STYLE_BODY)
+	if (!NeoHudCyberbrainStyle(NeoHudStyleCurrent()))
 	{
 		return false;
 	}

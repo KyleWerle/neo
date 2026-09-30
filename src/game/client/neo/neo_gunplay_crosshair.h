@@ -18,11 +18,8 @@ bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairSt
 // Whether the layer draws for this weapon at all (Enable Gunplay, cl_neo_gunplay_crosshair, a firearm).
 bool NeoGunplayCrosshairLayerOn(C_NEOBaseCombatWeapon *pWeapon);
 
-// How much of the view a screen fade leaves showing (1 none, 0 black): the spawn's fade in, a map's env_fade (the
-// firing range fades to black and back). The HUD paints over it, so our parts fade with it.
-float NeoHudFadeVisible();
-// Faded all but black: the layer, the sight ghost, the quick info and (with Enable Gunplay) the crosshair wait.
-bool NeoHudFadedOut();
+// The screen fade the layer follows (NeoHudFadeVisible, NeoHudFadedOut) is the HUD's.
+#include "neo_hud_style.h"
 
 // Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the
 // player's crosshair gave way to it (see NeoGunplayReplacesCrosshair).

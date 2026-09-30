@@ -6,7 +6,7 @@
 #include "iclientmode.h"
 #include "neo_gamerules.h"
 #include "neo/neo_competitive.h"
-#include "neo/neo_cyberbrain.h"
+#include "neo/neo_hud_style.h"
 #include "neo_hud_profile.h"
 #include "neo_hud_draw.h"
 #include <vgui/ISurface.h>
@@ -28,19 +28,6 @@ namespace NCo = NeoCompetitive;
 static bool CompetitiveStyle()
 {
 	return NeoHudStyleCurrent() == NEO_HUD_STYLE_COMPETITIVE;
-}
-
-// Asked directly, as the cyberbrain's (not "did it draw last frame", which let the stock panels flash through).
-bool NeoCompetitiveVitalsShowing()
-{
-	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
-	return CompetitiveStyle() && pPlayer && pPlayer->IsAlive() && !pPlayer->IsObserver();
-}
-
-bool NeoCompetitiveTeamShowing()
-{
-	const int team = GetLocalPlayerTeam();
-	return CompetitiveStyle() && (team == TEAM_JINRAI || team == TEAM_NSF) && C_NEO_Player::GetLocalNEOPlayer();
 }
 
 const Color NCo::WHITE(255, 255, 255, 255), NCo::FADED(255, 255, 255, 150), NCo::RED(255, 64, 64, 255);

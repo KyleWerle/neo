@@ -22,7 +22,7 @@
 #include "neo_hud_spectator_overlay.h"
 
 #include "hltvcamera.h"
-#include "neo/neo_cyberbrain.h"
+#include "neo/neo_hud_style.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -504,7 +504,7 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 
 	// The cyberbrain's (or Competitive's) score and squad list replace the drawing; the player order is still kept for the
 	// spectator commands.
-	const bool bReplaced = NeoCyberbrainTeamShowing() || NeoCompetitiveTeamShowing();
+	const bool bReplaced = NeoHudTeamReplaced();
 	int fontWidth, fontHeight;
 	if (!bReplaced)
 	{
@@ -1215,7 +1215,7 @@ void CNEOHud_RoundState::CheckActiveStar()
 	Assert(player);
 
 	// The cyberbrain (or Competitive) HUD draws its own squad list.
-	if (NeoCyberbrainTeamShowing() || NeoCompetitiveTeamShowing())
+	if (NeoHudTeamReplaced())
 	{
 		for (auto *ipStar : m_ipStars)
 		{

@@ -8,7 +8,7 @@
 #include "igameevents.h"
 #include "neo_gamerules.h"
 #include "neo/neo_cyberbrain_team.h"
-#include "neo/neo_gunplay_crosshair.h"
+#include "neo/neo_hud_style.h"
 #include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
@@ -23,15 +23,6 @@ DECLARE_NAMED_HUDELEMENT(CNEOHud_CyberbrainTeam, NHudCyberbrainTeam);
 NEO_HUD_ELEMENT_DECLARE_FREQ_CVAR(CyberbrainTeam, 0.0)
 
 namespace NC = NeoCyberbrain;
-
-// Asked directly, as NeoCyberbrainShowing: the style and you on a team (dead included).
-bool NeoCyberbrainTeamShowing()
-{
-	const NeoHudStyle style = NeoHudStyleCurrent();
-	const int team = GetLocalPlayerTeam();
-	return (style == NEO_HUD_STYLE_COMPACT || style == NEO_HUD_STYLE_BODY) && (team == TEAM_JINRAI || team == TEAM_NSF)
-		&& C_NEO_Player::GetLocalNEOPlayer();
-}
 
 void NC::TeamSides(int &left, int &right)
 {
@@ -97,11 +88,8 @@ void CNEOHud_CyberbrainTeam::FireGameEvent(IGameEvent *pEvent)
 
 bool CNEOHud_CyberbrainTeam::ShouldDraw()
 {
-	const NeoHudStyle style = NeoHudStyleCurrent();
-	const int team = GetLocalPlayerTeam();
 	// A spectator keeps the stock elements (the avatar strips, the spectator overlay, its selection).
-	return (style == NEO_HUD_STYLE_COMPACT || style == NEO_HUD_STYLE_BODY) && (team == TEAM_JINRAI || team == TEAM_NSF)
-		&& C_NEO_Player::GetLocalNEOPlayer() && NEORules() && CHudElement::ShouldDraw();
+	return NeoHudCyberbrainStyle(NeoHudStyleCurrent()) && NeoHudTeamReplaced() && NEORules() && CHudElement::ShouldDraw();
 }
 
 void CNEOHud_CyberbrainTeam::Paint()

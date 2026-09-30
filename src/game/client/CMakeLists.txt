@@ -1728,6 +1728,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_light.h
     neo/neo_hud_profile.cpp
     neo/neo_hud_profile.h
+    neo/neo_hud_style.cpp
+    neo/neo_hud_style.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_lens.cpp
