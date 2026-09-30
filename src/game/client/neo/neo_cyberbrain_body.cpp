@@ -149,7 +149,8 @@ void PaintBody(const Frame &f)
 	const int side = L.m > 0 ? 1 : -1;
 	wchar_t number[16];
 	V_snwprintf(number, ARRAYSIZE(number), L"%d", s.hpNumber);
-	const Vector2D na = L.At(-m * (BODY_W * 0.5f + 12.0f), DISC_Y - 4.0f - h * 0.5f);
+	// Well clear of the capsule (Kyle: it sat too close to the body).
+	const Vector2D na = L.At(-m * (BODY_W * 0.5f + 22.0f), DISC_Y - 4.0f - h * 0.5f);
 	Text(f, number, na.x, na.y, -side, FONT_INTEGRITY, bHit ? CRIT : col, 1.0f);
 	if (look.labels > 0.02f)
 	{

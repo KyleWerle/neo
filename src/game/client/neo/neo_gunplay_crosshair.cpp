@@ -178,6 +178,13 @@ bool NeoGunplayReplacesCrosshair(C_NEOBaseCombatWeapon *pWeapon, int crosshairSt
 // How much of the view shows through a screen fade (the spawn's fade in from black): 1 none, 0 fully faded.
 float NeoHudFadeVisible()
 {
+	// A map's black screen overlay counts as fully faded (the tutorials hold env_screenoverlay's tools/toolsblack over
+	// the view until you walk in: not a view fade, so the fade params don't see it).
+	IMaterial *pOverlay = view ? view->GetScreenOverlayMaterial() : nullptr;
+	if (pOverlay && !pOverlay->IsErrorMaterial() && V_stristr(pOverlay->GetName(), "toolsblack"))
+	{
+		return 0.0f;
+	}
 	byte r, g, b, a;
 	bool bBlend;
 	vieweffects->GetFadeParams(&r, &g, &b, &a, &bBlend);

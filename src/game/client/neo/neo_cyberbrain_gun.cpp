@@ -10,12 +10,18 @@
 #include "engine/ivmodelrender.h"
 #include "KeyValues.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
+#include "datacache/imdlcache.h"
+#include "engine/ivmodelinfo.h"
+#include "studio.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// The weapon on the gun. The reload's band is a box round the magazine bone, square to the view, so it fits every gun
-// with a magazine bone and no per-gun art (tune it live with cl_neo_hud_gun_mag_box and cl_neo_hud_gun_debug 1). The
+// The weapon on the gun. The reload's band is a box round the magazine itself: its real extent, measured once per model
+// from the vertices weighted to its bone (in that bone's own space), carried with the bone every frame, so it fits
+// every gun with no per-gun art, whatever the bone's origin (the ZR68s' and the SRM's sit off the magazine). A model
+// with no vertices on its magazine bone falls back to a box round the bone, square to the view
+// (cl_neo_hud_gun_mag_box). cl_neo_hud_gun_debug 1 draws the box all the time. The
 // callout points come from the models' own attachments (every NT gun has "muzzle" and "eject") and magazine bones,
 // as drawn this frame.
 
@@ -90,6 +96,114 @@ static bool BoneAt(C_BaseAnimating *pViewModel, const char *const names[], int c
 		}
 	}
 	return false;
+}
+
+static void SetGunPlane(float plane[4], const Vector &n, float d);
+
+// The first bone with one of these names, or -1.
+static int BoneIndex(C_BaseAnimating *pViewModel, const char *const names[], int count)
+{
+	for (int n = 0; n < count; ++n)
+	{
+		const int bone = pViewModel->LookupBone(names[n]);
+		if (bone >= 0)
+			return bone;
+	}
+	return -1;
+}
+
+// A magazine's extent in its bone's own space, measured from the model's vertices (those weighted at least half to
+// the bone), once per model.
+struct MagMesh { const model_t *pModel = nullptr; int bone = -1; bool bValid = false; Vector mins, maxs; };
+static MagMesh s_magMeshes[16];
+static int s_magNext = 0;
+
+static const MagMesh *MagMeshOf(C_BaseAnimating *pViewModel, CStudioHdr *hdr, int bone)
+{
+	const model_t *pModel = pViewModel->GetModel();
+	for (const MagMesh &mesh : s_magMeshes)
+	{
+		if (mesh.pModel == pModel && mesh.bone == bone)
+			return mesh.bValid ? &mesh : nullptr;
+	}
+	MagMesh &mesh = s_magMeshes[s_magNext];
+	s_magNext = (s_magNext + 1) % ARRAYSIZE(s_magMeshes);
+	mesh = MagMesh();
+	mesh.pModel = pModel;
+	mesh.bone = bone;
+	const MDLHandle_t handle = modelinfo->GetCacheHandle(pModel);
+	const vertexFileHeader_t *pVvd = handle != MDLHANDLE_INVALID ? mdlcache->GetVertexData(handle) : nullptr;
+	if (!pVvd || bone >= hdr->numbones())
+		return nullptr;
+	const mstudiovertex_t *pVerts = pVvd->GetVertexData();
+	const matrix3x4_t &poseToBone = hdr->pBone(bone)->poseToBone;
+	mesh.mins.Init(FLT_MAX, FLT_MAX, FLT_MAX);
+	mesh.maxs.Init(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	int found = 0;
+	for (int i = 0; pVerts && i < pVvd->numLODVertexes[0]; ++i)
+	{
+		const mstudioboneweight_t &w = pVerts[i].m_BoneWeights;
+		float weight = 0.0f;
+		for (int k = 0; k < w.numbones && k < MAX_NUM_BONES_PER_VERT; ++k)
+		{
+			if (w.bone[k] == bone)
+				weight += w.weight[k];
+		}
+		if (weight < 0.5f)
+			continue;
+		Vector local;
+		VectorTransform(pVerts[i].m_vecPosition, poseToBone, local);
+		VectorMin(mesh.mins, local, mesh.mins);
+		VectorMax(mesh.maxs, local, mesh.maxs);
+		++found;
+	}
+	if (found < 8)
+		return nullptr;
+	// A little room round it, so the scan takes the magazine's own edges.
+	mesh.mins -= Vector(0.4f, 0.4f, 0.4f);
+	mesh.maxs += Vector(0.4f, 0.4f, 0.4f);
+	mesh.bValid = true;
+	return &mesh;
+}
+
+// The band as the magazine's own box (its bone's axes), the scan running along its longest side: t 0 to 1 from one end
+// to the other, width in units (a width of 0: the whole box).
+static void AddMeshBand(NeoCyberGunPass &pass, const matrix3x4_t &boneToWorld, const MagMesh &mesh, float t, float width,
+	const Color &color, float alpha)
+{
+	if (pass.count >= NEO_CYBER_GUN_BANDS || alpha <= 0.01f)
+		return;
+	Vector axis[3], origin;
+	float scale[3];
+	for (int a = 0; a < 3; ++a)
+	{
+		MatrixGetColumn(boneToWorld, a, axis[a]);
+		scale[a] = VectorNormalize(axis[a]);
+	}
+	MatrixGetColumn(boneToWorld, 3, origin);
+	int longest = 0;
+	for (int a = 1; a < 3; ++a)
+	{
+		if ((mesh.maxs[a] - mesh.mins[a]) * scale[a] > (mesh.maxs[longest] - mesh.mins[longest]) * scale[longest])
+			longest = a;
+	}
+	NeoCyberGunBand &band = pass.bands[pass.count++];
+	band.planeCount = 0;
+	for (int a = 0; a < 3; ++a)
+	{
+		float lo = mesh.mins[a], hi = mesh.maxs[a];
+		if (a == longest && width > 0.0f)
+		{
+			const float along = hi - t * (hi - lo), half = 0.5f * width / Max(scale[a], 0.001f);
+			lo = along - half;
+			hi = along + half;
+		}
+		const float base = DotProduct(axis[a], origin);
+		SetGunPlane(band.planes[band.planeCount++], axis[a], base + lo * scale[a]);
+		SetGunPlane(band.planes[band.planeCount++], -axis[a], -(base + hi * scale[a]));
+	}
+	band.color = color;
+	band.alpha = alpha;
 }
 
 // Projects a world point with this render view's own matrices (the viewmodel's field of view) to screen pixels.
@@ -186,6 +300,24 @@ bool NeoCyberGunPrepare(C_BaseAnimating *pViewModel, NeoCyberGunPass &pass)
 		return false;
 	const NC::Senses &s = *pSenses;
 	const float now = gpGlobals->realtime;
+	// The magazine's own box, measured from the model (the fallback below when a model gives none).
+	const int magBone = BoneIndex(pViewModel, s_mag, ARRAYSIZE(s_mag));
+	const MagMesh *pMesh = magBone >= 0 ? MagMeshOf(pViewModel, hdr, magBone) : nullptr;
+	if (pMesh)
+	{
+		const matrix3x4_t &boneToWorld = pViewModel->GetBone(magBone);
+		if (cl_neo_hud_gun_debug.GetBool())
+		{
+			AddMeshBand(pass, boneToWorld, *pMesh, 0.0f, 0.0f, color, 0.6f);
+		}
+		else if (s.bReloading)
+		{
+			const float t = fmodf(Max(0.0f, now - s.reloadStart), GUN_SCAN_EVERY) / GUN_SCAN_TIME;
+			if (t < 1.0f)
+				AddMeshBand(pass, boneToWorld, *pMesh, t, GUN_SCAN_WIDTH, NC::WARN, GUN_SCAN_ALPHA * (1.0f - 0.5f * t));
+		}
+		return pass.count > 0;
+	}
 	float half, down, up;
 	MagBox(half, down, up);
 	const float depth = DotProduct(CurrentViewForward(), world[NEO_GUN_MAG] - CurrentViewOrigin());

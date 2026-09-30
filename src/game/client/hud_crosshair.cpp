@@ -397,6 +397,9 @@ void CHudCrosshair::Paint( void )
 #ifdef NEO
 	if (!ShouldDraw())
 		return;
+	// With Enable Gunplay, no crosshair over a black screen (a spawn fade, a map's black overlay); off stays stock.
+	if (NeoGunplayEnabled() && NeoHudFadedOut())
+		return;
 #else
 	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( !pPlayer )

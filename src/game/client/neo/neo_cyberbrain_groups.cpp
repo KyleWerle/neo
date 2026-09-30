@@ -13,6 +13,10 @@
 // graph (your team, your ping as the links' line, your load as your node's fill). Words and plates only come in with
 // attention.
 
+ConVar cl_neo_hud_gun_count("cl_neo_hud_gun_count", "0", FCVAR_ARCHIVE,
+	"The rounds' count (and its calls) hung from the gun's muzzle: stubbed off until each gun gets a hand-placed spot;"
+	" 0 keeps them in the weapon group.", true, 0, true, 1);
+
 namespace NeoCyberbrain
 {
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
@@ -160,6 +164,9 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 // screen or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
 static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a, Vector2D &below, int &align)
 {
+	// Stubbed (Kyle: the muzzle readout sits too inconsistently across the guns; it needs placing by hand, per gun).
+	if (!cl_neo_hud_gun_count.GetBool())
+		return false;
 	Vector2D at;
 	if (!NeoCyberGunPointOnScreen(NEO_GUN_MUZZLE, at) || InKeepout(f, at))
 		return false;
