@@ -58,9 +58,9 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 
 static vgui::HFont GetFont(Font font)
 {
-	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity" };
-	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive" };
-	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT };
+	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons" };
+	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr };
+	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT };
 	vgui::HFont &handle = s_fonts[font];
 	if (handle == vgui::INVALID_FONT)
 	{
@@ -80,7 +80,7 @@ static vgui::HFont GetFont(Font font)
 
 void PrintFonts()
 {
-	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity" };
+	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons" };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));
@@ -123,6 +123,16 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	vgui::surface()->DrawSetTextColor(c.r(), c.g(), c.b(), Alpha(f, alpha));
 	vgui::surface()->DrawSetTextPos(tx, ty);
 	vgui::surface()->DrawPrintText(pText, count);
+	return static_cast<float>(wide);
+}
+
+float TextWidth(const wchar_t *pText, Font font)
+{
+	const vgui::HFont handle = GetFont(font);
+	if (handle == vgui::INVALID_FONT || !pText || !pText[0])
+		return 0.0f;
+	int wide, tall;
+	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	return static_cast<float>(wide);
 }
 

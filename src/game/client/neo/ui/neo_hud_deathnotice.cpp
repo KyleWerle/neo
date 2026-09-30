@@ -25,6 +25,7 @@
 #include "c_neo_killer_damage_infos.h"
 #include "neo_scoreboard.h"
 #include "neo_hud_deathnotice.h"
+#include "neo/neo_cyberbrain.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -201,7 +202,8 @@ void CNEOHud_DeathNotice::SetColorForNoticePlayer( int iTeamNumber )
 //-----------------------------------------------------------------------------
 void CNEOHud_DeathNotice::DrawNeoHudElement()
 {
-	int iCount = m_DeathNotices.Count();
+	// The cyberbrain's feed draws its own copy; the entries still retire below.
+	int iCount = NeoCyberbrainTeamShowing() ? 0 : m_DeathNotices.Count();
 	for (int i = 0; i < iCount; i++)
 	{
 		if (m_DeathNotices[i].bRankChange)

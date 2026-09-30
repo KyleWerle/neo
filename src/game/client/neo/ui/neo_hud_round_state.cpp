@@ -22,6 +22,7 @@
 #include "neo_hud_spectator_overlay.h"
 
 #include "hltvcamera.h"
+#include "neo/neo_cyberbrain.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -501,8 +502,13 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 		return;
 	}
 
-	surface()->DrawSetTextFont(m_hOCRFont);
+	// The cyberbrain's score and squad list replace the drawing; the player order below is still kept for the
+	// spectator commands.
+	const bool bCyberbrain = NeoCyberbrainTeamShowing();
 	int fontWidth, fontHeight;
+	if (!bCyberbrain)
+	{
+	surface()->DrawSetTextFont(m_hOCRFont);
 	surface()->GetTextSize(m_hOCRFont, m_wszTime, fontWidth, fontHeight);
 
 	// Draw Box
@@ -522,6 +528,8 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 	surface()->DrawSetTextPos(m_iXpos - (fontWidth / 2), m_iBoxYEnd);
 	surface()->DrawPrintText(m_pWszStatusUnicode, m_iStatusUnicodeSize);
 
+	}
+
 	const int localPlayerTeam = GetLocalPlayerTeam();
 	const bool localPlayerSpecOrNoTeam = !NEORules()->IsTeamplay() || !(localPlayerTeam == TEAM_JINRAI || localPlayerTeam == TEAM_NSF);
 
@@ -531,6 +539,8 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 	const auto leftTeamInfo = m_teamLogoColors[leftTeam];
 	const auto rightTeamInfo = m_teamLogoColors[rightTeam];
 
+	if (!bCyberbrain)
+	{
 	// Draw total players alive (or score)
 	surface()->DrawSetTextFont(m_hOCRSmallerFont);
 	surface()->GetTextSize(m_hOCRSmallerFont, m_wszPlayersAliveUnicode, fontWidth, fontHeight);
@@ -580,6 +590,7 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 		surface()->DrawSetTextPos(m_posRightTeamScore.x - (fontWidth / 2), m_posRightTeamScore.y);
 		surface()->DrawSetTextColor(rightTeamInfo.color);
 		surface()->DrawPrintText(m_wszRightTeamScore, 2);
+	}
 	}
 
 	m_iLeftPlayersTotal = m_iRightPlayersTotal = 0;
@@ -644,6 +655,11 @@ void CNEOHud_RoundState::DrawNeoHudElement()
 		}
 
 		m_nPlayerList.Sort([](const playerIndexAndTheirValue *first, const playerIndexAndTheirValue *second)->int{return second->playerValue - first->playerValue;});
+	}
+
+	if (bCyberbrain)
+	{
+		return;
 	}
 
 	if (cl_neo_squad_hud_original.GetBool())
@@ -1197,6 +1213,17 @@ void CNEOHud_RoundState::CheckActiveStar()
 {
 	auto player = C_NEO_Player::GetLocalNEOPlayer();
 	Assert(player);
+
+	// The cyberbrain draws its own star with its squad list.
+	if (NeoCyberbrainTeamShowing())
+	{
+		for (auto *ipStar : m_ipStars)
+		{
+			ipStar->SetVisible(false);
+		}
+		m_iPreviouslyActiveStar = m_iPreviouslyActiveTeam = -1;
+		return;
+	}
 
 	int currentStar;
 	if (!ShouldDraw())

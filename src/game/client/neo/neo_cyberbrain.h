@@ -20,3 +20,9 @@ NeoHudStyle NeoHudStyleCurrent();
 // A cyberbrain style, and drawn this frame or the last: the health / therm-optic / aux panel, the ammo panel and the
 // compass give way to it. Off, or hidden (dead, spectating, the rules), they stay.
 bool NeoCyberbrainShowing();
+
+// The team's side of it (ui/neo_hud_cyberbrain_team.*): the score, the squad list and the kill feed in the cyberbrain's
+// language, drawn this frame or the last. It stays up while you're dead (it's about the match, not your body); for a
+// spectator, or in the other styles, the stock elements draw. The stock round state and death notice keep running (the
+// spectator commands' player order, the countdown beep, the kills the scoreboard marks) and only stop drawing.
+bool NeoCyberbrainTeamShowing();

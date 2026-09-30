@@ -20,8 +20,8 @@ namespace NeoCyberbrain
 enum Group { GROUP_BODY, GROUP_OPTICS, GROUP_WEAPON, GROUP_LINK, GROUP_MOTION, GROUP__COUNT };
 
 // NT's own shipped faces, from ClientScheme.res: NOCR for values, Zrnic for labels, Alpha Flight for plates; the
-// kanji beside the plates in a Japanese face.
-enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT__COUNT };
+// kanji beside the plates in a Japanese face; NT's own killfeed icons (weapons, headshot, ghost, ranks) as glyphs.
+enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT_ICONS, FONT__COUNT };
 // What the fonts resolved to (the cl_neo_hud_fonts command).
 void PrintFonts();
 
@@ -172,6 +172,8 @@ void RectOutline(const Frame &f, const Vector2D &a, const Vector2D &b, NeoGhostW
 void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float from, float to, NeoGhostWeight weight, const Color &c, float alpha);
 // Text with its vertical middle at y: align -1 ending at x, 0 centred, 1 starting at x. Returns its width in pixels.
 float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Font font, const Color &c, float alpha);
+// How wide text would draw, pixels.
+float TextWidth(const wchar_t *pText, Font font);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);

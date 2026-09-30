@@ -1656,6 +1656,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_childelement.cpp
     neo/ui/neo_hud_compass.cpp
     neo/ui/neo_hud_cyberbrain.cpp
+    neo/ui/neo_hud_cyberbrain_team.cpp
+    neo/ui/neo_hud_cyberbrain_team.h
     neo/neo_ironsight_bench.cpp
     neo/neo_ironsight_augment.cpp
     neo/neo_ironsight_augment.h
@@ -1693,6 +1695,10 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_callouts.cpp
     neo/neo_cyberbrain_gun.cpp
     neo/neo_cyberbrain_gun.h
+    neo/neo_cyberbrain_feed.cpp
+    neo/neo_cyberbrain_score.cpp
+    neo/neo_cyberbrain_squad.cpp
+    neo/neo_cyberbrain_team.h
     neo/neo_cyberbrain_ring.cpp
     neo/neo_cyberbrain_groups.cpp
     neo/neo_cyberbrain_backing.cpp
