@@ -23,6 +23,9 @@ ConVar cl_neo_hud_hearing("cl_neo_hud_hearing", "1", FCVAR_ARCHIVE,
 	"The cyberbrain's surround ring shows sounds other players make that you can already hear: direction and loudness,"
 	" never position. 0 = off (the Comp preset).", true, 0, true, 1);
 
+ConVar cl_neo_hud_light_range("cl_neo_hud_light_range", "0.25 0.75", FCVAR_ARCHIVE,
+	"The light sensor's raw readings that count as fully dark and fully bright (the iris spreads between them).");
+
 namespace NeoCyberbrain
 {
 constexpr float METRES_PER_UNIT = 0.0254f;
@@ -162,7 +165,12 @@ static float SenseLight(C_NEO_Player *pPlayer)
 	const float luminance = 0.3f * light.x + 0.59f * light.y + 0.11f * light.z;
 	CMatRenderContextPtr pRenderContext(materials);
 	const float exposure = pRenderContext->GetToneMappingScaleLinear().x;
-	return sqrtf(clamp(0.5f * luminance * exposure, 0.0f, 1.0f));
+	const float raw = sqrtf(clamp(0.5f * luminance * exposure, 0.0f, 1.0f));
+	// Played, the raw reading sat between about a quarter and three quarters; spread that over the whole scale (a bit
+	// past either end just pins it: it's a feel, not a meter).
+	float dark = 0.25f, bright = 0.75f;
+	sscanf(cl_neo_hud_light_range.GetString(), "%f %f", &dark, &bright);
+	return clamp((raw - dark) / Max(bright - dark, 0.05f), 0.0f, 1.0f);
 }
 
 void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)

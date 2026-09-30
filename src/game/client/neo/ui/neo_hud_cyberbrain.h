@@ -66,10 +66,10 @@ private:
 	CPanelAnimationVarAliasType(int, m_linkNearX, "link_near_x", "r142", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_linkNearY, "link_near_y", "204", "proportional_ypos");
 	// The motion group, beside the body: left of it in Compact, right of it (toward the centre) On the body.
-	CPanelAnimationVarAliasType(int, m_motionFarX, "motion_far_x", "178", "proportional_xpos");
+	CPanelAnimationVarAliasType(int, m_motionFarX, "motion_far_x", "154", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_motionFarY, "motion_far_y", "r48", "proportional_ypos");
-	CPanelAnimationVarAliasType(int, m_motionNearX, "motion_near_x", "231", "proportional_xpos");
-	CPanelAnimationVarAliasType(int, m_motionNearY, "motion_near_y", "r53", "proportional_ypos");
+	CPanelAnimationVarAliasType(int, m_motionNearX, "motion_near_x", "150", "proportional_xpos");
+	CPanelAnimationVarAliasType(int, m_motionNearY, "motion_near_y", "r58", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_motionRingFarX, "motion_ring_far_x", "c36", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_motionRingFarY, "motion_ring_far_y", "r47", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_motionRingNearX, "motion_ring_near_x", "c18", "proportional_xpos");

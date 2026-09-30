@@ -20,6 +20,8 @@ public:
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme) override;
 	virtual void Paint() override;
 	virtual bool ShouldDraw() override;
+	// The stock rounded box, for the painters (neo/neo_competitive.h's Box).
+	void PaintBox(int x0, int y0, int x1, int y1, const Color &c, bool bFlushTop) const;
 
 protected:
 	virtual void UpdateStateForNeoHudElementDraw() override {}

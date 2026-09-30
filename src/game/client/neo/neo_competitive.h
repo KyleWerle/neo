@@ -28,8 +28,12 @@ float Print(const Pen &pen, const wchar_t *pText, float x, float y, int align, F
 float Width(const wchar_t *pText, Face face, bool bKeepCase = false);
 float Height(Face face);
 
-// The stock colours.
-extern const Color WHITE, FADED, RED;
+// The stock colours: text, and the panels' boxes (the grey the stock panels sit on; the feed's dark entries).
+extern const Color WHITE, FADED, RED, BOX, FEED_BOX;
+constexpr float BOX_PAD = 8.0f;	// pixels at 1080p round the text
+
+// The stock panels' grey rounded box, pixels (flush: the top corners square, as the round's box at the screen's top).
+void Box(float x0, float y0, float x1, float y1, const Color &c = BOX, bool bFlushTop = false);
 
 // The vitals, ammo, compass and rangefinder (neo_competitive_vitals.cpp), while you're alive.
 void PaintVitals(const Pen &pen, bool bHealth, bool bAmmo, bool bCompass);

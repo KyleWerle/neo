@@ -24,7 +24,7 @@ constexpr float METRES_PER_UNIT = 0.0254f;
 static void Health(const Pen &pen, C_NEO_Player *pPlayer)
 {
 	static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
-	const float s = pen.s, line = Height(FACE_LARGE) + 2.0f * s;
+	const float s = pen.s, large = Height(FACE_LARGE), line = large + 2.0f * s;
 	const int neoClass = pPlayer->GetClass();
 	const bool bSupport = neoClass == NEO_CLASS_SUPPORT, bJuggernaut = neoClass == NEO_CLASS_JUGGERNAUT;
 	struct Row { const wchar_t *pLabel; int value; };
@@ -35,13 +35,14 @@ static void Health(const Pen &pen, C_NEO_Player *pPlayer)
 		rows[count++] = { L"therm-optic", static_cast<int>(roundf(pPlayer->m_HL2Local.m_cloakPower)) };
 	if (!bSupport)
 		rows[count++] = { L"aux power", static_cast<int>(pPlayer->m_HL2Local.m_flSuitPower) };
-	const float bottom = pen.tall - EDGE * s;
+	const float bottom = pen.tall - EDGE * s, top = bottom - count * line, pad = BOX_PAD * s;
+	Box(EDGE * s - pad, top - pad, VITALS_VALUE_X * s + pad, bottom - 2.0f * s + pad);
 	for (int i = 0; i < count; ++i)
 	{
-		const float y = bottom - (count - i) * line;
+		const float y = top + i * line;
 		wchar_t value[16];
 		V_snwprintf(value, ARRAYSIZE(value), L"%d", rows[i].value);
-		Print(pen, rows[i].pLabel, EDGE * s, y + (Height(FACE_LARGE) - Height(FACE_TEXT)) * 0.5f, 1, FACE_TEXT, FADED);
+		Print(pen, rows[i].pLabel, EDGE * s, y + (large - Height(FACE_TEXT)) * 0.5f, 1, FACE_TEXT, FADED);
 		Print(pen, value, VITALS_VALUE_X * s, y, -1, FACE_LARGE, WHITE);
 	}
 }
@@ -52,36 +53,45 @@ static void Ammo(const Pen &pen, C_NEO_Player *pPlayer)
 	NeoQuickInfo::ReadAmmo(pPlayer, ammo);
 	if (!ammo.bShown)
 		return;
-	const float s = pen.s, right = pen.wide - EDGE * s, bottom = pen.tall - EDGE * s;
+	const float s = pen.s, right = pen.wide - EDGE * s, bottom = pen.tall - EDGE * s, gap = 12.0f * s, pad = BOX_PAD * s;
 	const float large = Height(FACE_LARGE), text = Height(FACE_TEXT);
-	const float y1 = bottom - large, y0 = y1 - text - 4.0f * s;
-	Print(pen, ammo.name, right, y0, -1, FACE_TEXT, FADED);
+	const float y1 = bottom - large, y0 = y1 - text - 4.0f * s, yText = y1 + (large - text) * 0.5f;
+
+	// The bottom row, measured before it's drawn so the box fits: the mode, the rounds (or the heat), the magazines.
+	wchar_t main[24] = L"";
+	const wchar_t *pMode = nullptr, *pMags = nullptr;
+	Color mainColour = WHITE;
 	if (ammo.bHeat)
 	{
-		wchar_t heat[24];
 		if (ammo.bOverheated)
-			V_wcsncpy(heat, L"overheat", sizeof(heat));
+			V_wcsncpy(main, L"overheat", sizeof(main));
 		else
-			V_snwprintf(heat, ARRAYSIZE(heat), L"heat %d%%", RoundFloatToInt(ammo.heat * 100.0f));
-		Print(pen, heat, right, y1, -1, FACE_LARGE, ammo.bOverheated || ammo.heat > 0.8f ? RED : WHITE);
-		return;
+			V_snwprintf(main, ARRAYSIZE(main), L"heat %d%%", RoundFloatToInt(ammo.heat * 100.0f));
+		mainColour = ammo.bOverheated || ammo.heat > 0.8f ? RED : WHITE;
 	}
-	if (ammo.maxRounds <= 0)
-		return;
-	// Right to left: the magazines, the rounds, the mode.
-	float x = right;
-	if (ammo.mags[0])
+	else if (ammo.maxRounds > 0)
 	{
-		x -= Print(pen, ammo.mags, x, y1 + (large - text) * 0.5f, -1, FACE_TEXT, ammo.bMagsOut ? RED : FADED) + 12.0f * s;
+		const bool bThrown = ammo.pMode && !V_wcscmp(ammo.pMode, L"THROW");
+		if (bThrown)
+			V_snwprintf(main, ARRAYSIZE(main), L"x%d", ammo.rounds);
+		else
+			V_snwprintf(main, ARRAYSIZE(main), L"%d/%d", ammo.rounds, ammo.maxRounds);
+		mainColour = ammo.rounds == 0 ? RED : WHITE;
+		pMode = bThrown ? nullptr : ammo.pMode;
+		pMags = ammo.mags[0] ? ammo.mags : nullptr;
 	}
-	wchar_t rounds[24];
-	if (ammo.pMode && !V_wcscmp(ammo.pMode, L"THROW"))
-		V_snwprintf(rounds, ARRAYSIZE(rounds), L"x%d", ammo.rounds);
-	else
-		V_snwprintf(rounds, ARRAYSIZE(rounds), L"%d/%d", ammo.rounds, ammo.maxRounds);
-	x -= Print(pen, rounds, x, y1, -1, FACE_LARGE, ammo.rounds == 0 ? RED : WHITE) + 12.0f * s;
-	if (ammo.pMode && V_wcscmp(ammo.pMode, L"THROW"))
-		Print(pen, ammo.pMode, x, y1 + (large - text) * 0.5f, -1, FACE_TEXT, FADED);
+	const float magsW = pMags ? Width(pMags, FACE_TEXT) + gap : 0.0f, mainW = Width(main, FACE_LARGE);
+	const float modeW = pMode ? Width(pMode, FACE_TEXT) + gap : 0.0f;
+	const float rowW = magsW + mainW + modeW, width = Max(rowW, Width(ammo.name, FACE_TEXT));
+	Box(right - width - pad, (main[0] ? y0 : y1) - pad, right + pad, bottom - 2.0f * s + pad);
+
+	Print(pen, ammo.name, right, main[0] ? y0 : y1, -1, FACE_TEXT, FADED);
+	float x = right;
+	if (pMags)
+		x -= Print(pen, pMags, x, yText, -1, FACE_TEXT, ammo.bMagsOut ? RED : FADED) + gap;
+	x -= Print(pen, main, x, y1, -1, FACE_LARGE, mainColour) + gap;
+	if (pMode)
+		Print(pen, pMode, x, yText, -1, FACE_TEXT, FADED);
 }
 
 // A bearing (degrees from ahead, right positive) across the compass, or false outside its view.
@@ -96,7 +106,9 @@ static bool CompassX(const Pen &pen, float bearing, float &x)
 static void Compass(const Pen &pen, C_NEO_Player *pPlayer)
 {
 	static const wchar_t *s_rose[] = { L"s", L"sw", L"w", L"nw", L"n", L"ne", L"e", L"se" };
-	const float s = pen.s, y = COMPASS_Y * s - Height(FACE_TEXT) * 0.5f, yaw = MainViewAngles()[YAW];
+	const float s = pen.s, y = COMPASS_Y * s - Height(FACE_TEXT) * 0.5f, yaw = MainViewAngles()[YAW], pad = BOX_PAD * s;
+	Box(pen.wide * 0.5f - COMPASS_W * 0.5f * s - pad, y - pad * 0.5f, pen.wide * 0.5f + COMPASS_W * 0.5f * s + pad,
+		y + Height(FACE_TEXT) + pad * 0.5f);
 	// The stock rose: S at world yaw 0's opposite; each point's bearing from where you look.
 	for (int i = 0; i < 8; ++i)
 	{

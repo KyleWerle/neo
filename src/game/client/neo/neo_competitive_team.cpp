@@ -27,6 +27,8 @@ void PaintRound(const Pen &pen)
 	float y = TOP * s;
 	if (r.bTimed)
 	{
+		// The stock box: flush with the screen's top, round the label, clock, scores and tally.
+		Box(cx - (SCORE_X + 30.0f) * s, 0.0f, cx + (SCORE_X + 30.0f) * s, y + text + large + text + BOX_PAD * s, BOX, true);
 		Print(pen, r.round, cx, y, 0, FACE_TEXT, r.bPaused ? RED : FADED);
 		y += text;
 		Print(pen, r.clock, cx, y, 0, FACE_LARGE, r.bRed ? RED : WHITE);
@@ -68,13 +70,16 @@ void PaintSquad(const Pen &pen)
 	// The star as its name, in the stock star's colour.
 	static const wchar_t *s_stars[STAR__TOTAL] = { L"alpha", L"bravo", L"charlie", L"delta", L"echo", L"foxtrot", L"no squad" };
 	const int star = clamp(pLocal->GetStar(), 0, STAR__TOTAL - 1);
-	Print(pen, s_stars[star], x, y, 1, FACE_LARGE, star == STAR_NONE ? COLOR_NEO_WHITE : team == TEAM_NSF ? COLOR_NSF : COLOR_JINRAI);
+	const Color starColour = star == STAR_NONE ? COLOR_NEO_WHITE : team == TEAM_NSF ? COLOR_NSF : COLOR_JINRAI;
 	y += Height(FACE_LARGE) + 4.0f * s;
 
 	NC::SquadEntry order[MAX_PLAYERS];
 	const int count = NC::SquadOrder(order);
 	static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
 	const Color teamColour = NC::TeamColour(team);
+	struct Line { wchar_t name[64], rest[64]; Color c; float y; };
+	static Line s_lines[MAX_PLAYERS];
+	float widest = Width(s_stars[star], FACE_LARGE);
 	for (int i = 0; i < count; ++i)
 	{
 		const NC::SquadEntry &e = order[i];
@@ -95,27 +100,35 @@ void PaintSquad(const Pen &pen)
 			if (pImpersonator)
 				pClass = GetNeoClassName(pImpersonator->m_iClassBeforeTakeover);
 		}
-		wchar_t name[64], rest[64];
-		g_pVGuiLocalize->ConvertANSIToUnicode(pName ? pName : "", name, sizeof(name));
+		Line &line = s_lines[i];
+		g_pVGuiLocalize->ConvertANSIToUnicode(pName ? pName : "", line.name, sizeof(line.name));
+		wchar_t cls[24];
+		g_pVGuiLocalize->ConvertANSIToUnicode(pClass ? pClass : "", cls, sizeof(cls));
 		if (bAlive)
 		{
 			const int mode = cl_neo_hud_health_mode.GetInt();
-			wchar_t cls[24];
-			g_pVGuiLocalize->ConvertANSIToUnicode(pClass ? pClass : "", cls, sizeof(cls));
 			wchar_t rank[8];
 			g_pVGuiLocalize->ConvertANSIToUnicode(GetRankName(g_PR->GetXP(player), true), rank, sizeof(rank));
-			V_snwprintf(rest, ARRAYSIZE(rest), mode ? L" %ls  [%ls]  %dhp" : L" %ls  [%ls]  %d%%", rank, cls, g_PR->GetDisplayedHealth(player, mode));
+			V_snwprintf(line.rest, ARRAYSIZE(line.rest), mode ? L" %ls  [%ls]  %dhp" : L" %ls  [%ls]  %d%%", rank, cls,
+				g_PR->GetDisplayedHealth(player, mode));
 		}
 		else
 		{
-			wchar_t cls[24];
-			g_pVGuiLocalize->ConvertANSIToUnicode(pClass ? pClass : "", cls, sizeof(cls));
-			V_snwprintf(rest, ARRAYSIZE(rest), L"  [%ls]  dead", cls);
+			V_snwprintf(line.rest, ARRAYSIZE(line.rest), L"  [%ls]  dead", cls);
 		}
-		const Color c = e.bCommanded ? teamColour : !bAlive ? Color(255, 255, 255, 80) : e.bSmall ? FADED : WHITE;
-		const float w = Print(pen, name, x, y, 1, FACE_TEXT, c, true);
-		Print(pen, rest, x + w, y, 1, FACE_TEXT, c);
+		line.c = e.bCommanded ? teamColour : !bAlive ? Color(255, 255, 255, 80) : e.bSmall ? FADED : WHITE;
+		line.y = y;
+		widest = Max(widest, Width(line.name, FACE_TEXT, true) + Width(line.rest, FACE_TEXT));
 		y += text;
+	}
+	const float pad = BOX_PAD * s;
+	Box(x - pad, TOP * s - pad * 0.5f, x + widest + pad, y + pad * 0.5f);
+	Print(pen, s_stars[star], x, TOP * s, 1, FACE_LARGE, starColour);
+	for (int i = 0; i < count; ++i)
+	{
+		const Line &line = s_lines[i];
+		const float w = Print(pen, line.name, x, line.y, 1, FACE_TEXT, line.c, true);
+		Print(pen, line.rest, x + w, line.y, 1, FACE_TEXT, line.c);
 	}
 }
 
@@ -124,7 +137,7 @@ void PaintFeed(const Pen &pen)
 	namespace NC = NeoCyberbrain;
 	const NC::FeedEntry *pFeed;
 	const int count = NC::FeedEntries(&pFeed);
-	const float s = pen.s, right = pen.wide - EDGE * s, line = Height(FACE_TEXT) + 4.0f * s;
+	const float s = pen.s, right = pen.wide - EDGE * s, line = Height(FACE_TEXT) + 8.0f * s;
 	for (int i = 0; i < count; ++i)
 	{
 		const NC::FeedEntry &e = pFeed[i];
@@ -135,8 +148,8 @@ void PaintFeed(const Pen &pen)
 			width += Width(e.seg[k].text, faceOf(e.seg[k]), e.seg[k].font == NC::FONT_VALUE);
 		float x = right - width;
 		const float y = FEED_TOP * s + i * line;
-		if (e.bInvolved)
-			Print(pen, L">", x - 10.0f * s, y, 1, FACE_TEXT, WHITE);
+		// The stock feed's boxes: dark, and grey for the ones you're in.
+		Box(x - 4.0f * s, y - 2.0f * s, right + 4.0f * s, y + line - 4.0f * s, e.bInvolved ? BOX : FEED_BOX);
 		for (int k = 0; k < e.count; ++k)
 		{
 			const NC::FeedSegment &seg = e.seg[k];

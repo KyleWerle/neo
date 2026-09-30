@@ -41,6 +41,20 @@ bool NeoCompetitiveTeamShowing()
 }
 
 const Color NCo::WHITE(255, 255, 255, 255), NCo::FADED(255, 255, 255, 150), NCo::RED(255, 64, 64, 255);
+const Color NCo::BOX(150, 150, 150, 60), NCo::FEED_BOX(20, 20, 20, 220);	// HudLayout.res's box_color, the feed's
+
+static const CNEOHud_Competitive *s_pDrawing = nullptr;
+
+void NCo::Box(float x0, float y0, float x1, float y1, const Color &c, bool bFlushTop)
+{
+	if (s_pDrawing)
+		s_pDrawing->PaintBox(RoundFloatToInt(x0), RoundFloatToInt(y0), RoundFloatToInt(x1), RoundFloatToInt(y1), c, bFlushTop);
+}
+
+void CNEOHud_Competitive::PaintBox(int x0, int y0, int x1, int y1, const Color &c, bool bFlushTop) const
+{
+	DrawNeoHudRoundedBox(x0, y0, x1, y1, c, !bFlushTop, !bFlushTop, true, true);
+}
 
 static vgui::HFont FaceFont(NCo::Face face)
 {
@@ -146,6 +160,7 @@ void CNEOHud_Competitive::DrawNeoHudElement()
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
 	const NCo::Pen pen = { m_resY / 1080.0f, m_resX, m_resY };
 	const int hidden = NEORules()->GetHiddenHudElements();
+	s_pDrawing = this;
 
 	// The vitals as the stock panels hide: dead, spectating, the rules' bits, their own switches.
 	if (pPlayer->IsAlive() && !pPlayer->IsObserver() && !gHUD.IsHidden(HIDEHUD_HEALTH | HIDEHUD_PLAYERDEAD))
@@ -168,4 +183,5 @@ void CNEOHud_Competitive::DrawNeoHudElement()
 		if (!gHUD.IsHidden(HIDEHUD_MISCSTATUS))
 			NCo::PaintFeed(pen);
 	}
+	s_pDrawing = nullptr;
 }
