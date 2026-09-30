@@ -8,7 +8,7 @@
 // The other receptor groups, in shapes rather than numbers. Optics: how visible you are (a halftone patch that fills
 // with the light you stand in, hollow and displaced while cloaked, vision mode lighting its brackets; the therm-optic
 // tank under it). Nothing loops: motion is for events. Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
-// aim settle as a bar, the range while aiming; a shot flicks its tick out, a reload sweeps them back. The count hangs
+// aim settle as two registration crosses coming into register, the range while aiming; a shot flicks its tick out, a reload sweeps them back. The count hangs
 // from the gun's own magazine on a short leader (neo_cyberbrain_gun.h), in the group only when it can't. Link: ping as signal bars, neural load
 // as cells, the squad as pips. Words and plates only come in with attention.
 
@@ -16,6 +16,7 @@ namespace NeoCyberbrain
 {
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
 constexpr int HALFTONE_CELLS = 5;
+constexpr float SYNC_Y = 30.0f, SYNC_ARM = 6.0f, SYNC_SPREAD = 10.0f;	// pixels at 1080p: where, a cross's arm, the most out of register
 constexpr float HALFTONE_PITCH = 13.0f, HALFTONE_MIN = 1.5f;	// pixels at 1080p: a cell, and a square in the dark
 
 void PaintOptics(const Frame &f)
@@ -231,10 +232,29 @@ void PaintWeapon(const Frame &f)
 			}
 		}
 	}
-	// SYNC: the aim settle, dipping on each shot.
-	const float sw = 120.0f;
-	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(sw * 0.5f, 31.0f), f.color, 0.1f * a);
-	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(-sw * 0.5f + sw * s.sync, 31.0f), s.sync < 0.5f ? WARN : f.color, 0.7f * a);
+	// SYNC, the aim settle, as registration (Kyle's pick over the bar): two of the HUD's registration crosses knocked out
+	// of register by each shot and drifting back together as the aim settles, until they're one aligned cross with its
+	// target ring: in register, ready. It moves only after a shot.
+	{
+		const float off = SYNC_SPREAD * (1.0f - clamp(s.sync, 0.0f, 1.0f));
+		const Color sc = s.sync < 0.5f ? WARN : f.color;
+		const Vector2D centre(0.0f, SYNC_Y), d(off * m, off * 0.6f);
+		if (off < 0.5f)
+		{
+			Line(f, L.At(-SYNC_ARM, SYNC_Y), L.At(SYNC_ARM, SYNC_Y), NEO_GHOST_HEAVY, sc, 0.9f * a);
+			Line(f, L.At(0.0f, SYNC_Y - SYNC_ARM), L.At(0.0f, SYNC_Y + SYNC_ARM), NEO_GHOST_HEAVY, sc, 0.9f * a);
+			Arc(f, L.At(0.0f, SYNC_Y), Vector2D(4.5f, 4.5f) * L.k, 0.0f, 360.0f, NEO_GHOST_LIGHT, sc, 0.7f * a);
+		}
+		else
+		{
+			for (int k = -1; k <= 1; k += 2)
+			{
+				const Vector2D c = centre + d * static_cast<float>(k);
+				Line(f, L.At(c.x - SYNC_ARM, c.y), L.At(c.x + SYNC_ARM, c.y), NEO_GHOST_MEDIUM, sc, 0.85f * a);
+				Line(f, L.At(c.x, c.y - SYNC_ARM), L.At(c.x, c.y + SYNC_ARM), NEO_GHOST_MEDIUM, sc, 0.85f * a);
+			}
+		}
+	}
 	// The range while aiming (the rangefinder's), under the settle: the ring only says where.
 	if (s.bRange)
 	{
