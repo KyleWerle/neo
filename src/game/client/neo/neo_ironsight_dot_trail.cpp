@@ -26,7 +26,7 @@ ConVar cl_neo_ironsight_dot_trail_time("cl_neo_ironsight_dot_trail_time", "0.25"
 ConVar cl_neo_ironsight_dot_trail_width("cl_neo_ironsight_dot_trail_width", "1.5", FCVAR_ARCHIVE,
 	"The trail's width, in dot radii (its glow reaches this far; its bright core a third of it).", true, 0.2f, true, 6);
 ConVar cl_neo_ironsight_dot_trail_color("cl_neo_ironsight_dot_trail_color", "255 40 24", FCVAR_ARCHIVE,
-	"The trail's colour, \"R G B\".");
+	"The trail's colour, \"R G B\", for dots whose weapon names none (\"dot_color\").");
 ConVar cl_neo_ironsight_dot_trail_speed("cl_neo_ironsight_dot_trail_speed", "40", FCVAR_ARCHIVE,
 	"Degrees a second the aim must turn before the trail starts showing (full at twice this): no smear while"
 	" holding or tracking slowly.", true, 0, true, 720);
@@ -67,6 +67,7 @@ static struct
 	int shotCount = 0;
 	float viewChanged = -1.0f;
 	float lastDebug = 0.0f;
+	Color colour = Color(0, 0, 0, 0);	// the latest dot's; alpha 0 for the convar's
 } s_trail;
 
 // Notes a shot when the viewed weapon's clip drops.
@@ -83,7 +84,7 @@ static void WatchShots(float now)
 	s_trail.viewChanged = shots.viewChanged;
 }
 
-void NeoIronsightRecordDotTrail(const Vector &direction, float angularRadius, float strength)
+void NeoIronsightRecordDotTrail(const Vector &direction, float angularRadius, float strength, const Color &colour)
 {
 	if (cl_neo_ironsight_dot_trail.GetFloat() <= 0.0f)
 	{
@@ -123,6 +124,8 @@ void NeoIronsightRecordDotTrail(const Vector &direction, float angularRadius, fl
 	sample.moving = moving;
 	sample.time = now;
 	sample.frame = gpGlobals->framecount;
+	// One colour for the whole trail, the latest dot's: a weapon switch outlasts the trail by far.
+	s_trail.colour = colour;
 }
 
 // How dark it is where the player stands: 1 fully dark, 0 too bright for the trail.
@@ -231,7 +234,16 @@ void NeoIronsightPaintDotTrail()
 		s_material.Init("__neo_ironsight_dot_trail", pVMT);
 	}
 	int red = 255, green = 40, blue = 24;
-	sscanf(cl_neo_ironsight_dot_trail_color.GetString(), "%d %d %d", &red, &green, &blue);
+	if (s_trail.colour.a() > 0)
+	{
+		red = s_trail.colour.r();
+		green = s_trail.colour.g();
+		blue = s_trail.colour.b();
+	}
+	else
+	{
+		sscanf(cl_neo_ironsight_dot_trail_color.GetString(), "%d %d %d", &red, &green, &blue);
+	}
 
 	CMatRenderContextPtr pRenderContext(materials);
 	IMesh *pMesh = pRenderContext->GetDynamicMesh(true, nullptr, nullptr, s_material);

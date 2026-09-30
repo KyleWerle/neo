@@ -75,15 +75,14 @@ WeaponData
 	}
 
 
-	// Optic: a live magnified view on the lens (cl_neo_ironsight_optic 1), or the full-screen scope (0).
+	// Optic: the eyepiece, clear glass seen through at the aim's own zoom (no zoom of its own). At the hip the lens
+	// shows as it is; on the sights it and the housing behind it are left out, and the eyepiece art drawn over the
+	// clear view (the lens material is shared with the ZR68L, so it stays untouched).
 	"IronsightOptic"
 	{
-		"magnification"	"2"		// zoom relative to the lens on screen; 1 = like empty glass
-		"fov"		"25"		// only used if the lens surface is unknown
-		// The lens material is shared with the ZR68L, so it stays untouched: the live view is drawn over it
-		// as a disc, plain glass at the hip and magnified on the sights, with the reticle on top.
 		"lens"		"models/weapons/lenseCompleteMap"
-		"lens_disc"	"1"
+		"window"	"1"
+		"scope"		"1"
 		"reticle"	"vgui/hud/optics/mx_reticle"
 		// The lens surface on Box01 (from v_*_mx.mdl).
 		"lens_bone"	"Box01"

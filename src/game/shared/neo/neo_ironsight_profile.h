@@ -8,11 +8,9 @@
 //     reads per frame to split the CPU cost by feature.
 enum NeoIronsightProfileSection
 {
-	NEO_PROFILE_OPTIC_RENDER,	// the optic's own scene render
-	NEO_PROFILE_LENS,		// drawing the view and reticle on lenses and sight glass
+	NEO_PROFILE_LENS,		// the glass: its art, and leaving it out of the gun
 	NEO_PROFILE_DAMPING,		// bob, idle and recoil damping on the viewmodel's bones
 	NEO_PROFILE_SIGHTS,		// sight points, dots and the sight ghost
-	NEO_PROFILE_AUGMENT,		// the MPN45's augmented aim
 	NEO_PROFILE_HUD,		// the crosshair layer and the quick info band (HUD linework)
 	NEO_PROFILE__COUNT,
 };

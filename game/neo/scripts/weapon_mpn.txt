@@ -63,14 +63,6 @@ WeaponData
 	
 	// Classic NT zoom with ironsights on; the tuned pose below stays for later.
 	"IronsightDisabled"	"1"
-	// Augmented aim instead of sights: a magnified window around the crosshair, framed in its colour.
-	"IronsightAugment"
-	{
-		"magnification"	"1.5"	// on top of the aim's own zoom
-		"size"		"0.4"	// fraction of the screen, across and down
-		"edge"		"0.35"	// fades to translucent over this much of its half-size, from the rim
-		"alpha"		"1"	// opaque: no double image of the world through it
-	}
 	"AimOffset"
 	{
 		"fov"		"45"

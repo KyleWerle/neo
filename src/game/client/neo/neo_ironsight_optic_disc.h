@@ -1,21 +1,21 @@
 #pragma once
 
-// Optics drawn by us over a weapon's lens rather than on its mesh (neo_ironsight_optic_disc.cpp):
-//   any optic while cloaked, since the cloak override replaces the lens material;
-//   "lens_disc" lenses (e.g. the Jitte's), fading in on the sights over their untouched lens;
-//   "window" sight glass (red dots, holo sights), only while cloaked: the glass shows exactly the world
-//     behind it, so the cloak doesn't smear the view through the sight.
-// The view itself is rendered by neo_ironsight_optic.cpp; where the lens is, by neo_ironsight_lens.cpp.
-// NeoIronsightDrawOpticDisc, the per-frame drawing call, is declared in neo_ironsight_optic.h.
+// Seeing through a weapon's glass where the gun would cover it (neo_ironsight_optic_disc.cpp). Nothing is
+// rendered for it: the world is already on screen when the gun is drawn, so leaving the gun out in front of it
+// is enough.
+//   "window" glass while the gun is drawn over (cloak, thermals): the gun in slices around the glass, so the
+//     override never draws the glass itself (NeoIronsightBeginGlassSplit);
+//   "scope" glass on the sights otherwise: the housing behind the glass left out (NeoIronsightDrawScopeHole).
+// The glass's own art goes back on after the gun (NeoIronsightDrawGlassArt, in neo_ironsight_optic.h). Where
+// the lens is comes from neo_ironsight_lens.cpp.
 
 class CNEOWeaponInfo;
 class C_BaseAnimating;
 
-// Sight glass ("window") while the gun is drawn over (cloak, thermals): draw the clear view first
-// (NeoIronsightDrawGlassView), then the gun once per slice, with that slice's clip planes pushed
-// (PushCustomClipPlane), so the panes themselves are left out, and the view's depth
-// (NeoIronsightDrawGlassDepth) just before slice depthBefore. Then draw the reticle
-// (NeoIronsightDrawOpticDisc with NEO_LENS_RETICLE). False when this doesn't apply: draw as usual.
+// Sight glass ("window") while the gun is drawn over (cloak, thermals): draw the gun once per slice, with that
+// slice's clip planes pushed (PushCustomClipPlane), so the panes themselves are left out, and the glass's depth
+// (NeoIronsightDrawGlassDepth) just before slice depthBefore. Then draw the art (NeoIronsightDrawGlassArt).
+// False when this doesn't apply: draw as usual.
 struct NeoIronsightGlassSplit
 {
 	int slices = 0;
@@ -25,8 +25,13 @@ struct NeoIronsightGlassSplit
 };
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
 	NeoIronsightGlassSplit &split);
-// The clear view on the glass for this frame's split, and its depth, each drawn once a frame (the gun can be
-// drawn more than once a frame). The gun far enough behind the glass ("window_skip") goes down between them,
-// over the view; no other part of it behind the glass draws there.
-void NeoIronsightDrawGlassView(const CNEOWeaponInfo &data);
+// The glass's outline for this frame's split into depth, once a frame (the gun can be drawn more than once a
+// frame). The gun far enough behind the glass ("window_skip") goes down before it; no other part of the gun
+// behind the glass draws inside it.
 void NeoIronsightDrawGlassDepth(const CNEOWeaponInfo &data);
+
+// A "scope" on the sights and not drawn over: its lens's outline into depth, a hair in front of the lens, so
+// neither the lens nor the housing behind it draws there and the world shows through, with the art drawn back
+// on after the gun. Call before each draw of the gun (depth only, so drawing it again changes nothing).
+void NeoIronsightDrawScopeHole(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
+	float ironsightBlend);

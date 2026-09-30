@@ -1,8 +1,7 @@
 #pragma once
 
 // Where a weapon's lens is ("lens_bone", "lens_map", "lens_map2", "lens_circle" in its IronsightOptic
-// block), and seeing through sight glass ("window"). Shared by the optic's camera (neo_ironsight_optic.cpp)
-// and the lens drawing (neo_ironsight_optic_disc.cpp).
+// block), for the glass drawing (neo_ironsight_optic_disc.cpp) and the collimated dots.
 
 class C_BaseAnimating;
 class CNEOWeaponInfo;
@@ -29,22 +28,7 @@ bool NeoIronsightLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 // eye-space ray, scaled sideways by this, does.
 float NeoIronsightFovScale(const CViewSetup &view);
 
-// How far past the glass's outline ("window_glass") the clear view reaches while the gun is drawn over
-// (cloak, thermals): any ring of the glass left uncovered shows what's behind it, flickering as the gun
-// sways. Just enough to seal the edge: further out it would hide the frame's lip behind the glass, leaving a
-// clear border.
+// How far past the glass's outline ("window_glass") the gun behind it is kept out while drawn over (cloak,
+// thermals): any ring of the glass left uncovered shows the gun behind it, flickering as the gun sways. Just
+// enough to seal the edge: further out it would hide the frame's lip behind the glass, leaving a clear border.
 constexpr float NEO_IRONSIGHT_WINDOW_GROW = 1.03f;
-
-// For "window" optics: points the optic camera from the eye at the sight glass and sizes it to just
-// cover the glass (NEO_IRONSIGHT_WINDOW_GROW past its outline), remembering the projection so the glass can
-// look up exactly what lies behind each of its points. False if the glass is not in front of the eye.
-bool NeoIronsightWindowCamera(const CViewSetup &mainView, const CNEOWeaponInfo &data, QAngle &angles, float &fov);
-
-// Whether this frame's window camera ran, so the glass can look up the view behind it.
-bool NeoIronsightWindowReady();
-
-// Where the world behind a point of the glass lies in the window camera's view, in texture coordinates.
-void NeoIronsightWindowTexCoord(const Vector &world, float &u, float &v);
-
-// Why the window camera last failed ("" if it didn't), for cl_neo_ironsight_optic_debug.
-const char *NeoIronsightWindowDebugReason();

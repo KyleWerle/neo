@@ -25,6 +25,5 @@ float NeoHudFadeVisible();
 bool NeoHudFadedOut();
 
 // Paints the layer around the crosshair at (x, y) in the HUD pass, in the crosshair's colour; bCentre: the
-// player's crosshair gave way to it (see NeoGunplayReplacesCrosshair). spreadScale: the spread as seen through a zoom (the MPN45's window).
-void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre,
-	float spreadScale = 1.0f);
+// player's crosshair gave way to it (see NeoGunplayReplacesCrosshair).
+void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &color, int x, int y, bool bCentre);

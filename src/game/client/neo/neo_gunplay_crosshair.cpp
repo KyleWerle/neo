@@ -189,8 +189,7 @@ bool NeoHudFadedOut()
 	return NeoHudFadeVisible() < FADE_HIDDEN;
 }
 
-void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &colorIn, int x, int y, bool bCentre,
-	float spreadScale)
+void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &colorIn, int x, int y, bool bCentre)
 {
 	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_HUD, "NeoGunplayPaintCrosshairLayer");
 	// Under a screen fade (the spawn's fade in from black): the HUD paints over the view's fade, so the layer fades
@@ -222,7 +221,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	{
 		dt = 0.0f;
 		s_layer.bootStart = now;
-		s_layer.spread = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2) * spreadScale;
+		s_layer.spread = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2);
 		s_layer.spreadVelocity = 0.0f;
 		s_layer.aim = pPlayer->IsInAim() ? 1.0f : 0.0f;
 		s_layer.pWeapon = pWeapon;
@@ -242,7 +241,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	s_layer.lastFrame = gpGlobals->framecount;
 
 	// The spread's edge, eased (it steps shot to shot), and the hip-to-aimed look.
-	const float target = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2) * spreadScale;
+	const float target = HalfInaccuracyConeInScreenPixels(pWeapon, wide / 2);
 	// Each shot pops it out past the spread a moment, springing back: the layer shifts with every shot.
 	if (bShot)
 	{
@@ -270,7 +269,7 @@ void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &
 	const float scaledFov = DEG2RAD(ScaleFOVByWidthRatio(C_BasePlayer::GetLocalPlayer()->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
 	const float pixelsPerTangent = (wide * 0.5f) / tanf(scaledFov);
 	frame.deviation = GunDeviation(pixelsPerTangent) * cl_neo_gunplay_crosshair_parallax.GetFloat();
-	frame.pixelsPerTangent = pixelsPerTangent * spreadScale;
+	frame.pixelsPerTangent = pixelsPerTangent;
 	frame.spread = s_layer.spread;
 	frame.spreadExact = target;
 	frame.aim = NeoSmoothStep(s_layer.aim);

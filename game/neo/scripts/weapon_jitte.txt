@@ -71,16 +71,18 @@ WeaponData
 		"up"		"2.53"
 	}
 
+	// Optic: the Jitte's green dot sight, clear glass seen through at the aim's own zoom (no zoom of its own). Its
+	// art, shared by both Jittes, is drawn by us with the dot collimated (at infinity, where the gun points); on
+	// the sights the housing behind the glass is left out, so the view through it is clear.
 	"IronsightOptic"
 	{
-		"magnification"	"1"		// zoom relative to the lens on screen; 1 = like empty glass
-		"fov"		"30"		// only used if the lens surface is unknown
-		// The Jitte's lens is a square mesh with a round picture, shared with the unscoped model. It stays
-		// untouched: at the hip it shows as it is; on the sights the live view fades in over it as a disc,
-		// with the original lens texture on top as the reticle.
 		"lens"		"models/weapons/jitte_mat3"
-		"lens_disc"	"1"
+		"window"	"1"
+		"scope"		"1"
 		"reticle"	"vgui/hud/optics/jitte_reticle"
+		// The green dot in the art (u v radius), three texels across in the gap at the crosshair's centre.
+		"collimated_dot"	"0.497 0.446 0.006"
+		"dot_color"	"40 255 60"
 		// The lens surface on Torus01 (from v_*_jitte(s).mdl), and the lens circle within its UVs.
 		"lens_bone"	"Torus01"
 		"lens_map"	"-1.798 1.773 1.506  3.611 0 0  0 0 -3.611"
