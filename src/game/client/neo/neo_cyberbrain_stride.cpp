@@ -5,18 +5,17 @@
 #include "tier0/memdbgon.h"
 
 // The stride waveform (Kyle's pick, merging the gait with your noise): a strip over the speed trace where each of your
-// footsteps lands live as a small mirrored burst of strokes, its height how far the step carried; silent steps (no
+// footsteps lands live as a mirrored bar, its height how far the step carried; silent steps (no
 // sound, so counted from the distance you cover) land as a flat dash; any other sound you make (a shot, a landing, a
-// reload) as a wider, taller burst. Spacing is cadence: the newest mark at the right, the older ones at their real
-// time gaps, so the strip shifts only when a mark lands (motion only for events); each mark falls in with a small
-// bounce and old ones fade out. Amber from 16 m.
+// reload) as a wider, taller burst. Spacing is cadence, on the speed trace's timescale (Kyle: the two graphs on one
+// clock, so they match): each mark at the moment it landed across the trace's eight seconds, scrolling with it, and
+// fading out over the trace's oldest tenth. Each falls in with a small bounce. Amber from 16 m.
 
 namespace NeoCyberbrain
 {
-constexpr int STRIDE_MARKS = 24;
-constexpr float STRIDE_PX_PER_SEC = 40.0f;		// pixels at 1080p between marks a second apart
+constexpr int STRIDE_MARKS = 48;				// eight seconds of a sprint's steps, with room for the other sounds
 constexpr float STRIDE_METRES = 0.85f;			// a silent stride
-constexpr float STRIDE_FADE_FROM = 2.5f, STRIDE_FADE_FOR = 1.0f;
+constexpr float STRIDE_FADE_EDGE = 0.1f;		// the share of the trace, from its oldest end, a mark fades over
 constexpr float STRIDE_HEIGHT = 11.0f;			// a burst's half height at full loudness, pixels at 1080p
 
 enum MarkKind { MARK_STEP, MARK_SILENT, MARK_OTHER };
@@ -101,15 +100,14 @@ void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, f
 		Line(f, L.At(x, y), L.At(Min(x + 3.0f, right), y), NEO_GHOST_LIGHT, f.color, 0.2f * alpha);
 	if (s_stride.count == 0)
 		return;
-	const float newest = s_stride.marks[s_stride.count - 1].time;
 	for (int i = 0; i < s_stride.count; ++i)
 	{
 		const Mark &mark = s_stride.marks[i];
 		const float age = f.now - mark.time;
-		const float fade = 1.0f - clamp((age - STRIDE_FADE_FROM) / STRIDE_FADE_FOR, 0.0f, 1.0f);
-		// Its place: newest at the right, the rest at their real gaps (it moves only when a mark lands).
-		const float x = right - 4.0f - (newest - mark.time) * STRIDE_PX_PER_SEC;
-		if (fade <= 0.0f || x < left)
+		// Its place: when it landed, on the speed trace's clock.
+		const float x = MotionTimeX(mark.time, left, right);
+		const float fade = clamp((x - left) / (STRIDE_FADE_EDGE * (right - left)), 0.0f, 1.0f);
+		if (fade <= 0.0f)
 			continue;
 		const Color c = mark.bLoud ? WARN : f.color;
 		// Falling in: dropped from a little above, a small damped bounce on landing.
@@ -117,11 +115,13 @@ void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, f
 		const float a = fade * alpha;
 		if (mark.kind == MARK_SILENT)
 		{
-			Line(f, L.At(x - 3.0f, y + drop), L.At(x + 3.0f, y + drop), NEO_GHOST_MEDIUM, c, 0.7f * a);
+			Line(f, L.At(x - 1.5f, y + drop), L.At(x + 1.5f, y + drop), NEO_GHOST_MEDIUM, c, 0.7f * a);
 			continue;
 		}
-		const int strokes = mark.kind == MARK_OTHER ? 5 : 3;
-		const float pitch = 2.5f, mid = (strokes - 1) * 0.5f;
+		// On this timescale a sprint's steps land about 4 px apart: a step is one bar, another sound three (still the
+		// wider, taller burst), so neighbours never run together.
+		const int strokes = mark.kind == MARK_OTHER ? 3 : 1;
+		const float pitch = 2.0f, mid = (strokes - 1) * 0.5f;
 		const float scale = mark.kind == MARK_OTHER ? 1.5f : 1.0f;
 		for (int k = 0; k < strokes; ++k)
 		{

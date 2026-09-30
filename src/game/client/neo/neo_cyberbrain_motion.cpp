@@ -46,6 +46,14 @@ static void Record(const Senses &s, float now)
 	}
 }
 
+float MotionTimeX(float time, float left, float right)
+{
+	// Sample k back from the newest covers the tenth of a second ending k tenths before lastSample, drawn k steps in
+	// from the right; a moment in the tenth not yet sampled sits at the right edge.
+	const float steps = (s_motion.lastSample - time) / SAMPLE_EVERY;
+	return right - Max(0.0f, steps) * (right - left) / (SAMPLES - 1);
+}
+
 void PaintMotion(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -122,7 +130,8 @@ void PaintMotion(const Frame &f)
 	}
 
 	// Over the trace: the stride waveform, your steps and sounds landing live (it took the chevrons' and the noise
-	// waveform's place: one strip for gait and noise).
+	// waveform's place: one strip for gait and noise), on the trace's own clock (MotionTimeX): Kyle, the two graphs on
+	// one timescale, so a step sits over the speed it was taken at.
 	PaintStrideStrip(f, L, left, right, TRACE_TOP - 16.0f, Max(a, 0.6f));
 	if (look.labels > 0.02f)
 	{
