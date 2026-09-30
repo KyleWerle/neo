@@ -15,7 +15,7 @@ class C_BaseAnimating;
 // Sight glass ("window") while the gun is drawn over (cloak, thermals): draw the gun once per slice, with that
 // slice's clip planes pushed (PushCustomClipPlane), so the panes themselves are left out, and the glass's depth
 // (NeoIronsightDrawGlassDepth) just before slice depthBefore. Then draw the art (NeoIronsightDrawGlassArt).
-// False when this doesn't apply: draw as usual.
+// False when this doesn't apply (an "eyepiece" off the sights among them): draw as usual.
 struct NeoIronsightGlassSplit
 {
 	int slices = 0;
@@ -24,7 +24,7 @@ struct NeoIronsightGlassSplit
 	float planes[4][2][4] = {};
 };
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
-	NeoIronsightGlassSplit &split);
+	float ironsightBlend, NeoIronsightGlassSplit &split);
 // The glass's outline for this frame's split into depth, once a frame (the gun can be drawn more than once a
 // frame). The gun far enough behind the glass ("window_skip") goes down before it; no other part of the gun
 // behind the glass draws inside it.

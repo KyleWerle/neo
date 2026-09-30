@@ -80,6 +80,10 @@ public:
 	// behind the glass is hidden inside its outline in every state, not only while drawn over, so the view
 	// through the glass is clear.
 	bool	m_bIronOpticScope = false;
+	// "eyepiece": a magnifying scope's eyepiece (the MX): seen through only on the sights. Off them the gun
+	// draws whole in every state, the scope's inside included, as a real scope shows nothing off its axis
+	// (without it, under the cloak or thermals, the hip saw the world through the whole tube).
+	bool	m_bIronOpticEyepiece = false;
 	// "window_skip": how deep behind the glass, in viewmodel units, the gun is hidden inside its outline while
 	// drawn over: sight parts there, see-through in their own material, would be solid. The gun further
 	// back (its front, seen through the sight at the hip) shows. Without it, all of the gun behind the glass

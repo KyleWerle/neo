@@ -326,7 +326,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	// Clear sight glass in the cloaked or thermal gun: the gun in slices around the glass, so the world already on
 	// screen shows through it (see NeoIronsightGlassSplit).
 	NeoIronsightGlassSplit split;
-	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, split))
+	if (bDrawn && NeoIronsightBeginGlassSplit(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, split))
 	{
 		int ret = 0;
 		CMatRenderContextPtr pRenderContext(materials);
