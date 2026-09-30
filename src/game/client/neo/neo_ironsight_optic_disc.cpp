@@ -52,7 +52,8 @@ static const Vector2D *LensOutline(float shape)
 }
 
 // An area of the lens surface in UV to draw over, as an outline around a centre, scaled: the lens itself
-// ("lens_circle", "lens_shape") or the whole glass ("window_glass", else the lens), grown by grow.
+// ("lens_circle", "lens_shape") or the whole glass ("window_glass", else the lens), exactly: grown, it cut real
+// parts of the gun out past the glass.
 struct LensArea
 {
 	float centreU, centreV, scaleU, scaleV;
@@ -60,15 +61,15 @@ struct LensArea
 	int points;
 };
 
-static LensArea LensAreaOf(const CNEOWeaponInfo &data, bool bWholeGlass, float grow = 1.0f)
+static LensArea LensAreaOf(const CNEOWeaponInfo &data, bool bWholeGlass)
 {
 	if (bWholeGlass && data.m_iIronOpticWindowGlassPoints >= 3)
 	{
 		const Vector &centre = data.m_vecIronOpticWindowCircle;
-		return { centre.x, centre.y, grow, grow, data.m_vecIronOpticWindowGlass, data.m_iIronOpticWindowGlassPoints };
+		return { centre.x, centre.y, 1.0f, 1.0f, data.m_vecIronOpticWindowGlass, data.m_iIronOpticWindowGlassPoints };
 	}
 	const Vector &circle = data.m_vecIronOpticLensCircle;
-	return { circle.x, circle.y, circle.z * grow, data.m_flIronOpticLensRadiusV * grow,
+	return { circle.x, circle.y, circle.z, data.m_flIronOpticLensRadiusV,
 		LensOutline(data.m_flIronOpticLensShape), LENS_SEGMENTS };
 }
 
@@ -239,14 +240,6 @@ void NeoIronsightDrawGlassArt(C_BaseAnimating *pViewModel, const CNEOWeaponInfo 
 	}
 }
 
-// The area kept clear of the gun behind the glass: its outline, grown to seal the edge (NEO_IRONSIGHT_WINDOW_GROW),
-// except an eyepiece's, whose outline is its exact rim: grown, it cut a ring behind the rim's lip that showed the world
-// from some angles (a white line in motion vision).
-static LensArea ClearArea(const CNEOWeaponInfo &data)
-{
-	return LensAreaOf(data, true, data.m_bIronOpticEyepiece ? 1.0f : NEO_IRONSIGHT_WINDOW_GROW);
-}
-
 // Draws nothing itself: only its depth is written (see DrawDepthOnly).
 static IMaterial *GlassDepthMaterial()
 {
@@ -288,7 +281,7 @@ void NeoIronsightDrawScopeHole(C_BaseAnimating *pViewModel, const CNEOWeaponInfo
 	NeoLensPane pane;
 	if (NeoIronsightLensPane(pViewModel, data, CurrentViewOrigin(), pane))
 	{
-		DrawDepthOnly(pane, ClearArea(data));
+		DrawDepthOnly(pane, LensAreaOf(data, true));
 	}
 }
 
@@ -401,7 +394,7 @@ void NeoIronsightDrawGlassDepth(const CNEOWeaponInfo &data)
 		return;
 	}
 	s_glassView.depthFrame = gpGlobals->framecount;
-	DrawDepthOnly(s_glassView.pane, ClearArea(data));
+	DrawDepthOnly(s_glassView.pane, LensAreaOf(data, true));
 }
 
 bool NeoIronsightBeginGlassSplit(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
