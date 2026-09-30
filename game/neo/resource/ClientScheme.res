@@ -2568,6 +2568,301 @@ Scheme
 				//"additive"	"1"
 			}
 		}
+		// The cyberbrain HUD (neo_cyberbrain_paint.cpp): values in NT's NOCR, labels in Zrnic, plates in Alpha Flight.
+		NHudCyberValue
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's large values (integrity, rounds).
+		NHudCyberValueLarge
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's labels.
+		NHudCyberLabel
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's plates (dark text on NT's grey).
+		NHudCyberPlate
+		{
+			"1"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's kanji beside its plates. A system Japanese face for now (Windows: Yu Gothic); to ship, an
+		// open-licence subset (Noto Sans JP, OFL) in CustomFontFiles so every platform has it (HUD-REDESIGN.md, kanji).
+		NHudCyberKanji
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"8"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's integrity number: the one big value (NOCR).
+		NHudCyberIntegrity
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"42"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"57"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
 		NHudBullets
 		{
 			"1"

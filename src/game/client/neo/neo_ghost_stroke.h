@@ -34,6 +34,10 @@ void NeoGhostFillRect(float x0, float y0, float x1, float y1);
 // (a feathered edge). Batched only; drawn a call each (cl_neo_hud_batch 0) it's flat.
 void NeoGhostFillShaded(const Vector2D corners[4], const float shade[4]);
 
+// The dark outline behind strokes from here on, 0 to 1, in place of cl_neo_gunplay_outline (the cyberbrain HUD raises
+// it on bright scenes); a negative value goes back to the setting.
+void NeoGhostOutline(float strength);
+
 // Draws everything queued since the last flush: strokes and fills wait so they go down as one batch (one draw call;
 // cl_neo_hud_batch). Call before drawing anything else over them (text) and when a drawing is done.
 void NeoGhostFlush();

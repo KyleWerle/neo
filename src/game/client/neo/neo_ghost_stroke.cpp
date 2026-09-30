@@ -23,6 +23,7 @@ static int s_iWhiteTexture = -1;
 static Color s_color;
 static int s_iAlpha = 255;
 static bool s_bPanelLocal = false;
+static float s_flOutline = -1.0f;	// NeoGhostOutline's, or negative for the setting
 
 // Everything waits here and is drawn at the flush: outlines first (every one, so an outline never cuts into a stroke
 // drawn before it where they meet), then the strokes and fills in the order they came. Batched, that's one draw
@@ -43,6 +44,11 @@ void NeoGhostBegin(const Color &color, int alpha)
 {
 	s_color = color;
 	s_iAlpha = clamp(alpha, 0, 255);
+}
+
+void NeoGhostOutline(float strength)
+{
+	s_flOutline = strength;
 }
 
 void NeoGhostPanelLocal(bool bPanelLocal)
@@ -87,7 +93,7 @@ void NeoGhostStroke(const NeoGhostPen &pen, const Vector2D &a, const Vector2D &b
 	// Square caps: each end runs on by half the width, so strokes meeting at a corner join solid.
 	const Vector2D start = from - along * (width * 0.5f), end = to + along * (width * 0.5f);
 	SetQuad(s_quads[s_iQuads++], start, end, along, width, s_color, s_iAlpha);
-	const float outline = cl_neo_gunplay_outline.GetFloat();
+	const float outline = (s_flOutline >= 0.0f) ? s_flOutline : cl_neo_gunplay_outline.GetFloat();
 	if (outline > 0.0f)
 	{
 		// Behind it, dark and a little wider all round.

@@ -815,6 +815,51 @@
 		"PaintBackgroundType"	"0" // rounded corners
 	}
 
+	// The cyberbrain HUD (neo_hud_cyberbrain.h): each receptor group's far and near home (right-handed; mirrored for a
+	// left-handed gun), the compact ring's height and radius, the ring on the body's radius.
+	NHudCyberbrain
+	{
+		"fieldName"				"NHudCyberbrain"
+		"visible"				"1"
+		"enabled"				"1"
+		"xpos"					"0"
+		"ypos"					"0"
+		"wide"					"f0"
+		"tall"					"480"
+		"fgcolor"				"228 238 240 255"
+		"body_far_x"				"249"
+		"body_far_y"				"r48"
+		"body_near_x"			"302"
+		"body_near_y"			"r50"
+		"body_ring_far_x"		"c-80"
+		"body_ring_far_y"		"r54"
+		"body_ring_near_x"		"c-72"
+		"body_ring_near_y"		"r92"
+		"optics_far_x"			"89"
+		"optics_far_y"			"c0"
+		"optics_near_x"			"222"
+		"optics_near_y"			"c-9"
+		"weapon_far_x"			"r209"
+		"weapon_far_y"			"r129"
+		"weapon_near_x"			"r262"
+		"weapon_near_y"			"r159"
+		"link_far_x"				"r80"
+		"link_far_y"				"187"
+		"link_near_x"			"r142"
+		"link_near_y"			"204"
+		"motion_far_x"			"178"
+		"motion_far_y"			"r48"
+		"motion_near_x"			"231"
+		"motion_near_y"			"r53"
+		"motion_ring_far_x"			"c36"
+		"motion_ring_far_y"			"r47"
+		"motion_ring_near_x"			"c18"
+		"motion_ring_near_y"			"r67"
+		"ring_y"					"r42"
+		"ring_radius"			"84"
+		"body_ring_radius"		"33"
+	}
+
 	NHudCompass
 	{
 		"fieldName"		"NHudCompass"

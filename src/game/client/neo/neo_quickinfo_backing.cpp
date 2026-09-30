@@ -14,9 +14,9 @@
 // spots on screen, the world's light where they land (sky counts as bright), times the view's auto exposure on HDR
 // maps. One ray a frame, round the spots, eased; nothing in the dark, up to BACK_MAX in daylight.
 
-ConVar cl_neo_hud_quickinfo_backing("cl_neo_hud_quickinfo_backing", "1", FCVAR_ARCHIVE,
-	"The quick info's dark backings behind the band and the speed graph, darker the brighter the scene behind them."
-	" Their strength (0 = none).", true, 0, true, 2);
+ConVar cl_neo_hud_backing("cl_neo_hud_backing", "1", FCVAR_ARCHIVE,
+	"The HUD's dark backings (the racer band and speed graph, the cyberbrain's groups and ring), darker the brighter the"
+	" scene behind them. Their strength (0 = none).", true, 0, true, 2);
 ConVar cl_neo_hud_quickinfo_backing_debug("cl_neo_hud_quickinfo_backing_debug", "0", FCVAR_NONE,
 	"Debug: print each backing's measured brightness (0 dark to 1 bright) and opacity once a second.");
 
@@ -61,6 +61,14 @@ static float Sample(C_NEO_Player *pPlayer, const Vector2D &pixel, int wide, int 
 	return sqrtf(clamp(ALBEDO * luminance * exposure, 0.0f, 1.0f));	// about the screen's gamma
 }
 
+float SceneBrightness(C_NEO_Player *pPlayer, const Vector2D &pixel)
+{
+	int wide, tall;
+	vgui::surface()->GetScreenSize(wide, tall);
+	const float halfFov = DEG2RAD(ScaleFOVByWidthRatio(pPlayer->GetFOV(), engine->GetScreenAspectRatio() * 0.75f)) * 0.5f;
+	return Sample(pPlayer, pixel, wide, tall, (wide * 0.5f) / tanf(halfFov));
+}
+
 float BackingAlpha(Backing backing, C_NEO_Player *pPlayer, const Vector2D *pSpots, int spots, float dt, bool bBoot)
 {
 	spots = clamp(spots, 1, MAX_BACKING_SPOTS);
@@ -97,7 +105,7 @@ float BackingAlpha(Backing backing, C_NEO_Player *pPlayer, const Vector2D *pSpot
 	float &brightness = s_back.brightness[backing];
 	brightness = bBoot ? target : brightness + (target - brightness) * Min(1.0f, dt / EASE);
 	const float alpha = Lerp(NeoSmoothStep((brightness - DIM) / (BRIGHT - DIM)), BACK_MIN, BACK_MAX)
-		* cl_neo_hud_quickinfo_backing.GetFloat();
+		* cl_neo_hud_backing.GetFloat();
 	if (cl_neo_hud_quickinfo_backing_debug.GetBool() && backing == BACKING_BAND && gpGlobals->realtime - s_back.lastPrint > 1.0f)
 	{
 		s_back.lastPrint = gpGlobals->realtime;

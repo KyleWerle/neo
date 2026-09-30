@@ -123,6 +123,8 @@ extern const Color WARN;
 // A backing's opacity for how bright the scene is behind it, measured through its spots (screen pixels); call once
 // a frame each, in order (they share one ray a frame). And the backing: a feathered rounded blob, 1080p units.
 float BackingAlpha(Backing backing, C_NEO_Player *pPlayer, const Vector2D *pSpots, int spots, float dt, bool bBoot);
+// How bright the scene looks through a screen pixel (0 black, 1 white): one ray, the world's light where it lands.
+float SceneBrightness(C_NEO_Player *pPlayer, const Vector2D &pixel);
 void PaintBacking(const QuickFrame &f, Layer layer, const Vector2D &centre, const Vector2D &inner, const Vector2D &feather, float alpha);
 
 void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo);

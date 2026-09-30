@@ -703,7 +703,8 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		
 		pHUD->bShowSquadList = cvr->cl_neo_squad_hud_original.GetBool();
 		pHUD->bHudBoot = cvr->cl_neo_hud_boot.GetBool();
-		pHUD->bQuickInfo = cvr->cl_neo_hud_quickinfo.GetBool();
+		pHUD->iHudStyle = cvr->cl_neo_hud_style.GetInt();
+		pHUD->iHudMotion = cvr->cl_neo_hud_motion.GetInt();
 		pHUD->iHealthMode = cvr->cl_neo_hud_health_mode.GetInt();
 		pHUD->iObjVerbosity = cvr->cl_neo_hud_worldpos_verbose.GetInt();
 		pHUD->bShowHints = cvr->cl_neo_showhints.GetBool();
@@ -992,7 +993,8 @@ void NeoSettingsSave(const NeoSettings *ns)
 		
 		cvr->cl_neo_squad_hud_original.SetValue(pHUD->bShowSquadList);
 		cvr->cl_neo_hud_boot.SetValue(pHUD->bHudBoot);
-		cvr->cl_neo_hud_quickinfo.SetValue(pHUD->bQuickInfo);
+		cvr->cl_neo_hud_style.SetValue(pHUD->iHudStyle);
+		cvr->cl_neo_hud_motion.SetValue(pHUD->iHudMotion);
 		cvr->cl_neo_hud_health_mode.SetValue(pHUD->iHealthMode);
 		cvr->cl_neo_hud_worldpos_verbose.SetValue(pHUD->iObjVerbosity);
 		cvr->cl_neo_showhints.SetValue(pHUD->bShowHints);
@@ -1851,13 +1853,18 @@ static const wchar_t *NEOSCOREBOARDPADDING_LABELS[NEOSCOREBOARDPADDING__TOTAL] =
 	L"Spacious",	// NEOSCOREBOARDPADDING_SPACIOUS
 };
 
+// cl_neo_hud_style (neo_cyberbrain.h) and cl_neo_hud_motion.
+static const wchar_t *HUDSTYLE_LABELS[] = { L"Original", L"Cyberbrain: compact", L"Cyberbrain: on the body", L"Racer band", };
+static const wchar_t *HUDMOTION_LABELS[] = { L"Still", L"Calm", L"Full", };
+
 void NeoSettings_HUD(NeoSettings *ns)
 {
 	NeoSettings::HUD *pHud = &ns->hud;
 	NeoUI::Divider(L"MISCELLANEOUS");
 	NeoUI::RingBoxBool(L"Classic squad list", &pHud->bShowSquadList);
 	NeoUI::RingBoxBool(L"HUD boot animation", &pHud->bHudBoot);
-	NeoUI::RingBoxBool(L"Quick info band", &pHud->bQuickInfo);
+	NeoUI::RingBox(L"HUD style", HUDSTYLE_LABELS, ARRAYSIZE(HUDSTYLE_LABELS), &pHud->iHudStyle);
+	NeoUI::RingBox(L"HUD motion", HUDMOTION_LABELS, ARRAYSIZE(HUDMOTION_LABELS), &pHud->iHudMotion);
 	NeoUI::RingBox(L"Health display mode", HEALTHMODE_LABELS, pHud->iHealthMode >= 2 ? ARRAYSIZE(HEALTHMODE_LABELS) : 2, &pHud->iHealthMode);
 	NeoUI::RingBox(L"Objective verbosity", OBJVERBOSITY_LABELS, ARRAYSIZE(OBJVERBOSITY_LABELS), &pHud->iObjVerbosity);
 	NeoUI::RingBoxBool(L"Show hints", &pHud->bShowHints);

@@ -10,7 +10,7 @@
 class C_NEO_Player;
 class Color;
 
-// The setting (cl_neo_hud_quickinfo).
+// The setting: the racer style (cl_neo_hud_style 3, neo_cyberbrain.h).
 bool NeoQuickInfoOn();
 
 // On and drawn (or held back only by a screen fade) this frame or the last: the ammo panel gives way to it. Off, or

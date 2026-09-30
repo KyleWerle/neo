@@ -1655,6 +1655,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_ammo.cpp
     neo/ui/neo_hud_childelement.cpp
     neo/ui/neo_hud_compass.cpp
+    neo/ui/neo_hud_cyberbrain.cpp
     neo/neo_ironsight_bench.cpp
     neo/neo_ironsight_augment.cpp
     neo/neo_ironsight_augment.h
@@ -1683,6 +1684,17 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_quickinfo_speed.cpp
     neo/neo_quickinfo_backing.cpp
     neo/neo_quickinfo_internal.h
+    neo/neo_cyberbrain.h
+    neo/neo_cyberbrain_internal.h
+    neo/neo_cyberbrain_sense.cpp
+    neo/neo_cyberbrain_attention.cpp
+    neo/neo_cyberbrain_paint.cpp
+    neo/neo_cyberbrain_body.cpp
+    neo/neo_cyberbrain_ring.cpp
+    neo/neo_cyberbrain_groups.cpp
+    neo/neo_cyberbrain_backing.cpp
+    neo/neo_cyberbrain_chassis.cpp
+    neo/neo_cyberbrain_motion.cpp
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp
     neo/neo_crosshair_mg.cpp
@@ -1757,6 +1769,7 @@ target_sources_grouped(
     neo/ui/neo_hud_ammo.h
     neo/ui/neo_hud_childelement.h
     neo/ui/neo_hud_compass.h
+    neo/ui/neo_hud_cyberbrain.h
     neo/ui/neo_hud_deathnotice.h
     neo/ui/neo_hud_friendly_marker.h
     neo/ui/neo_hud_game_event.h

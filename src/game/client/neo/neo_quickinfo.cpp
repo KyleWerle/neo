@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_quickinfo.h"
+#include "neo_cyberbrain.h"
 #include "neo_quickinfo_internal.h"
 #include "neo_gunplay_shots.h"
 #include "neo_gunplay_crosshair.h"
@@ -12,9 +13,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar cl_neo_hud_quickinfo("cl_neo_hud_quickinfo", "0", FCVAR_ARCHIVE,
-	"Quick info: integrity, therm-optic, aux and ammo as a band below the crosshair, at the edge of your view, and a"
-	" speed graph bottom left, in place of the health / therm-optic / aux and ammo panels in the screen's corners.", true, 0, true, 1);
 ConVar cl_neo_hud_quickinfo_floor("cl_neo_hud_quickinfo_floor", "0.3", FCVAR_ARCHIVE,
 	"The quick info's opacity at rest (it rises to full on any change, a low value or an active mode).", true, 0, true, 1);
 ConVar cl_neo_hud_quickinfo_detail("cl_neo_hud_quickinfo_detail", "1", FCVAR_ARCHIVE,
@@ -250,7 +248,7 @@ static void Update(C_NEO_Player *pPlayer, Kind kind, float dt, float now, bool b
 
 bool NeoQuickInfoOn()
 {
-	return cl_neo_hud_quickinfo.GetBool();
+	return NeoHudStyleCurrent() == NEO_HUD_STYLE_RACER;	// the racer band (cl_neo_hud_style 3)
 }
 
 bool NeoQuickInfoShowing()
