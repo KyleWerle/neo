@@ -17,37 +17,49 @@ namespace NeoCyberbrain
 {
 static float Heading(float worldYaw) { return AngleNormalizePositive(180.0f - worldYaw); }
 
-// A sound's kind as a small mark at p: steps two footfalls, gunfire a burst, a reload a bracket, a landing a down
-// chevron, a blast a big burst.
+// A sound's kind as a small mark at p, readable at a glance in a fight (Kyle's picks): steps as the stride waveform's
+// three-stroke burst, so a step reads the same on the ring as on your own strip; the rest as primitives that differ
+// in outline alone: gunfire a sharp triangle, a reload a bracket, a landing a down wedge, a blast an octagon.
 static void KindGlyph(const Frame &f, const Vector2D &p, SoundKind kind, const Color &c, float a)
 {
 	const float k = f.s;
 	switch (kind)
 	{
 	case SOUND_STEP:
-		Rect(f, p + Vector2D(-4, -3) * k, p + Vector2D(-1, 1) * k, c, a);
-		Rect(f, p + Vector2D(1, -1) * k, p + Vector2D(4, 3) * k, c, a);
+		Line(f, p + Vector2D(-3.0f, -3.0f) * k, p + Vector2D(-3.0f, 3.0f) * k, NEO_GHOST_MEDIUM, c, a);
+		Line(f, p + Vector2D(0.0f, -5.5f) * k, p + Vector2D(0.0f, 5.5f) * k, NEO_GHOST_MEDIUM, c, a);
+		Line(f, p + Vector2D(3.0f, -3.0f) * k, p + Vector2D(3.0f, 3.0f) * k, NEO_GHOST_MEDIUM, c, a);
 		break;
 	case SOUND_GUNFIRE:
-	case SOUND_BLAST:
 	{
-		const float r = (kind == SOUND_BLAST ? 8.0f : 5.0f) * k;
-		for (int i = 0; i < 4; ++i)
-		{
-			const float q = i * M_PI_F / 4.0f;
-			Line(f, p - Vector2D(cosf(q), sinf(q)) * r, p + Vector2D(cosf(q), sinf(q)) * r, NEO_GHOST_LIGHT, c, a);
-		}
+		NeoGhostBegin(c, Alpha(f, a));
+		const Vector2D tri[4] = { p + Vector2D(0.0f, -6.0f) * k, p + Vector2D(5.5f, 5.0f) * k, p + Vector2D(-5.5f, 5.0f) * k,
+			p + Vector2D(0.0f, -6.0f) * k };
+		NeoGhostFill(tri);
 		break;
 	}
 	case SOUND_RELOAD:
-		Line(f, p + Vector2D(-3, -4) * k, p + Vector2D(-3, 4) * k, NEO_GHOST_LIGHT, c, a);
-		Line(f, p + Vector2D(-3, -4) * k, p + Vector2D(2, -4) * k, NEO_GHOST_LIGHT, c, a);
-		Line(f, p + Vector2D(-3, 4) * k, p + Vector2D(2, 4) * k, NEO_GHOST_LIGHT, c, a);
+		Line(f, p + Vector2D(3.0f, -5.5f) * k, p + Vector2D(-3.0f, -5.5f) * k, NEO_GHOST_MEDIUM, c, a);
+		Line(f, p + Vector2D(-3.0f, -5.5f) * k, p + Vector2D(-3.0f, 5.5f) * k, NEO_GHOST_MEDIUM, c, a);
+		Line(f, p + Vector2D(-3.0f, 5.5f) * k, p + Vector2D(3.0f, 5.5f) * k, NEO_GHOST_MEDIUM, c, a);
 		break;
 	case SOUND_LAND:
-		Line(f, p + Vector2D(-4, -2) * k, p + Vector2D(0, 2) * k, NEO_GHOST_MEDIUM, c, a);
-		Line(f, p + Vector2D(0, 2) * k, p + Vector2D(4, -2) * k, NEO_GHOST_MEDIUM, c, a);
+	{
+		NeoGhostBegin(c, Alpha(f, a));
+		const Vector2D wedge[4] = { p + Vector2D(-6.0f, -4.0f) * k, p + Vector2D(6.0f, -4.0f) * k, p + Vector2D(0.0f, 5.0f) * k,
+			p + Vector2D(0.0f, 5.0f) * k };
+		NeoGhostFill(wedge);
 		break;
+	}
+	case SOUND_BLAST:
+	{
+		const float r = 7.0f, q = r * 0.414f;
+		const Vector2D oct[9] = { Vector2D(-q, -r), Vector2D(q, -r), Vector2D(r, -q), Vector2D(r, q), Vector2D(q, r), Vector2D(-q, r),
+			Vector2D(-r, q), Vector2D(-r, -q), Vector2D(-q, -r) };
+		for (int i = 0; i < 8; ++i)
+			Line(f, p + oct[i] * k, p + oct[i + 1] * k, NEO_GHOST_HEAVY, c, a);
+		break;
+	}
 	default:
 		break;
 	}
