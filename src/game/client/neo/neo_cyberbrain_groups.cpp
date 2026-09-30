@@ -265,12 +265,18 @@ void PaintWeapon(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
 	const NeoQuickInfo::Ammo &ammo = s.ammo;
+	const Look look = LookOf(f, GROUP_WEAPON);
+	const Local L = { f.pPlaces[GROUP_WEAPON].pos, f.s * look.scale, f.hand };
+	// Carrying the ghost, its uplink takes the weapon group's place (the ghost has no rounds).
+	if (s.bGhost)
+	{
+		PaintUplink(f, L, look.alpha, look.labels);
+		return;
+	}
 	if (!ammo.bShown)
 	{
 		return;
 	}
-	const Look look = LookOf(f, GROUP_WEAPON);
-	const Local L = { f.pPlaces[GROUP_WEAPON].pos, f.s * look.scale, f.hand };
 	const float a = look.alpha, m = static_cast<float>(L.m);
 	const int side = L.m > 0 ? 1 : -1;
 	if (ammo.bHeat)

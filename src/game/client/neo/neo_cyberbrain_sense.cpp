@@ -346,6 +346,7 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	}
 
 	SenseSounds(pPlayer, now, out);
+	SenseUplink(pPlayer, out);
 	if (bBoot)
 	{
 		out.spawnTime = now;

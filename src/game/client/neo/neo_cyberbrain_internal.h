@@ -71,6 +71,13 @@ struct Senses
 	bool bExposed = false;
 	bool bReloading = false;
 	float reloadStart = -100.0f;
+	// The ghost, carried (neo_cyberbrain_uplink.cpp): its uplink working (the active weapon, or holstered when the
+	// server allows), its bootup 0 to 1, the enemies its beacons show on your screen now and the nearest of them
+	// (metres; below 0 none). Only what the stock beacons already show.
+	bool bGhost = false, bGhostWorking = false;
+	float ghostBoot = 0.0f;
+	int ghostContacts = 0;
+	float ghostNearest = -1.0f;
 	// How far the reload has come, on the weapon's own clock: a magazine's whole reload (to its end time, the
 	// animation's length), or with shells (the Supa 7) the next shell going in. 0 to 1.
 	float reloadProgress = 0.0f;
@@ -193,8 +200,8 @@ int NoiseArcs(const Senses &s);
 // Loose cells (Kyle's pick for stamina and jumps, in place of the tanks): `count` separate cells stacked bottom up in
 // the box from a (top left) to b (bottom right), each with its top corner cut on the `chamfer` side (1 right, -1
 // left); full ones solid, the one charging outlined and filling from its bottom (its top edge flaring as it fills),
-// empty ones a faint outline. No vessel, no cap.
-struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; Color fill; };
+// empty ones a faint outline. No vessel, no cap. bRow lays them left to right, filling from the left.
+struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; bool bRow = false; Color fill; };
 void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const CellStyle &style, float alpha);
 
 // The groups and the ring.
@@ -204,6 +211,9 @@ void PaintOptics(const Frame &f);
 void PaintWeapon(const Frame &f);
 void PaintLink(const Frame &f);
 void PaintMotion(const Frame &f);
+// The ghost's uplink (neo_cyberbrain_uplink.cpp): its sensing, and its readout in the weapon group's place.
+void SenseUplink(C_NEO_Player *pPlayer, Senses &senses);
+void PaintUplink(const Frame &f, const Local &L, float alpha, float labels);
 // The stride waveform over the speed trace (neo_cyberbrain_stride.cpp): each step, and each other sound you make,
 // landing live as a burst; from left to right at height y, in the motion group's local frame.
 void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha);

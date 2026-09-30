@@ -56,6 +56,14 @@ public:
 	// If the enemy is within this ghost's range, returns true and passes its distance by reference.
 	// If the enemy is not in range, the distance will not be written into.
 	[[nodiscard]] bool BeaconRange(CBaseEntity* enemy, float& outDistance) const;
+	// How far the bootup has come, 0 to 1 (IsBootupCompleted's clock), for the HUD's uplink readout.
+	float GetBootupProgress() const
+	{
+		extern ConVar sv_neo_ctg_ghost_beacons_when_inactive;
+		const float ghostActivationTime = sv_neo_ctg_ghost_beacons_when_inactive.GetBool() ? m_flPickupTime : m_flDeployTime;
+		const float delay = sv_neo_ghost_delay_secs.GetFloat();
+		return delay > 0.0f ? clamp((gpGlobals->curtime - ghostActivationTime) / delay, 0.0f, 1.0f) : 1.0f;
+	}
 
 	virtual void PrimaryAttack(void) OVERRIDE { }
 	virtual void SecondaryAttack(void) OVERRIDE { }

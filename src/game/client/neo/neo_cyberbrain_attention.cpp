@@ -105,6 +105,9 @@ static float Salience(const Senses &s, Group group, float now)
 				Max(Max(s.bHasCloak && s.cloak < 0.98f ? 0.3f : 0.0f, s.bVision ? 0.35f : 0.0f), s.bExposed ? 0.4f : 0.0f)));
 	case GROUP_WEAPON:
 	{
+		// The ghost's uplink in its place: in while it boots or sees someone.
+		if (s.bGhost)
+			return s.bGhostWorking && s.ghostBoot < 1.0f ? 0.8f : s.ghostContacts > 0 ? 0.7f : 0.4f;
 		return Max(Max(Pulse(now, s.ammoChanged, 0.8f), now - s.shotTime < 1.0f ? 0.6f : 0.0f),
 			Max(s.bReloading ? 0.85f : 0.0f, s.bAmmoLow || s.heatLevel > 0 ? 0.7f : 0.0f));
 	}

@@ -12,6 +12,8 @@ public:
     C_NEO_NPCDummy();
     virtual ~C_NEO_NPCDummy();
     static C_NEO_NPCDummy* GetList();
+    // The next dummy in the list (the cyberbrain HUD's uplink counts them as the beacons do).
+    C_NEO_NPCDummy* GetNext() const { return m_pNext; }
 
 private:
     friend class C_EntityClassList<C_NEO_NPCDummy>;

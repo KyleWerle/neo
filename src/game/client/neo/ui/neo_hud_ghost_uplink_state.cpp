@@ -7,6 +7,8 @@
 #include "c_neo_player.h"
 #include "weapon_ghost.h"
 
+#include "neo/neo_cyberbrain.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -92,7 +94,8 @@ void CNEOHud_GhostUplinkState::DrawNeoHudElement()
 	if ((pActiveWeapon && pActiveWeapon->IsGhost()) || 
 		(sv_neo_ctg_ghost_beacons_when_inactive.GetBool() && (NEORules()->GetGhosterPlayer() == pLocalPlayer->entindex() || pLocalPlayer->IsCarryingGhost())))
 	{
-		if (NEORules()->IsRoundOver())
+		// The cyberbrain's uplink replaces the ghost's scan while it shows (the Juggernaut's below stays).
+		if (NEORules()->IsRoundOver() || NeoCyberbrainShowing())
 			return;
 		
 		if (m_flTimeGhostEquip == 0.f)

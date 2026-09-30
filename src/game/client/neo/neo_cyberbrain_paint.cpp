@@ -226,6 +226,27 @@ void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, con
 {
 	fill = clamp(fill, 0.0f, 1.0f);
 	const int n = Max(style.count, 1);
+	if (style.bRow)
+	{
+		// Left to right: each cell full, filling from its left, or empty.
+		const float gap = 3.0f * f.s, cw = (b.x - a.x - gap * (n - 1)) / n, c = Min(4.0f * f.s, Min(cw, b.y - a.y) * 0.35f);
+		for (int i = 0; i < n; ++i)
+		{
+			const float x0 = a.x + i * (cw + gap), x1 = x0 + cw, t = clamp(fill * n - i, 0.0f, 1.0f);
+			if (t >= 0.999f)
+			{
+				CellShape(f, x0, a.y, x1, b.y, c, style.chamfer, true, style.fill, 0.85f * alpha);
+				continue;
+			}
+			CellShape(f, x0, a.y, x1, b.y, c, style.chamfer, false, f.color, (t > 0.0f ? 0.8f : 0.25f) * alpha);
+			if (t > 0.0f)
+			{
+				const float pad = 1.5f * f.s;
+				Rect(f, Vector2D(x0 + pad, a.y + c), Vector2D(x0 + pad + (cw - 2.0f * pad) * t, b.y - pad), style.fill, 0.6f * alpha);
+			}
+		}
+		return;
+	}
 	const float gap = 3.0f * f.s, h = (b.y - a.y - gap * (n - 1)) / n, w = b.x - a.x;
 	const float c = Min(4.0f * f.s, Min(w, h) * 0.35f);
 	for (int i = 0; i < n; ++i)
