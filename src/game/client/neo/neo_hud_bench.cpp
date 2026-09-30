@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_hud_profile.h"
+#include "neo_hud_bench.h"
 #include "c_neo_player.h"
 #include "igamesystem.h"
 #include "filesystem.h"
@@ -56,6 +57,8 @@ public:
 	void Start(float measureSeconds, float settleSeconds);
 	void Stop(const char *pszWhy);
 	void Update(float frametime) override;
+	bool IsRunning() const { return m_phase != IDLE; }
+	int Reports() const { return m_reports; }
 
 private:
 	enum Phase { IDLE, SETTLE, MEASURE };
@@ -70,6 +73,7 @@ private:
 
 	Phase m_phase = IDLE;
 	int m_run = 0;
+	int m_reports = 0;	// finished runs, reported
 	float m_measureSeconds = 3.0f;
 	float m_settleSeconds = 2.0f;
 	double m_phaseStart = 0.0;
@@ -272,6 +276,7 @@ void CNeoHudBench::Restore()
 
 void CNeoHudBench::Report()
 {
+	++m_reports;
 	MaterialAdapterInfo_t adapter;
 	materials->GetDisplayAdapterInfo(materials->GetCurrentAdapter(), adapter);
 	char map[MAX_PATH];
@@ -361,6 +366,21 @@ void CNeoHudBench::Report()
 		g_pFullFileSystem->Close(file);
 		Msg("Saved to %s (in the mod folder).\n", path);
 	}
+}
+
+bool NeoHudBenchRunning()
+{
+	return s_hudBench.IsRunning();
+}
+
+void NeoHudBenchStart(float measureSeconds, float settleSeconds)
+{
+	s_hudBench.Start(measureSeconds, settleSeconds);
+}
+
+int NeoHudBenchReports()
+{
+	return s_hudBench.Reports();
 }
 
 CON_COMMAND(neo_hud_bench, "Hands-off benchmark of the HUD styles (see neo_hud_bench.cpp). Usage:"

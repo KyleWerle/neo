@@ -1724,6 +1724,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_boot.cpp
     neo/neo_hud_boot.h
     neo/neo_hud_bench.cpp
+    neo/neo_hud_bench.h
+    neo/neo_hud_bench_auto.cpp
     neo/neo_hud_draw.cpp
     neo/neo_hud_draw.h
     neo/neo_hud_light.cpp
