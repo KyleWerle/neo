@@ -5,7 +5,7 @@
 #include "tier0/memdbgon.h"
 
 // The motion group: proprioception of movement, its own group but kept beside the body and tied to it by a faint
-// tendon. Stamina (assault, juggernaut) as a four-segment tank, or recon's two jump tanks filling as each recharges;
+// tendon. Stamina (assault, juggernaut) as four loose cells, or recon's two jump cells filling as each recharges;
 // speed as a short trace of the last eight seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
 // speed, the scale growing for bunny hops; chevrons for walk, run, sprint. Its attention: sprinting, recovering,
 // recharging, going faster than a run, landing. Beside the trace, your noise state: what you're sending out.
@@ -59,26 +59,30 @@ void PaintMotion(const Frame &f)
 	const float kBody = f.s * LookOf(f, GROUP_BODY).scale;
 	Line(f, L.At(d * 58.0f, 40.0f), body.pos + Vector2D(-d * 46.0f * kBody, 60.0f * kBody), NEO_GHOST_LIGHT, f.color, 0.3f * a);
 
-	// Tanks on the body's side.
+	// Cells on the body's side: stamina in four, recon's two jumps one each (each fills as it recharges).
+	const int chamfer = d > 0.0f ? -1 : 1;	// the cut corner away from the body
 	if (s.bHasSprint)
 	{
 		const float fill = s.aux / 100.0f;
-		TankStyle style;
-		style.segments = 4;
+		CellStyle style;
+		style.count = 4;
+		style.chamfer = chamfer;
 		style.bCharging = !s.bSprinting && fill < 0.995f;
 		style.fill = fill < 0.25f ? WARN : f.color;
 		const Vector2D p0 = L.At(d * 22.0f, -58.0f), p1 = L.At(d * 36.0f, 40.0f);
-		Tank(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), fill, style, a);
+		Cells(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), fill, style, a);
 	}
 	if (s.bHasJumps)
 	{
 		for (int i = 0; i < 2; ++i)
 		{
 			const float fill = clamp((s.aux - i * JUMP_COST) / JUMP_COST, 0.0f, 1.0f), x = 22.0f + i * 17.0f;
-			TankStyle style;
+			CellStyle style;
+			style.chamfer = chamfer;
 			style.bCharging = fill > 0.0f && fill < 1.0f;
+			style.fill = f.color;
 			const Vector2D p0 = L.At(d * x, -10.0f), p1 = L.At(d * (x + 13.0f), 40.0f);
-			Tank(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), fill, style, a);
+			Cells(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), fill, style, a);
 		}
 	}
 

@@ -51,7 +51,7 @@ void PaintOptics(const Frame &f)
 	const bool bJuggernaut = s.neoClass == NEO_CLASS_JUGGERNAUT;
 	const float flash = expf(-Max(0.0f, f.now - s.visionChanged) / 0.25f);
 	const float bracket = (s.bVision || bJuggernaut) ? 0.75f + 0.25f * flash : 0.25f;
-	const float edge = half + 4.0f, arm = 7.0f;
+	const float edge = half + (s.bHasCloak ? 10.0f : 4.0f), arm = 7.0f;
 	for (int corner = 0; corner < 4; ++corner)
 	{
 		const float sx = (corner & 1) ? 1.0f : -1.0f, sy = (corner & 2) ? 1.0f : -1.0f;
@@ -59,17 +59,27 @@ void PaintOptics(const Frame &f)
 		Line(f, at, L.At(sx * (edge - arm), sy * edge), NEO_GHOST_MEDIUM, f.color, bracket * a);
 		Line(f, at, L.At(sx * edge, sy * (edge - arm)), NEO_GHOST_MEDIUM, f.color, bracket * a);
 	}
-	// The therm-optic as a tank under the patch, eight segments, filling from the gun side's far end: hollow while
-	// cloaked (it's draining).
+	// The therm-optic as the patch's frame (Kyle's pick): eight segments round it, two a side, filling clockwise from
+	// the top corner away from the gun, the last one part-lit as it charges; amber under a quarter. Cloaked (it's
+	// draining), the lit segments go thin and sit displaced outward, as the patch's rows do.
 	if (s.bHasCloak)
 	{
-		const Vector2D p0 = L.At(-44.0f, 46.0f), p1 = L.At(44.0f, 57.0f);
-		TankStyle style;
-		style.segments = 8;
-		style.dir = L.m > 0 ? 1 : -1;
-		style.bHollow = s.bCloaked;
-		style.bCharging = !s.bCloaked && s.cloak < 0.995f;
-		Tank(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), s.cloak, style, a);
+		const float r = half + 4.0f, out = s.bCloaked ? 2.0f : 0.0f, seg = r;	// each segment half a side
+		const Vector2D corners[4] = { Vector2D(-r, -r), Vector2D(r, -r), Vector2D(r, r), Vector2D(-r, r) };
+		const Color frame = s.cloak < 0.25f ? WARN : f.color;
+		const float lit = s.cloak * 8.0f;
+		for (int i = 0; i < 8; ++i)
+		{
+			// Segment i: the half side from corner i/2, clockwise (mirrored with the hand).
+			const Vector2D c0 = corners[i / 2], c1 = corners[(i / 2 + 1) % 4], dir = (c1 - c0) / (2.0f * r);
+			const Vector2D normal(dir.y, -dir.x);
+			const Vector2D from = c0 + dir * (seg * (i % 2) + 1.5f), to = c0 + dir * (seg * (i % 2 + 1) - 1.5f);
+			const float t = clamp(lit - i, 0.0f, 1.0f);
+			const auto at = [&](const Vector2D &p) { const Vector2D q = p + normal * out; return L.At(q.x * m, q.y); };
+			Line(f, at(from), at(to), NEO_GHOST_LIGHT, f.color, 0.18f * a);
+			if (t > 0.0f)
+				Line(f, at(from), at(from + (to - from) * t), s.bCloaked ? NEO_GHOST_LIGHT : NEO_GHOST_HEAVY, frame, (t < 1.0f ? 0.7f : 0.9f) * a);
+		}
 	}
 	// A word only when it's pulled in.
 	if (look.labels > 0.02f)

@@ -171,95 +171,62 @@ void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, fl
 	}
 }
 
-void Tank(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const TankStyle &style, float alpha)
+// One cell's outline or fill: its top corner on the chamfer side cut by c.
+static void CellShape(const Frame &f, float x0, float y0, float x1, float y1, float c, int chamfer, bool bFill, const Color &col,
+	float alpha)
+{
+	const Vector2D tl(x0, y0), tr(x1, y0), br(x1, y1), bl(x0, y1);
+	const Vector2D cutA = chamfer > 0 ? Vector2D(x1 - c, y0) : Vector2D(x0 + c, y0);
+	const Vector2D cutB = chamfer > 0 ? Vector2D(x1, y0 + c) : Vector2D(x0, y0 + c);
+	if (bFill)
+	{
+		NeoGhostBegin(col, Alpha(f, alpha));
+		if (chamfer > 0)
+		{
+			const Vector2D left[4] = { tl, cutA, Vector2D(cutA.x, y1), bl };
+			const Vector2D right[4] = { cutA, cutB, br, Vector2D(cutA.x, y1) };
+			NeoGhostFill(left);
+			NeoGhostFill(right);
+		}
+		else
+		{
+			const Vector2D left[4] = { cutB, cutA, Vector2D(cutA.x, y1), bl };
+			const Vector2D right[4] = { cutA, tr, br, Vector2D(cutA.x, y1) };
+			NeoGhostFill(left);
+			NeoGhostFill(right);
+		}
+		return;
+	}
+	const Vector2D outline[6] = { chamfer > 0 ? tl : cutB, cutA, chamfer > 0 ? cutB : tr, br, bl, chamfer > 0 ? tl : cutB };
+	for (int i = 0; i < 5; ++i)
+		Line(f, outline[i], outline[i + 1], NEO_GHOST_LIGHT, col, alpha);
+}
+
+void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const CellStyle &style, float alpha)
 {
 	fill = clamp(fill, 0.0f, 1.0f);
-	const float s = f.s, pad = 2.0f * s;
-	const bool bVertical = style.dir == 0;
-	// The vessel and its cap.
-	RectOutline(f, a, b, NEO_GHOST_MEDIUM, f.color, 0.8f * alpha);
-	if (bVertical)
+	const int n = Max(style.count, 1);
+	const float gap = 3.0f * f.s, h = (b.y - a.y - gap * (n - 1)) / n, w = b.x - a.x;
+	const float c = Min(4.0f * f.s, Min(w, h) * 0.35f);
+	for (int i = 0; i < n; ++i)
 	{
-		const float cx = (a.x + b.x) * 0.5f, cw = Max(2.0f * s, (b.x - a.x) * 0.25f);
-		Rect(f, Vector2D(cx - cw, a.y - 3.0f * s), Vector2D(cx + cw, a.y - 1.0f * s), f.color, 0.8f * alpha);
-	}
-	else
-	{
-		const float cy = (a.y + b.y) * 0.5f, ch = Max(2.0f * s, (b.y - a.y) * 0.25f), x = style.dir > 0 ? b.x + 1.0f * s : a.x - 3.0f * s;
-		Rect(f, Vector2D(x, cy - ch), Vector2D(x + 2.0f * s, cy + ch), f.color, 0.8f * alpha);
-	}
-	// Inside: the fill from its end, a hard edge; the rest hatched.
-	const Vector2D in0 = a + Vector2D(pad, pad), in1 = b - Vector2D(pad, pad);
-	const float length = bVertical ? in1.y - in0.y : in1.x - in0.x;
-	const float edge = length * fill;
-	Vector2D f0 = in0, f1 = in1, e0 = in0, e1 = in1;	// the filled part, and the empty part
-	if (bVertical)
-	{
-		f0.y = in1.y - edge;
-		e1.y = f0.y;
-	}
-	else if (style.dir > 0)
-	{
-		f1.x = in0.x + edge;
-		e0.x = f1.x;
-	}
-	else
-	{
-		f0.x = in1.x - edge;
-		e1.x = f0.x;
-	}
-	const Color fc = style.fill.a() ? style.fill : f.color;
-	if (edge > 0.5f)
-	{
-		if (style.bHollow)
+		const float y1 = b.y - i * (h + gap), y0 = y1 - h;
+		const float t = clamp(fill * n - i, 0.0f, 1.0f);
+		if (t >= 0.999f)
 		{
-			RectOutline(f, f0, f1, NEO_GHOST_LIGHT, fc, 0.85f * alpha);
+			CellShape(f, a.x, y0, b.x, y1, c, style.chamfer, true, style.fill, 0.85f * alpha);
+			continue;
 		}
-		else
+		CellShape(f, a.x, y0, b.x, y1, c, style.chamfer, false, f.color, (t > 0.0f ? 0.8f : 0.25f) * alpha);
+		if (t > 0.0f)
 		{
-			Rect(f, f0, f1, fc, 0.8f * alpha);
-		}
-		// Segment gaps, cut into the fill.
-		for (int i = 1; i < style.segments; ++i)
-		{
-			const float t = static_cast<float>(i) / style.segments;
-			if (bVertical)
-			{
-				const float y = in1.y - length * t;
-				if (y > f0.y)
-					Rect(f, Vector2D(in0.x, y - 0.75f * s), Vector2D(in1.x, y + 0.75f * s), Color(0, 0, 0, 255), 0.6f * alpha);
-			}
-			else
-			{
-				const float x = style.dir > 0 ? in0.x + length * t : in1.x - length * t;
-				if (style.dir > 0 ? x < f1.x : x > f0.x)
-					Rect(f, Vector2D(x - 0.75f * s, in0.y), Vector2D(x + 0.75f * s, in1.y), Color(0, 0, 0, 255), 0.6f * alpha);
-			}
-		}
-		// The leading edge: steady and dimmer while it charges, flaring as each segment fills (an event, not a loop;
-		// read from the fill itself, just past a segment's line).
-		const float seg = fill * style.segments, past = seg - floorf(seg);
-		const float pulse = !style.bCharging ? 0.9f : (seg >= 1.0f && past < 0.08f) ? 1.0f : 0.6f;
-		if (bVertical)
-			Line(f, Vector2D(in0.x, f0.y), Vector2D(in1.x, f0.y), NEO_GHOST_MEDIUM, fc, pulse * alpha);
-		else
-		{
-			const float x = style.dir > 0 ? f1.x : f0.x;
-			Line(f, Vector2D(x, in0.y), Vector2D(x, in1.y), NEO_GHOST_MEDIUM, fc, pulse * alpha);
-		}
-	}
-	// Hatching in the empty part: fine diagonals, clipped to it.
-	const float hatchH = e1.y - e0.y, hatchW = e1.x - e0.x;
-	if (hatchH > 1.0f && hatchW > 1.0f)
-	{
-		const float step = 5.0f * s;
-		for (float c = e0.x - hatchH; c < e1.x; c += step)
-		{
-			// From (c, e1.y) up to (c + hatchH, e0.y), clipped to [e0.x, e1.x].
-			const float x0 = Max(c, e0.x), x1 = Min(c + hatchH, e1.x);
-			if (x1 <= x0)
-				continue;
-			Line(f, Vector2D(x0, e1.y - (x0 - c)), Vector2D(x1, e1.y - (x1 - c)), NEO_GHOST_LIGHT, f.color, 0.22f * alpha);
+			// Filling from the bottom, clear of the cut corner; its edge flares just past each quarter (an event read
+			// from the fill itself, no loop).
+			const float pad = 1.5f * f.s, top = Max(y1 - (h - pad) * t, y0 + c);
+			Rect(f, Vector2D(a.x + pad, top), Vector2D(b.x - pad, y1 - pad), style.fill, 0.6f * alpha);
+			const float quarter = t * 4.0f - floorf(t * 4.0f);
+			const float edge = style.bCharging && quarter < 0.1f ? 1.0f : 0.7f;
+			Line(f, Vector2D(a.x + pad, top), Vector2D(b.x - pad, top), NEO_GHOST_MEDIUM, style.fill, edge * alpha);
 		}
 	}
 }

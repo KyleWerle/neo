@@ -188,11 +188,12 @@ void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
 void NoiseIcon(const Frame &f, const Vector2D &p, int arcs, bool bSilent, const Color &c, float a);
 // How loud you are now, as the icon's arcs (0 to 3).
 int NoiseArcs(const Senses &s);
-// A tank: a box-shaped vessel, screen pixels from a (top left) to b (bottom right), filled to `fill` (0 to 1) from the
-// bottom (dir 0), the left (1) or the right (-1), with a hard edge, gaps between `segments`, the empty part hatched,
-// a cap on its top (or its outer end); a charging tank's edge flares as each segment fills.
-struct TankStyle { int segments = 1; int dir = 0; bool bCharging = false; bool bHollow = false; Color fill; };
-void Tank(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const TankStyle &style, float alpha);
+// Loose cells (Kyle's pick for stamina and jumps, in place of the tanks): `count` separate cells stacked bottom up in
+// the box from a (top left) to b (bottom right), each with its top corner cut on the `chamfer` side (1 right, -1
+// left); full ones solid, the one charging outlined and filling from its bottom (its top edge flaring as it fills),
+// empty ones a faint outline. No vessel, no cap.
+struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; Color fill; };
+void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const CellStyle &style, float alpha);
 
 // The groups and the ring.
 void PaintBody(const Frame &f);
