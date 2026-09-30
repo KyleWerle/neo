@@ -12,6 +12,7 @@
 #include "Color.h"
 
 class C_NEO_Player;
+class IGameEvent;
 
 namespace NeoCyberbrain
 {
@@ -32,7 +33,12 @@ const wchar_t *SoundName(SoundKind kind);
 struct Heard { float time; float bearing; float loud; SoundKind kind; };
 // A sound you made: when, and about how far it carries (metres; placeholders until the in-game calibration).
 struct Noise { float time; float metres; SoundKind kind; };
-constexpr int MAX_HEARD = 16, MAX_NOISE = 16, MAX_MATES = 32;
+// An enemy the ghost called out: where (world yaw, degrees), how far (metres), how long ago, and how much of its time
+// on the ring is left (1 new, 0 gone).
+struct Callout { float yaw; float metres; float age; float life; };
+// Who has the objective: nobody, your team, or theirs.
+enum Carrier { CARRIER_NONE, CARRIER_OURS, CARRIER_THEIRS };
+constexpr int MAX_HEARD = 16, MAX_NOISE = 16, MAX_MATES = 32, MAX_CALLOUTS = 32;
 
 // Everything the groups show, read once a frame.
 struct Senses
@@ -63,8 +69,11 @@ struct Senses
 	// The view, and where things are round you (world yaw, degrees).
 	float yaw = 0.0f, pitch = 0.0f;
 	float yawRate = 0.0f, pitchRate = 0.0f;	// degrees a second: turning left, looking down
-	bool bObjective = false;
+	bool bObjective = false;			// shown: there is one, and you aren't carrying it
 	float objectiveYaw = 0.0f, objectiveMetres = 0.0f;
+	Carrier carrier = CARRIER_NONE;
+	Callout callout[MAX_CALLOUTS];
+	int calloutCount = 0, calloutNewest = -1;
 	float mateYaw[MAX_MATES] = {};
 	int mates = 0;
 	bool bRange = false;
@@ -121,6 +130,10 @@ Frame ForGroup(const Frame &f, int slot);
 
 // Sensing (neo_cyberbrain_sense.cpp): reads the player, the view, light and sounds into senses.
 void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &senses);
+// The ghost's enemy callouts (neo_cyberbrain_callouts.cpp): the HUD element passes on the game events it listens for.
+void CalloutEvent(IGameEvent *pEvent);
+void SenseCallouts(float now, Senses &senses);
+void ResetCallouts();
 
 // Attention and placement (neo_cyberbrain_attention.cpp): salience per group, attention in fast and out slow,
 // critically damped springs, the balance against the gun, the crosshair keep-out, motion comfort.

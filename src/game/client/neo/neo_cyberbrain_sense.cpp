@@ -292,7 +292,12 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 		const Vector d = objPos - MainViewOrigin();
 		out.objectiveYaw = RAD2DEG(atan2f(d.y, d.x));
 		out.objectiveMetres = d.Length() * METRES_PER_UNIT;
+		// Coloured by who carries it, as the compass's arrow; hidden while you carry it yourself.
+		const int ghoster = NEORules()->GetGhosterTeam();
+		out.carrier = (ghoster != TEAM_JINRAI && ghoster != TEAM_NSF) ? CARRIER_NONE : ghoster == team ? CARRIER_OURS : CARRIER_THEIRS;
+		out.bObjective = !pPlayer->IsObjective();
 	}
+	SenseCallouts(now, out);
 	out.bRange = out.bInAim;
 	if (out.bRange)
 	{

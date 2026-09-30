@@ -6,7 +6,7 @@
 
 // The surround ring: the compass as a ring on the ground round you, in perspective. Ahead is its far (top) edge,
 // behind its near (bottom) edge; it opens toward a full circle as you look down, and turns with you as the world does.
-// On it: the heading, the objective, squadmates, every sound you can hear (the full circle), and your own noise as
+// On it: the heading, the objective, the ghost's callouts, squadmates, every sound you can hear (the full circle), and your own noise as
 // short ticks pushed out from it (short and local: nothing flows across the view). Compact: small at the bottom
 // centre. On the body: it is the body group's ground disc, so sounds land round your own feet. Glyphs, not numbers: a
 // sound's kind is a mark beside its arc, your noise state an icon, the objective's distance a line's length.
@@ -82,6 +82,61 @@ struct Ring
 	static float Front(float bearing) { return 0.5f + 0.5f * cosf(DEG2RAD(bearing)); }
 };
 
+static Vector2D Unit(const Vector2D &v)
+{
+	const float len = v.Length();
+	return len > 1e-4f ? v / len : Vector2D(1.0f, 0.0f);
+}
+
+// A distance as a line's length out from the ring, 0 to 1 (log scale, 10 m to 300 m).
+static float DistanceReach(float metres)
+{
+	return clamp(log10f(Max(metres, 1.0f) / 10.0f) / log10f(30.0f), 0.0f, 1.0f);
+}
+
+// The ghost's enemy callouts, as the compass's red arrows but at their real bearing (behind you too): a wedge on the
+// ring pointing in, fading over the callout's time; a fresh one closes in with a bracket. The newest carries its
+// distance as a line, and as metres while it's fresh (the compass always showed it).
+template <typename Rel>
+static void PaintCallouts(const Frame &f, const Ring &ring, const Rel &rel)
+{
+	const Senses &s = *f.pSenses;
+	for (int pass = 0; pass < 2; ++pass)	// older first, the newest on top
+	{
+		for (int i = 0; i < s.calloutCount; ++i)
+		{
+			const bool bNewest = i == s.calloutNewest;
+			if (bNewest != (pass == 1))
+				continue;
+			const Callout &c = s.callout[i];
+			const float b = rel(c.yaw), front = Ring::Front(b), fade = c.life * (0.55f + 0.45f * front);
+			const Vector2D tip = ring.At(b, 1.0f), base = ring.At(b, bNewest ? 13.0f : 10.0f);
+			const Vector2D across = Unit(Vector2D(base.y - tip.y, tip.x - base.x)) * (bNewest ? 5.0f : 4.0f) * f.s;
+			NeoGhostBegin(CRIT, Alpha(f, (bNewest ? 0.95f : 0.7f) * fade));
+			const Vector2D wedge[4] = { tip, base + across, base - across, tip };
+			NeoGhostFill(wedge);
+			if (c.age < 0.25f)
+			{
+				const float close = 1.0f - c.age / 0.25f, gap = (6.0f + 10.0f * close) * f.s;
+				const Vector2D mid = (tip + base) * 0.5f, side = Unit(across) * gap;
+				Line(f, mid - side + (base - tip) * 0.6f, mid - side - (base - tip) * 0.6f, NEO_GHOST_MEDIUM, CRIT, 0.9f * close);
+				Line(f, mid + side + (base - tip) * 0.6f, mid + side - (base - tip) * 0.6f, NEO_GHOST_MEDIUM, CRIT, 0.9f * close);
+			}
+			if (bNewest)
+			{
+				Line(f, ring.At(b, 16.0f), ring.At(b, 16.0f + 30.0f * DistanceReach(c.metres)), NEO_GHOST_LIGHT, CRIT, 0.6f * fade);
+				if (c.age < 3.0f)
+				{
+					wchar_t metres[16];
+					V_snwprintf(metres, ARRAYSIZE(metres), L"%.0f M", c.metres);
+					const Vector2D at = ring.At(b, 54.0f);
+					Text(f, metres, at.x, at.y, 0, FONT_VALUE, CRIT, 0.85f * fade * Min(1.0f, (3.0f - c.age) / 0.5f));
+				}
+			}
+		}
+	}
+}
+
 void PaintRing(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -125,18 +180,20 @@ void PaintRing(const Frame &f)
 	NeoGhostBegin(f.color, Alpha(f, 0.9f * a));
 	const Vector2D notch[4] = { front + Vector2D(0, 2) * f.s, front + Vector2D(5, 10) * f.s, front + Vector2D(-5, 10) * f.s, front + Vector2D(0, 2) * f.s };
 	NeoGhostFill(notch);
-	// The objective (the ghost, or the juggernaut's marker), and squadmates.
+	// The objective (the ghost, or the juggernaut's marker), coloured by who carries it: amber loose, green with your
+	// team, red with theirs.
 	if (s.bObjective)
 	{
+		const Color oc = s.carrier == CARRIER_OURS ? TEAM_OURS : s.carrier == CARRIER_THEIRS ? CRIT : WARN;
 		const float b = rel(s.objectiveYaw), d = 6.0f * f.s;
 		const Vector2D p = ring.At(b);
-		NeoGhostBegin(WARN, Alpha(f, (0.4f + 0.5f * Ring::Front(b)) * a));
+		NeoGhostBegin(oc, Alpha(f, (0.4f + 0.5f * Ring::Front(b)) * a));
 		const Vector2D diamond[4] = { p + Vector2D(0, -d), p + Vector2D(d, 0), p + Vector2D(0, d), p + Vector2D(-d, 0) };
 		NeoGhostFill(diamond);
-		// Its distance as a line out from the ring, longer the further (log scale, 10 m to 300 m).
-		const float reach = clamp(log10f(Max(s.objectiveMetres, 1.0f) / 10.0f) / log10f(30.0f), 0.0f, 1.0f);
-		Line(f, ring.At(b, 8.0f), ring.At(b, 8.0f + 30.0f * reach), NEO_GHOST_LIGHT, WARN, (0.3f + 0.5f * Ring::Front(b)) * a);
+		Line(f, ring.At(b, 8.0f), ring.At(b, 8.0f + 30.0f * DistanceReach(s.objectiveMetres)), NEO_GHOST_LIGHT, oc,
+			(0.3f + 0.5f * Ring::Front(b)) * a);
 	}
+	PaintCallouts(f, ring, rel);
 	for (int i = 0; i < s.mates; ++i)
 	{
 		const Vector2D p = ring.At(rel(s.mateYaw[i]));

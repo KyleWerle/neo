@@ -3,6 +3,7 @@
 
 #include "c_neo_player.h"
 #include "iclientmode.h"
+#include "igameevents.h"
 #include "neo/neo_gunplay_crosshair.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_profile.h"
@@ -72,6 +73,20 @@ void CNEOHud_Cyberbrain::LevelInit()
 {
 	m_lastFrame = -1;
 	m_senses = NC::Senses();
+	NC::ResetCallouts();
+}
+
+// The ghost's enemy callouts, for the ring (the compass keeps its own).
+void CNEOHud_Cyberbrain::Init()
+{
+	ListenForGameEvent("ghost_enemy_callout");
+	ListenForGameEvent("round_start");
+	ListenForGameEvent("player_team");
+}
+
+void CNEOHud_Cyberbrain::FireGameEvent(IGameEvent *pEvent)
+{
+	NC::CalloutEvent(pEvent);
 }
 
 bool CNEOHud_Cyberbrain::ShouldDraw()
