@@ -28,7 +28,3 @@ bool NeoIronsightLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &dat
 // eye-space ray, scaled sideways by this, does.
 float NeoIronsightFovScale(const CViewSetup &view);
 
-// How far past the glass's outline ("window_glass") the gun behind it is kept out while drawn over (cloak,
-// thermals): any ring of the glass left uncovered shows the gun behind it, flickering as the gun sways. Just
-// enough to seal the edge: further out it would hide the frame's lip behind the glass, leaving a clear border.
-constexpr float NEO_IRONSIGHT_WINDOW_GROW = 1.03f;
