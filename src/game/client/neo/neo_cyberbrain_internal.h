@@ -114,7 +114,7 @@ struct Home { Vector2D far, nearer; float weight; };
 // One group's attention and placement.
 // The deep layer (its registration crosses and etched rail) trails the group on a softer spring and drifts a few
 // pixels as you turn: the depth.
-struct Place { float att = 0.0f, sal = 0.0f, balance = 0.0f; Vector2D pos, vel, deep, deepVel; bool bPlaced = false; };
+struct Place { float att = 0.0f, attVel = 0.0f, sal = 0.0f, balance = 0.0f; Vector2D pos, vel, deep, deepVel; bool bPlaced = false; };
 
 struct Frame
 {

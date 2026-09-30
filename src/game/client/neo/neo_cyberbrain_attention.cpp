@@ -76,7 +76,8 @@ bool InKeepout(const Frame &f, const Vector2D &p)
 struct Comfort { float travel, pullIn, letGo; };
 static Comfort ComfortOf()
 {
-	static const Comfort s_levels[] = { { 0.0f, 0.3f, 1.8f }, { 0.6f, 0.3f, 1.8f }, { 1.0f, 0.22f, 1.4f } };
+	// Pulling in fast; letting go slower and eased (Kyle), the seconds it takes to settle.
+	static const Comfort s_levels[] = { { 0.0f, 0.3f, 2.8f }, { 0.6f, 0.3f, 2.8f }, { 1.0f, 0.22f, 2.2f } };
 	return s_levels[clamp(cl_neo_hud_motion.GetInt(), 0, 2)];
 }
 // Something that happened at `when`, fading from its peak.
@@ -125,7 +126,28 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 	{
 		Place &p = places[g];
 		p.sal = clamp(Salience(senses, static_cast<Group>(g), f.now), 0.0f, 1.0f);
-		p.att = bBoot ? 0.0f : p.att + (p.sal - p.att) * Min(1.0f, dt / ((p.sal > p.att) ? comfort.pullIn : comfort.letGo));
+		if (bBoot)
+		{
+			p.att = p.attVel = 0.0f;
+		}
+		else if (p.sal > p.att)
+		{
+			// In: fast, straight toward it.
+			p.att += (p.sal - p.att) * Min(1.0f, dt / comfort.pullIn);
+			p.attVel = 0.0f;
+		}
+		else
+		{
+			// Out: a critically damped spring from rest, easing off, then settling over about letGo seconds.
+			const float omega = 5.0f / comfort.letGo;
+			for (float left = dt; left > 0.0f; left -= STEP)
+			{
+				const float h = Min(left, STEP);
+				p.attVel += ((p.sal - p.att) * (omega * omega) - p.attVel * (2.0f * omega)) * h;
+				p.att += p.attVel * h;
+			}
+			p.att = clamp(p.att, p.sal, 1.0f);
+		}
 	}
 	// The balance: the gun and each group, weighted by how present it is, about the screen's centre line.
 	const float gunX = f.hand > 0 ? f.wide - GUN_X * f.s : GUN_X * f.s;

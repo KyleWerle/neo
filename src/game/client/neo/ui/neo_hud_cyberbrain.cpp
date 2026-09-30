@@ -3,6 +3,7 @@
 
 #include "c_neo_player.h"
 #include "iclientmode.h"
+#include "hud.h"
 #include "igameevents.h"
 #include "neo/neo_gunplay_crosshair.h"
 #include "neo_ironsights.h"
@@ -20,9 +21,49 @@ using vgui::surface;
 // attention and place, and draws the surround ring and the groups, most present on top. Its layout lives in its
 // HudLayout.res block (NHudCyberbrain).
 
+static void NeoHudStyleChanged(IConVar *pVar, const char *pOldValue, float flOldValue);
 ConVar cl_neo_hud_style("cl_neo_hud_style", "2", FCVAR_ARCHIVE,
 	"The HUD's style: 0 = original (the stock NT panels), 1 = cyberbrain with the compact ring, 2 = cyberbrain with the"
-	" ring on the body, 3 = the racer band, 4 = competitive (the original layout as lowercase text).", true, 0, true, NEO_HUD_STYLE__COUNT - 1);
+	" ring on the body, 3 = the racer band, 4 = competitive (the original layout as lowercase text).", true, 0, true, NEO_HUD_STYLE__COUNT - 1,
+	NeoHudStyleChanged);
+
+// The chat's place in the cyberbrain styles: up under the squad list, narrower (proportional: x, y, wide, tall), off
+// the body group it covered at the bottom left (HUD-REDESIGN.md, "Layout check"). layout_check.py checks it.
+static constexpr int CHAT_X = 10, CHAT_Y = 116, CHAT_W = 200, CHAT_H = 84;
+
+static vgui::Panel *ChatPanel()
+{
+	CHudElement *pChat = gHUD.FindElement("CHudChat");
+	return pChat ? dynamic_cast<vgui::Panel *>(pChat) : nullptr;
+}
+
+// Moves the chat each frame the cyberbrain shows (its own layout would put it back on a scheme change).
+void NeoCyberbrainPlaceChat()
+{
+	vgui::Panel *pChat = ChatPanel();
+	if (!pChat)
+		return;
+	int wide, tall;
+	surface()->GetScreenSize(wide, tall);
+	const float sc = tall / 480.0f;
+	const int x = RoundFloatToInt(CHAT_X * sc), y = RoundFloatToInt(CHAT_Y * sc), w = RoundFloatToInt(CHAT_W * sc),
+		h = RoundFloatToInt(CHAT_H * sc);
+	int cx, cy, cw, ch;
+	pChat->GetBounds(cx, cy, cw, ch);
+	if (cx != x || cy != y || cw != w || ch != h)
+		pChat->SetBounds(x, y, w, h);
+}
+
+// Leaving the cyberbrain styles, the chat goes back where its own layout puts it.
+static void NeoHudStyleChanged(IConVar *pVar, const char *pOldValue, float flOldValue)
+{
+	const NeoHudStyle style = NeoHudStyleCurrent();
+	if (style != NEO_HUD_STYLE_COMPACT && style != NEO_HUD_STYLE_BODY)
+	{
+		if (vgui::Panel *pChat = ChatPanel())
+			pChat->InvalidateLayout(false, true);
+	}
+}
 ConVar cl_neo_hud_kanji("cl_neo_hud_kanji", "1", FCVAR_ARCHIVE,
 	"The cyberbrain HUD's kanji beside its plate labels (needs a Japanese font: NHudCyberKanji in ClientScheme.res).",
 	true, 0, true, 1);
@@ -162,6 +203,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	m_lastClass = pPlayer->GetClass();
 	m_lastStyle = style;
 
+	NeoCyberbrainPlaceChat();
 	NC::Sense(pPlayer, dt, now, bBoot, m_senses);
 	s_pPublished = &m_senses;
 	s_publishedColor = m_color;
@@ -195,8 +237,10 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	}
 	else
 	{
-		f.ringCentre.Init(f.centre.x, m_ringY - clamp(m_senses.pitch, -30.0f, 60.0f) * 1.5f * f.s);
-		f.ringRadii.Init(m_ringRadius, m_ringRadius * clamp(0.24f + 0.45f * down, 0.12f, 0.66f));
+		// It stays at its height and opens only a little as you look down (Kyle: the climb and the full opening were
+		// too much and distracting; they also ran it into the chat and the keep-out).
+		f.ringCentre.Init(f.centre.x, static_cast<float>(m_ringY));
+		f.ringRadii.Init(m_ringRadius, m_ringRadius * clamp(0.24f + 0.16f * down, 0.18f, 0.40f));
 		// Opening as you look down, it mustn't swing past the screen's bottom: held inside with its marks.
 		Vector2D centre, half;
 		NC::GroupExtent(f, NC::BRIGHT_RING, centre, half);

@@ -59,8 +59,8 @@ private:
 	CPanelAnimationVarAliasType(int, m_opticsNearY, "optics_near_y", "c-9", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_weaponFarX, "weapon_far_x", "r209", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_weaponFarY, "weapon_far_y", "r129", "proportional_ypos");
-	CPanelAnimationVarAliasType(int, m_weaponNearX, "weapon_near_x", "r262", "proportional_xpos");
-	CPanelAnimationVarAliasType(int, m_weaponNearY, "weapon_near_y", "r159", "proportional_ypos");
+	CPanelAnimationVarAliasType(int, m_weaponNearX, "weapon_near_x", "r250", "proportional_xpos");
+	CPanelAnimationVarAliasType(int, m_weaponNearY, "weapon_near_y", "r140", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_linkFarX, "link_far_x", "r80", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_linkFarY, "link_far_y", "187", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_linkNearX, "link_near_x", "r142", "proportional_xpos");

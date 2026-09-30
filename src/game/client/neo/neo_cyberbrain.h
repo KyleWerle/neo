@@ -27,6 +27,8 @@ bool NeoCyberbrainShowing();
 // spectator, or in the other styles, the stock elements draw. The stock round state and death notice keep running (the
 // spectator commands' player order, the countdown beep, the kills the scoreboard marks) and only stop drawing.
 bool NeoCyberbrainTeamShowing();
+// Keeps the chat in its cyberbrain place (up under the squad list), called each frame the cyberbrain draws.
+void NeoCyberbrainPlaceChat();
 
 // The Competitive style (ui/neo_hud_competitive.*), drawn this frame or the last: its vitals (the health / therm-optic /
 // aux, ammo and compass panels give way while it's alive and drawing) and its team side (the round state and death

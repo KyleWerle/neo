@@ -109,6 +109,7 @@ void CNEOHud_CyberbrainTeam::DrawNeoHudElement()
 		return;
 	}
 	s_iTeamDrawnFrame = gpGlobals->framecount;
+	NeoCyberbrainPlaceChat();
 
 	NC::Frame f;
 	f.style = NeoHudStyleCurrent();
