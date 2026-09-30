@@ -6,15 +6,15 @@
 
 // The motion group: proprioception of movement, its own group, kept beside the body (the line that tied them was
 // dropped: Kyle found it weird; being side by side says it). Stamina (assault, juggernaut) as four loose cells, or recon's two jump cells filling as each recharges;
-// speed as a short trace of the last eight seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
-// speed, the scale growing for bunny hops; over it the stride waveform (neo_cyberbrain_stride.cpp: your steps and
-// sounds landing live, gait and noise in one strip). Its attention: sprinting, recovering, recharging, going faster
+// speed as a short trace of the last five seconds (Agiel's speed graph, as a shape: no numbers), a line at your run
+// speed, the scale growing for bunny hops; over it the stride waveform (neo_cyberbrain_stride.cpp: your noise as one
+// smooth line on the same samples, gait and noise in one strip). Its attention: sprinting, recovering, recharging, going faster
 // than a run, landing.
 
 namespace NeoCyberbrain
 {
 constexpr float JUMP_COST = SUPER_JMP_COST;			// a recon's jump cell
-constexpr int SAMPLES = 80;							// eight seconds at ten a second
+constexpr int SAMPLES = 50;							// five seconds at ten a second (Kyle: both graphs on five)
 constexpr float SAMPLE_EVERY = 0.1f;
 constexpr float TRACE_W = 90.0f, TRACE_TOP = -8.0f, TRACE_BOTTOM = 28.0f;
 constexpr float SCALE_GROW = 0.12f, SCALE_SHRINK = 0.8f;
@@ -22,42 +22,62 @@ constexpr float SCALE_GROW = 0.12f, SCALE_SHRINK = 0.8f;
 static struct
 {
 	float samples[SAMPLES] = {};
+	float noise[SAMPLES] = {};		// the stride waveform's level, sampled with the speed (the loudest in each tenth)
+	bool loud[SAMPLES] = {};		// a sound in it carried 16 m or more
 	int head = 0;
+	float noisePeak = 0.0f;
+	bool bLoudPeak = false;
 	float peak = 0.0f, lastSample = -100.0f, lastSeen = -100.0f, top = 8.0f, lastTop = -100.0f;
 } s_motion;
 
-// Every tenth of a second, the fastest speed since the last sample (so a hop's peak stays).
-static void Record(const Senses &s, float now)
+// Every tenth of a second, the fastest speed since the last sample (so a hop's peak stays), and the loudest noise.
+static void Record(const Senses &s, float now, float noise, bool bLoud)
 {
 	if (now - s_motion.lastSeen > 0.5f || now < s_motion.lastSeen)
 	{
 		V_memset(s_motion.samples, 0, sizeof(s_motion.samples));
+		V_memset(s_motion.noise, 0, sizeof(s_motion.noise));
+		V_memset(s_motion.loud, 0, sizeof(s_motion.loud));
 		s_motion.lastSample = now;
 		s_motion.peak = 0.0f;
+		s_motion.noisePeak = 0.0f;
+		s_motion.bLoudPeak = false;
 	}
 	s_motion.lastSeen = now;
 	s_motion.peak = Max(s_motion.peak, s.speed);
+	s_motion.noisePeak = Max(s_motion.noisePeak, noise);
+	s_motion.bLoudPeak = s_motion.bLoudPeak || bLoud;
 	while (now - s_motion.lastSample >= SAMPLE_EVERY)
 	{
 		s_motion.samples[s_motion.head] = s_motion.peak;
+		s_motion.noise[s_motion.head] = s_motion.noisePeak;
+		s_motion.loud[s_motion.head] = s_motion.bLoudPeak;
 		s_motion.head = (s_motion.head + 1) % SAMPLES;
 		s_motion.lastSample += SAMPLE_EVERY;
 		s_motion.peak = s.speed;
+		s_motion.noisePeak = noise;
+		s_motion.bLoudPeak = bLoud;
 	}
 }
 
-float MotionTimeX(float time, float left, float right)
+int MotionSamples()
 {
-	// Sample k back from the newest covers the tenth of a second ending k tenths before lastSample, drawn k steps in
-	// from the right; a moment in the tenth not yet sampled sits at the right edge.
-	const float steps = (s_motion.lastSample - time) / SAMPLE_EVERY;
-	return right - Max(0.0f, steps) * (right - left) / (SAMPLES - 1);
+	return SAMPLES;
+}
+
+float MotionNoiseAt(int i, bool &bLoud)
+{
+	const int at = (s_motion.head + i) % SAMPLES;
+	bLoud = s_motion.loud[at];
+	return s_motion.noise[at];
 }
 
 void PaintMotion(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
-	Record(s, f.now);
+	bool bLoud;
+	const float noise = StrideListen(s, f.now, bLoud);
+	Record(s, f.now, noise, bLoud);
 	const Look look = LookOf(f, GROUP_MOTION);
 	const Local L = { f.pPlaces[GROUP_MOTION].pos, f.s * look.scale, f.hand };
 	const float a = look.alpha;
@@ -106,9 +126,9 @@ void PaintMotion(const Frame &f)
 	const float top = Max(s_motion.top, 1.0f);
 	const auto yOf = [&](float speed) { return TRACE_BOTTOM - (TRACE_BOTTOM - TRACE_TOP) * clamp(speed / top, 0.0f, 1.0f); };
 	Line(f, L.At(left, TRACE_BOTTOM), L.At(right, TRACE_BOTTOM), NEO_GHOST_LIGHT, f.color, 0.35f * a);
-	for (int k = 0; k <= 4; ++k)
+	for (int k = 0; k <= 5; ++k)	// a tick a second
 	{
-		const float x = left + TRACE_W * k / 4.0f;
+		const float x = left + TRACE_W * k / 5.0f;
 		Line(f, L.At(x, TRACE_BOTTOM), L.At(x, TRACE_BOTTOM + 3.0f), NEO_GHOST_LIGHT, f.color, 0.3f * a);
 	}
 	// Your run speed as a dashed reference.
@@ -130,8 +150,8 @@ void PaintMotion(const Frame &f)
 	}
 
 	// Over the trace: the stride waveform, your steps and sounds landing live (it took the chevrons' and the noise
-	// waveform's place: one strip for gait and noise), on the trace's own clock (MotionTimeX): Kyle, the two graphs on
-	// one timescale, so a step sits over the speed it was taken at.
+	// waveform's place: one strip for gait and noise), on the trace's own samples: Kyle, the two graphs on one
+	// timescale, so a step sits over the speed it was taken at.
 	PaintStrideStrip(f, L, left, right, TRACE_TOP - 16.0f, Max(a, 0.6f));
 	if (look.labels > 0.02f)
 	{

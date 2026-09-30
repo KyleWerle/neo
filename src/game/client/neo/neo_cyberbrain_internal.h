@@ -221,7 +221,11 @@ void PaintUplink(const Frame &f, const Local &L, float alpha, float labels);
 // The stride waveform over the speed trace (neo_cyberbrain_stride.cpp): each step, and each other sound you make,
 // landing live as a burst; from left to right at height y, in the motion group's local frame.
 void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha);
-// Where a moment (f.now's clock) sits across the speed trace running left to right: the trace's own timescale, stepping
-// with its samples (neo_cyberbrain_motion.cpp). Older than the trace: left of `left`.
-float MotionTimeX(float time, float left, float right);
+// Takes your new noises into the stride waveform's level (neo_cyberbrain_stride.cpp): returns it now, 0 to 1.5, and
+// whether a sound in it carried 16 m or more.
+float StrideListen(const Senses &s, float now, bool &bLoud);
+// The motion group's samples (neo_cyberbrain_motion.cpp), the speed trace's and the stride waveform's: how many, and
+// the waveform's level at sample i (0 the oldest).
+int MotionSamples();
+float MotionNoiseAt(int i, bool &bLoud);
 } // namespace NeoCyberbrain
