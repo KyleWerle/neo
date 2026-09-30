@@ -165,7 +165,8 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 	for (int g = 0; g < GROUP__COUNT; ++g)
 	{
 		Place &p = places[g];
-		const Vector2D far = mirror(homes[g].far), nearer = mirror(homes[g].nearer);
+		const Vector2D far = homes[g].bLeft ? homes[g].far : mirror(homes[g].far);
+		const Vector2D nearer = homes[g].bLeft ? homes[g].nearer : mirror(homes[g].nearer);
 		p.balance = bBoot ? 0.0f : p.balance + (shift * (1.0f - p.att) * comfort.travel - p.balance) * Min(1.0f, dt / BALANCE_EASE);
 		Vector2D target = far + (nearer - far) * (p.att * comfort.travel) + Vector2D(p.balance, 0.0f);
 		// Never past the screen's edges, whatever its size or shape: the group's extent (at its scale now, moved to the
@@ -234,7 +235,7 @@ void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 		half = f.ringRadii + Vector2D(40.0f, 30.0f) * f.s;
 		return;
 	}
-	const float k = f.s * LookOf(f, static_cast<Group>(slot)).scale, m = static_cast<float>(f.hand);
+	const float k = f.s * LookOf(f, static_cast<Group>(slot)).scale;
 	Vector2D offset, size;
 	switch (slot)
 	{
@@ -254,7 +255,8 @@ void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 	case GROUP_OPTICS:	offset.Init(0.0f, 4.0f); size.Init(58.0f, 58.0f); break;
 	case GROUP_WEAPON:	offset.Init(0.0f, 6.0f); size.Init(125.0f, 48.0f); break;
 	case GROUP_MOTION:	offset.Init(-12.0f * (f.pPlaces[GROUP_BODY].pos.x >= f.pPlaces[GROUP_MOTION].pos.x ? 1.0f : -1.0f), 0.0f); size.Init(80.0f, 58.0f); break;
-	default:			offset.Init(30.0f * m, 10.0f); size.Init(70.0f, 40.0f); break;
+	// The link: beside the squad list on the left in either hand, so never mirrored.
+	default:			offset.Init(30.0f, 10.0f); size.Init(70.0f, 40.0f); break;
 	}
 	centre = f.pPlaces[slot].pos + offset * k;
 	half = size * k;

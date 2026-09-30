@@ -431,12 +431,13 @@ static void DashedLine(const Frame &f, const Local &L, const Vector2D &from, con
 // The link group as a node graph (Kyle's pick): you as a node linked to a node per teammate, fanned above you in a
 // fixed arc (never where they are). The links' line is your ping: solid while it's good, dashed as it strains, sparse
 // dots when it's bad, always the HUD's colour. A dead teammate is a hollow red node, its link broken off short. Your
-// own node is a chamfered cell filling with your neural load (a cell a system drawing on you, of six).
+// own node is a chamfered cell filling with your neural load (a cell a system drawing on you, of six). It sits beside
+// the squad list, on the left in either hand (Kyle), so it's drawn right-handed always: the ping reads away from the edge.
 void PaintLink(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
 	const Look look = LookOf(f, GROUP_LINK);
-	const Local L = { f.pPlaces[GROUP_LINK].pos, f.s * look.scale, f.hand };
+	const Local L = { f.pPlaces[GROUP_LINK].pos, f.s * look.scale, 1 };
 	const float a = look.alpha;
 	const int side = L.m > 0 ? 1 : -1;
 	const Vector2D you(0.0f, LINK_YOU_Y);

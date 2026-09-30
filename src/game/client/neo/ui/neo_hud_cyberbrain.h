@@ -59,10 +59,10 @@ private:
 	CPanelAnimationVarAliasType(int, m_weaponFarY, "weapon_far_y", "r129", "proportional_ypos");
 	CPanelAnimationVarAliasType(int, m_weaponNearX, "weapon_near_x", "r250", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_weaponNearY, "weapon_near_y", "r140", "proportional_ypos");
-	CPanelAnimationVarAliasType(int, m_linkFarX, "link_far_x", "r80", "proportional_xpos");
-	CPanelAnimationVarAliasType(int, m_linkFarY, "link_far_y", "187", "proportional_ypos");
-	CPanelAnimationVarAliasType(int, m_linkNearX, "link_near_x", "r142", "proportional_xpos");
-	CPanelAnimationVarAliasType(int, m_linkNearY, "link_near_y", "204", "proportional_ypos");
+	CPanelAnimationVarAliasType(int, m_linkFarX, "link_far_x", "196", "proportional_xpos");
+	CPanelAnimationVarAliasType(int, m_linkFarY, "link_far_y", "66", "proportional_ypos");
+	CPanelAnimationVarAliasType(int, m_linkNearX, "link_near_x", "196", "proportional_xpos");
+	CPanelAnimationVarAliasType(int, m_linkNearY, "link_near_y", "74", "proportional_ypos");
 	// The motion group, beside the body: left of it in Compact, right of it (toward the centre) On the body.
 	CPanelAnimationVarAliasType(int, m_motionFarX, "motion_far_x", "138", "proportional_xpos");
 	CPanelAnimationVarAliasType(int, m_motionFarY, "motion_far_y", "r48", "proportional_ypos");

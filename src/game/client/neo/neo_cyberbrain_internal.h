@@ -111,7 +111,8 @@ struct Senses
 
 // Where a group lives: a far home deep in the periphery and a near one closer to the focus, screen pixels,
 // right-handed (mirrored for a left-handed gun), and its visual weight for the balance.
-struct Home { Vector2D far, nearer; float weight; };
+// bLeft: fixed to the screen's left whichever hand holds the gun (the link, beside the squad list), not mirrored.
+struct Home { Vector2D far, nearer; float weight; bool bLeft = false; };
 
 // One group's attention and placement.
 // The deep layer (its registration crosses and etched rail) trails the group on a softer spring and drifts a few
@@ -220,4 +221,7 @@ void PaintUplink(const Frame &f, const Local &L, float alpha, float labels);
 // The stride waveform over the speed trace (neo_cyberbrain_stride.cpp): each step, and each other sound you make,
 // landing live as a burst; from left to right at height y, in the motion group's local frame.
 void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha);
+// Where a moment (f.now's clock) sits across the speed trace running left to right: the trace's own timescale, stepping
+// with its samples (neo_cyberbrain_motion.cpp). Older than the trace: left of `left`.
+float MotionTimeX(float time, float left, float right);
 } // namespace NeoCyberbrain

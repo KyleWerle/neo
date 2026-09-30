@@ -158,7 +158,7 @@ void CNEOHud_Cyberbrain::HomesOf(NC::Home homes[NC::GROUP__COUNT], NeoHudStyle s
 	}
 	homes[NC::GROUP_OPTICS] = { v(m_opticsFarX, m_opticsFarY), v(m_opticsNearX, m_opticsNearY), 0.7f };
 	homes[NC::GROUP_WEAPON] = { v(m_weaponFarX, m_weaponFarY), v(m_weaponNearX, m_weaponNearY), 0.8f };
-	homes[NC::GROUP_LINK] = { v(m_linkFarX, m_linkFarY), v(m_linkNearX, m_linkNearY), 0.5f };
+	homes[NC::GROUP_LINK] = { v(m_linkFarX, m_linkFarY), v(m_linkNearX, m_linkNearY), 0.5f, true };
 }
 
 void CNEOHud_Cyberbrain::DrawNeoHudElement()
