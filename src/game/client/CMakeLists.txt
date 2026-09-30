@@ -1691,6 +1691,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_paint.cpp
     neo/neo_cyberbrain_body.cpp
     neo/neo_cyberbrain_callouts.cpp
+    neo/neo_cyberbrain_gun.cpp
+    neo/neo_cyberbrain_gun.h
     neo/neo_cyberbrain_ring.cpp
     neo/neo_cyberbrain_groups.cpp
     neo/neo_cyberbrain_backing.cpp

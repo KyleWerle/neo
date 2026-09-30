@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
+#include "neo_cyberbrain_gun.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -7,7 +8,8 @@
 // The other receptor groups, in shapes rather than numbers. Optics: how visible you are (an iris that opens with the
 // light you stand in, the therm-optic cells round it, shimmering hollow while cloaked, vision mode lighting its
 // centre). Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
-// aim settle as a bar; a shot flicks its tick out, a reload sweeps them back. Link: ping as signal bars, neural load
+// aim settle as a bar; a shot flicks its tick out, a reload sweeps them back. Leaders hang the readout from the gun
+// itself: the rounds from its magazine, the settle from its muzzle (neo_cyberbrain_gun.h). Link: ping as signal bars, neural load
 // as cells, the squad as pips. Words and plates only come in with attention.
 
 namespace NeoCyberbrain
@@ -116,6 +118,25 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 	}
 }
 
+// A leader from the group's edge to a point on the gun: out a little level, then straight to it, ending in an open
+// bracket round the point.
+static void GunLeader(const Frame &f, const Local &L, const Vector2D &halfSize, NeoCyberGunPoint point, const Color &c, float a)
+{
+	Vector2D to;
+	if (a <= 0.01f || !NeoCyberGunPointOnScreen(point, to))
+		return;
+	const Vector2D local = (to - L.origin) / L.k;
+	const Vector2D from = L.At(clamp(local.x, -halfSize.x, halfSize.x), clamp(local.y, -halfSize.y, halfSize.y));
+	if ((to - from).Length() < 24.0f * f.s)
+		return;
+	const Vector2D elbow = from + Vector2D(to.x > from.x ? 14.0f : -14.0f, 0.0f) * f.s;
+	Line(f, from, elbow, NEO_GHOST_LIGHT, c, a);
+	Line(f, elbow, to, NEO_GHOST_LIGHT, c, a);
+	const float b = 5.0f * f.s;
+	Line(f, to + Vector2D(-b, -b), to + Vector2D(-b, b), NEO_GHOST_LIGHT, c, a);
+	Line(f, to + Vector2D(b, -b), to + Vector2D(b, b), NEO_GHOST_LIGHT, c, a);
+}
+
 void PaintWeapon(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -176,6 +197,11 @@ void PaintWeapon(const Frame &f)
 	const float sw = 120.0f;
 	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(sw * 0.5f, 31.0f), f.color, 0.1f * a);
 	Rect(f, L.At(-sw * 0.5f, 28.0f), L.At(-sw * 0.5f + sw * s.sync, 31.0f), s.sync < 0.5f ? WARN : f.color, 0.7f * a);
+	// The leaders: the rounds hang from the magazine while the group is pulled in (a reload lights it amber), the
+	// settle from the muzzle while it recovers from a shot.
+	const float magLeader = s.bReloading ? 0.8f : 0.5f * look.numbers;
+	GunLeader(f, L, Vector2D(80.0f, 36.0f), NEO_GUN_MAG, s.bReloading ? WARN : f.color, magLeader * a);
+	GunLeader(f, L, Vector2D(80.0f, 36.0f), NEO_GUN_MUZZLE, f.color, 0.6f * clamp((1.0f - s.sync) * 3.0f, 0.0f, 1.0f) * a);
 	if (look.labels > 0.02f)
 	{
 		const Vector2D na = L.At(0.0f, -22.0f);

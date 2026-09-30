@@ -134,6 +134,9 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &sense
 void CalloutEvent(IGameEvent *pEvent);
 void SenseCallouts(float now, Senses &senses);
 void ResetCallouts();
+// The senses and colour the HUD drew with last (for the gun's overlay, drawn in the 3D pass before the HUD), or none
+// if it didn't draw last frame.
+const Senses *PublishedSenses(Color &color);
 
 // Attention and placement (neo_cyberbrain_attention.cpp): salience per group, attention in fast and out slow,
 // critically damped springs, the balance against the gun, the crosshair keep-out, motion comfort.

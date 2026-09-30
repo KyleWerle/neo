@@ -36,6 +36,15 @@ namespace NC = NeoCyberbrain;
 static constexpr float CYBERBRAIN_REVEAL = 0.45f;		// seconds to come up on spawn
 static int s_iCyberbrainDrawnFrame = -100;
 
+static const NC::Senses *s_pPublished = nullptr;
+static Color s_publishedColor;
+
+const NC::Senses *NC::PublishedSenses(Color &color)
+{
+	color = s_publishedColor;
+	return NeoCyberbrainShowing() ? s_pPublished : nullptr;
+}
+
 NeoHudStyle NeoHudStyleCurrent()
 {
 	return static_cast<NeoHudStyle>(clamp(cl_neo_hud_style.GetInt(), 0, NEO_HUD_STYLE__COUNT - 1));
@@ -154,6 +163,8 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	m_lastStyle = style;
 
 	NC::Sense(pPlayer, dt, now, bBoot, m_senses);
+	s_pPublished = &m_senses;
+	s_publishedColor = m_color;
 
 	NC::Frame f;
 	f.style = style;

@@ -8,6 +8,7 @@
 #include "neo/neo_ironsight_dots.h"
 #include "neo/neo_spread_pivot.h"
 #include "neo/neo_viewmodel_recoil.h"
+#include "neo/neo_cyberbrain_gun.h"
 #endif
 
 #include "in_buttons.h"
@@ -350,6 +351,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 		{
 			NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend, NEO_LENS_RETICLE);
 			NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
+			DrawCyberbrainGun(flags);
 		}
 		return ret;
 	}
@@ -362,8 +364,24 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	{
 		NeoIronsightDrawOpticDisc(this, *pWeaponData, bCloaked, bThermal, m_flIronsightBlend);
 		NeoIronsightDrawDots(this, *pWeaponData, bCloaked, m_flIronsightBlend);
+		DrawCyberbrainGun(flags);
 	}
 	return ret;
+}
+
+void CNEOPredictedViewModel::DrawCyberbrainGun(int flags)
+{
+	NeoCyberGunPass pass;
+	if (!NeoCyberGunPrepare(this, pass))
+	{
+		return;
+	}
+	for (int i = 0; i < pass.count; ++i)
+	{
+		NeoCyberGunBandBegin(pass, i);
+		BaseClass::DrawModel(flags);
+		NeoCyberGunBandEnd();
+	}
 }
 
 int CNEOPredictedViewModel::DrawGun(int flags)
