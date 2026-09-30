@@ -32,6 +32,8 @@ ConVar cl_neo_hud_gun_mag_box("cl_neo_hud_gun_mag_box", "3 7 2", FCVAR_NONE,
 ConVar cl_neo_hud_gun_debug("cl_neo_hud_gun_debug", "0", FCVAR_NONE,
 	"1 = draw the magazine box's wireframe all the time (for tuning cl_neo_hud_gun_mag_box).", true, 0, true, 1);
 
+extern ConVar cl_neo_hud_gun_count;
+
 namespace NC = NeoCyberbrain;
 
 constexpr float GUN_SCAN_TIME = 0.7f, GUN_SCAN_EVERY = 1.0f;	// seconds a scan takes, and between scans in a reload
@@ -64,38 +66,28 @@ static IMaterial *WireMaterial()
 	return s_material;
 }
 
-// The first attachment with one of these names, as drawn, in world space.
-static bool AttachmentAt(C_BaseAnimating *pViewModel, CStudioHdr *hdr, const char *const names[], int count, Vector &out)
+// An attachment as drawn, in world space.
+static void AttachmentAt(C_BaseAnimating *pViewModel, CStudioHdr *hdr, int index, Vector &out)
+{
+	const mstudioattachment_t &attachment = hdr->pAttachment(index);
+	matrix3x4_t world;
+	ConcatTransforms(pViewModel->GetBone(attachment.localbone), attachment.local, world);
+	MatrixGetColumn(world, 3, out);
+}
+
+// The first attachment with one of these names (on a bone), or -1.
+static int AttachmentIndex(CStudioHdr *hdr, const char *const names[], int count)
 {
 	for (int n = 0; n < count; ++n)
 	{
 		for (int i = 0; i < hdr->GetNumAttachments(); ++i)
 		{
 			const mstudioattachment_t &attachment = hdr->pAttachment(i);
-			if (V_stricmp(attachment.pszName(), names[n]) != 0 || attachment.localbone < 0)
-				continue;
-			matrix3x4_t world;
-			ConcatTransforms(pViewModel->GetBone(attachment.localbone), attachment.local, world);
-			MatrixGetColumn(world, 3, out);
-			return true;
+			if (V_stricmp(attachment.pszName(), names[n]) == 0 && attachment.localbone >= 0)
+				return i;
 		}
 	}
-	return false;
-}
-
-// The first bone with one of these names, as drawn (GetBone, never GetBoneTransform: that reads a hitbox-only cache).
-static bool BoneAt(C_BaseAnimating *pViewModel, const char *const names[], int count, Vector &out)
-{
-	for (int n = 0; n < count; ++n)
-	{
-		const int bone = pViewModel->LookupBone(names[n]);
-		if (bone >= 0)
-		{
-			MatrixGetColumn(pViewModel->GetBone(bone), 3, out);
-			return true;
-		}
-	}
-	return false;
+	return -1;
 }
 
 static void SetGunPlane(float plane[4], const Vector &n, float d);
@@ -265,44 +257,69 @@ bool NeoCyberGunPrepare(C_BaseAnimating *pViewModel, NeoCyberGunPass &pass)
 	if (!pSenses || !hdr || !NeoCyberbrainShowing())
 		return false;
 
-	// The points, as drawn: this frame's pose (attachment bones included).
-	pViewModel->SetupBones(nullptr, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime);
+	// The gun's points and magazine bone, looked up by name once per model; its magazine measured then too, on the gun's
+	// first frame rather than its first reload (a hitch mid-fight).
 	static const char *const s_muzzle[] = { "muzzle", "1" }, *const s_eject[] = { "eject", "2" };
 	// Magazine bones: the AA13's drum, the Supa 7's "Shell" (the shell going in).
 	static const char *const s_mag[] = { "Clip", "Clip01", "clip", "mag", "Drum", "Shell", "v_weapon.MP5_Clip", "ValveBiped.clip" };
+	static struct { const model_t *pModel = nullptr; int muzzle = -1, eject = -1, magBone = -1; } s_gun;
+	if (s_gun.pModel != pViewModel->GetModel())
+	{
+		s_gun.pModel = pViewModel->GetModel();
+		s_gun.muzzle = AttachmentIndex(hdr, s_muzzle, ARRAYSIZE(s_muzzle));
+		s_gun.eject = AttachmentIndex(hdr, s_eject, ARRAYSIZE(s_eject));
+		s_gun.magBone = BoneIndex(pViewModel, s_mag, ARRAYSIZE(s_mag));
+		if (s_gun.magBone >= 0)
+			MagMeshOf(pViewModel, hdr, s_gun.magBone);
+	}
+
+	// Nothing to draw or place: no bone setup. The points' only reader is the muzzle count (stubbed off by default); the
+	// band shows on reload or with the debug box. Custom clip planes can't change mid-scene under fast clipping (as the
+	// sight glass's split), and the box needs six. Only a real magazine bone: the ejection port's fallback would scan the
+	// hands.
+	const NC::Senses &s = *pSenses;
+	const bool bPoints = cl_neo_hud_gun_count.GetBool();
+	const bool bBand = cl_neo_hud_gun.GetBool() && (s.bReloading || cl_neo_hud_gun_debug.GetBool()) && s_gun.magBone >= 0
+		&& !materials->UsingFastClipping() && g_pMaterialSystemHardwareConfig->MaxUserClipPlanes() >= NEO_CYBER_GUN_PLANES;
+	if (!bPoints && !bBand)
+		return false;
+
+	// The points, as drawn: this frame's pose (attachment bones included).
+	pViewModel->SetupBones(nullptr, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime);
 	Vector world[NEO_GUN__COUNT];
-	bool bHas[NEO_GUN__COUNT];
-	bHas[NEO_GUN_MUZZLE] = AttachmentAt(pViewModel, hdr, s_muzzle, ARRAYSIZE(s_muzzle), world[NEO_GUN_MUZZLE]);
-	bHas[NEO_GUN_EJECT] = AttachmentAt(pViewModel, hdr, s_eject, ARRAYSIZE(s_eject), world[NEO_GUN_EJECT]);
-	bHas[NEO_GUN_MAG] = BoneAt(pViewModel, s_mag, ARRAYSIZE(s_mag), world[NEO_GUN_MAG]);
-	const bool bHasMagBone = bHas[NEO_GUN_MAG];
-	if (!bHas[NEO_GUN_MAG] && bHas[NEO_GUN_EJECT])
+	bool bHas[NEO_GUN__COUNT] = { s_gun.muzzle >= 0, s_gun.magBone >= 0, s_gun.eject >= 0 };
+	if (bHas[NEO_GUN_MUZZLE])
+		AttachmentAt(pViewModel, hdr, s_gun.muzzle, world[NEO_GUN_MUZZLE]);
+	if (bHas[NEO_GUN_EJECT])
+		AttachmentAt(pViewModel, hdr, s_gun.eject, world[NEO_GUN_EJECT]);
+	if (bHas[NEO_GUN_MAG])
+		MatrixGetColumn(pViewModel->GetBone(s_gun.magBone), 3, world[NEO_GUN_MAG]);
+	else if (bHas[NEO_GUN_EJECT])
 	{
 		world[NEO_GUN_MAG] = world[NEO_GUN_EJECT];
 		bHas[NEO_GUN_MAG] = true;
 	}
 
-	CMatRenderContextPtr pRenderContext(materials);
-	VMatrix view, projection, worldToClip;
-	pRenderContext->GetMatrix(MATERIAL_VIEW, &view);
-	pRenderContext->GetMatrix(MATERIAL_PROJECTION, &projection);
-	MatrixMultiply(projection, view, worldToClip);
-	int vx, vy, vw, vh;
-	pRenderContext->GetViewport(vx, vy, vw, vh);
-	for (int i = 0; i < NEO_GUN__COUNT; ++i)
-		s_points.bOn[i] = bHas[i] && Project(worldToClip, vx, vy, vw, vh, world[i], s_points.at[i]);
-	s_points.frame = gpGlobals->framecount;
-
-	// Custom clip planes can't change mid-scene under fast clipping (as the sight glass's split), and the box needs six.
-	// Only a real magazine bone: the ejection port's fallback would scan the hands.
-	if (!cl_neo_hud_gun.GetBool() || !bHasMagBone || materials->UsingFastClipping()
-		|| g_pMaterialSystemHardwareConfig->MaxUserClipPlanes() < NEO_CYBER_GUN_PLANES)
+	if (bPoints)
+	{
+		CMatRenderContextPtr pRenderContext(materials);
+		VMatrix view, projection, worldToClip;
+		pRenderContext->GetMatrix(MATERIAL_VIEW, &view);
+		pRenderContext->GetMatrix(MATERIAL_PROJECTION, &projection);
+		MatrixMultiply(projection, view, worldToClip);
+		int vx, vy, vw, vh;
+		pRenderContext->GetViewport(vx, vy, vw, vh);
+		for (int i = 0; i < NEO_GUN__COUNT; ++i)
+			s_points.bOn[i] = bHas[i] && Project(worldToClip, vx, vy, vw, vh, world[i], s_points.at[i]);
+		s_points.frame = gpGlobals->framecount;
+	}
+	if (!bBand)
 		return false;
-	const NC::Senses &s = *pSenses;
+
 	const float now = gpGlobals->realtime;
 	// The magazine's own box, measured from the model (the fallback below when a model gives none).
-	const int magBone = BoneIndex(pViewModel, s_mag, ARRAYSIZE(s_mag));
-	const MagMesh *pMesh = magBone >= 0 ? MagMeshOf(pViewModel, hdr, magBone) : nullptr;
+	const int magBone = s_gun.magBone;
+	const MagMesh *pMesh = MagMeshOf(pViewModel, hdr, magBone);
 	if (pMesh)
 	{
 		const matrix3x4_t &boneToWorld = pViewModel->GetBone(magBone);
