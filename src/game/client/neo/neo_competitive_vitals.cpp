@@ -2,6 +2,7 @@
 #include "neo_competitive.h"
 #include "neo_hud_model_ammo.h"
 #include "neo_hud_model_callouts.h"
+#include "neo_hud_model_view.h"
 #include "c_neo_player.h"
 #include "c_team.h"
 #include "neo_gamerules.h"
@@ -129,13 +130,12 @@ static void Compass(const Pen &pen, C_NEO_Player *pPlayer)
 	const auto bearingTo = [&](const Vector &at) { const Vector d = at - MainViewOrigin(); return AngleNormalize(yaw - RAD2DEG(atan2f(d.y, d.x))); };
 
 	// The objective, clamped to the edge as the stock arrow, in its carrier's colour; not while you carry it.
-	const bool bObjective = NEORules()->GhostExists() || NEORules()->GetJuggernautMarkerPos() != vec3_origin;
-	if (bObjective && !pPlayer->IsObjective())
+	NeoHud::Objective objective;
+	if (NeoHud::ReadObjective(pPlayer, objective) && !objective.bYours)
 	{
-		const Vector at = NEORules()->GetGameType() == NEO_GAME_TYPE_JGR ? NEORules()->GetJuggernautMarkerPos() : NEORules()->GetGhostPos();
 		float x;
-		CompassX(pen, clamp(bearingTo(at), -COMPASS_FOV * 0.5f, COMPASS_FOV * 0.5f), x);
-		const int ghoster = NEORules()->GetGhosterTeam();
+		CompassX(pen, clamp(bearingTo(objective.pos), -COMPASS_FOV * 0.5f, COMPASS_FOV * 0.5f), x);
+		const int ghoster = objective.carrierTeam;
 		const bool bCarried = ghoster == TEAM_JINRAI || ghoster == TEAM_NSF;
 		const Color c = !bCarried ? WHITE : ghoster != pPlayer->GetTeamNumber() ? RED
 			: (ghoster == TEAM_JINRAI ? COLOR_NEO_GREEN : COLOR_NEO_BLUE);
@@ -168,13 +168,10 @@ static void Range(const Pen &pen, C_NEO_Player *pPlayer)
 		fracY("cl_neo_hud_rangefinder_pos_frac_y");
 	if (!enabled.GetBool() || !pPlayer->IsInAim())
 		return;
-	Vector forward;
-	AngleVectors(MainViewAngles(), &forward);
-	trace_t tr;
-	UTIL_TraceLine(MainViewOrigin(), MainViewOrigin() + forward * MAX_TRACE_LENGTH, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
-	const float metres = METERS_PER_INCH * tr.startpos.DistTo(tr.endpos);
+	float metres;
+	const bool bHit = NeoHud::ReadRange(pPlayer, metres);
 	wchar_t range[24];
-	if (metres >= 999.0f || (tr.surface.flags & (SURF_SKY | SURF_SKY2D)))
+	if (metres >= 999.0f || !bHit)
 		V_wcsncpy(range, L"range ---m", sizeof(range));
 	else
 		V_snwprintf(range, ARRAYSIZE(range), L"range %.0fm", metres);

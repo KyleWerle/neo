@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
+#include "neo_hud_model_view.h"
 #include "c_neo_player.h"
 #include "c_playerresource.h"
 #include "neo_gamerules.h"
@@ -369,28 +370,24 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	out.pitchRate = (bBoot || dt <= 0.0f) ? 0.0f : AngleNormalize(out.pitch - s_sense.lastPitch) / dt;
 	s_sense.lastYaw = out.yaw;
 	s_sense.lastPitch = out.pitch;
-	out.bObjective = NEORules() && (NEORules()->GhostExists() || NEORules()->GetJuggernautMarkerPos() != vec3_origin);
+	NeoHud::Objective objective;
+	out.bObjective = NeoHud::ReadObjective(pPlayer, objective);
 	if (out.bObjective)
 	{
-		const Vector objPos = NEORules()->GetGameType() == NEO_GAME_TYPE_JGR ? NEORules()->GetJuggernautMarkerPos() : NEORules()->GetGhostPos();
-		const Vector d = objPos - MainViewOrigin();
+		const Vector d = objective.pos - MainViewOrigin();
 		out.objectiveYaw = RAD2DEG(atan2f(d.y, d.x));
 		out.objectiveMetres = d.Length() * METERS_PER_INCH;
 		// Coloured by who carries it, as the compass's arrow; hidden while you carry it yourself.
-		const int ghoster = NEORules()->GetGhosterTeam();
+		const int ghoster = objective.carrierTeam;
 		out.carrier = (ghoster != TEAM_JINRAI && ghoster != TEAM_NSF) ? CARRIER_NONE : ghoster == team ? CARRIER_OURS : CARRIER_THEIRS;
-		out.bObjective = !pPlayer->IsObjective();
+		out.bObjective = !objective.bYours;
 	}
 	SenseCallouts(now, out);
 	out.bRange = out.bInAim;
 	if (out.bRange)
 	{
-		Vector forward;
-		AngleVectors(MainViewAngles(), &forward);
-		trace_t tr;
-		UTIL_TraceLine(MainViewOrigin(), MainViewOrigin() + forward * MAX_TRACE_LENGTH, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
-		const bool bSky = (tr.surface.flags & (SURF_SKY | SURF_SKY2D)) != 0;
-		out.rangeMetres = bSky ? -1.0f : tr.startpos.DistTo(tr.endpos) * METERS_PER_INCH;
+		float metres;
+		out.rangeMetres = NeoHud::ReadRange(pPlayer, metres) ? metres : -1.0f;
 	}
 
 	SenseSounds(pPlayer, now, out);

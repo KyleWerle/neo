@@ -1735,6 +1735,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_model_feed.h
     neo/neo_hud_model_team.cpp
     neo/neo_hud_model_team.h
+    neo/neo_hud_model_view.cpp
+    neo/neo_hud_model_view.h
     neo/neo_hud_profile.cpp
     neo/neo_hud_profile.h
     neo/neo_hud_style.cpp
