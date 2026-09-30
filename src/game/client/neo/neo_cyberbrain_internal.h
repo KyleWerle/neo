@@ -22,7 +22,9 @@ enum Group { GROUP_BODY, GROUP_OPTICS, GROUP_WEAPON, GROUP_LINK, GROUP_MOTION, G
 // NT's own shipped faces, from ClientScheme.res: NOCR for values, Zrnic for labels, Alpha Flight for plates; the
 // kanji beside the plates in a Japanese face; NT's own killfeed icons (weapons, headshot, ghost, ranks) as glyphs;
 // players' names in Zrnic too (NOCR is digits and capitals only: its lowercase slots hold NT's weapon glyphs).
-enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT_ICONS, FONT_NAME, FONT__COUNT };
+// The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the weapon group's row.
+enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT_ICONS, FONT_NAME, FONT_BULLETS,
+	FONT__COUNT };
 // What the fonts resolved to (the cl_neo_hud_fonts command).
 void PrintFonts();
 

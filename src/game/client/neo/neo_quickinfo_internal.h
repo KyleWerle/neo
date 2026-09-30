@@ -65,6 +65,7 @@ struct Ammo
 	wchar_t name[48] = L"";
 	const wchar_t *pMode = nullptr;	// AUTO, SEMI, BUCK, SLUG, THROW; none for the ghost and melee
 	int rounds = 0, maxRounds = 0;	// maxRounds 0: the name alone
+	wchar_t bullet = 0;				// the stock panel's glyph for a round (NHudBullets, NOCR); 0: none (ticks)
 	bool bHeat = false;				// the BALC: a heat meter in the ticks' row
 	float heat = 0.0f;				// 0 to 1
 	bool bOverheated = false;

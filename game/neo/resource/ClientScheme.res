@@ -2568,6 +2568,55 @@ Scheme
 				//"additive"	"1"
 			}
 		}
+		// The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the cyberbrain weapon group's row.
+		NHudCyberBullets
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"32"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 6000"
+				"antialias"	"1"
+			}
+		}
 		// The Competitive HUD's text (cl_neo_hud_style 4): Neuropol2, the stock HUD's face, lowercase.
 		NHudCompText
 		{

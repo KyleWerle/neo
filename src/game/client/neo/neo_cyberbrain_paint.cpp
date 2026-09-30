@@ -58,10 +58,11 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 
 static vgui::HFont GetFont(Font font)
 {
-	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons", "NHudCyberLabel" };
-	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive" };
+	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons", "NHudCyberLabel",
+		"NHudCyberBullets" };
+	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive", "NHudBullets" };
 	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT,
-		vgui::INVALID_FONT };
+		vgui::INVALID_FONT, vgui::INVALID_FONT };
 	vgui::HFont &handle = s_fonts[font];
 	if (handle == vgui::INVALID_FONT)
 	{
@@ -83,8 +84,8 @@ void PrintFonts()
 {
 	// The engine gives no family name for these, and a missing face falls back silently at the asked height; what
 	// does tell: NOCR is fixed pitch (every glyph as wide), the fallbacks aren't, and the others are proportional.
-	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name" };
-	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, true, false, false };
+	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name", "bullets" };
+	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, true, false, false, true };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));

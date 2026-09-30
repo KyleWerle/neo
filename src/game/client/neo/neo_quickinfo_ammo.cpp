@@ -43,9 +43,12 @@ void ReadAmmo(C_NEO_Player *pPlayer, Ammo &ammo)
 		// Grenades (and the detpack): a tick each, the ammo panel's own count.
 		ammo.rounds = ammo.maxRounds = abs(pWeapon->m_iPrimaryAmmoCount.Get());
 		ammo.pMode = L"THROW";
+		// The stock panel's grenade glyphs (the detpack has none).
+		ammo.bullet = (bits & NEO_WEP_FRAG_GRENADE) ? L'g' : (bits & NEO_WEP_SMOKE_GRENADE) ? L'f' : 0;
 		return;
 	}
 	ammo.pMode = pWeapon->IsAutomatic() ? L"AUTO" : L"SEMI";
+	ammo.bullet = static_cast<wchar_t>(static_cast<unsigned char>(pWeapon->GetNEOWpnData().szBulletCharacter[0]));
 	if (bits & NEO_WEP_SUPA7)
 	{
 		ammo.pMode = static_cast<CWeaponSupa7 *>(pWeapon)->SlugLoaded() ? L"SLUG" : L"BUCK";

@@ -16,6 +16,7 @@ namespace NeoCyberbrain
 {
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
 constexpr int HALFTONE_CELLS = 5;
+constexpr float ROUNDS_W = 150.0f, ROUNDS_Y = 12.5f;	// pixels at 1080p: the rounds' row, and its middle
 constexpr float SYNC_Y = 30.0f, SYNC_ARM = 6.0f, SYNC_SPREAD = 10.0f;	// pixels at 1080p: where, a cross's arm, the most out of register
 constexpr float HALFTONE_PITCH = 13.0f, HALFTONE_MIN = 1.5f;	// pixels at 1080p: a cell, and a square in the dark
 
@@ -153,6 +154,80 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 	return true;
 }
 
+// The rounds as ticks (weapons without a bullet glyph: the detpack): the magazine a tick each (or grouped past 30).
+// A reload fills them back in on the weapon's own clock (a magazine over its whole reload; shells as the real count,
+// the next one filling as it goes in); a shot flicks the tick it spent.
+static void Ticks(const Frame &f, const Local &L, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Color &col, float flick, float a)
+{
+	const float m = static_cast<float>(L.m);
+	const int n = Min(ammo.maxRounds, 30);
+	const float pitch = Min(6.0f, ROUNDS_W / n), w = n * pitch, per = static_cast<float>(ammo.maxRounds) / n;
+	const bool bSweep = s.bReloading && !s.bReloadShells;
+	const int loaded = static_cast<int>(ceilf(ammo.rounds / per - 0.001f));
+	const int shown = bSweep ? static_cast<int>(s.reloadProgress * n) : loaded;
+	const int filling = s.bReloading && s.bReloadShells && loaded < n ? loaded : -1;
+	for (int i = 0; i < n; ++i)
+	{
+		const float x = m > 0.0f ? -w * 0.5f + i * pitch : w * 0.5f - i * pitch - 3.0f;
+		const bool bSpent = !s.bReloading && i == shown && flick > 0.0f;
+		const float lift = bSpent ? -4.0f * flick : 0.0f;
+		const float tick = i < shown ? 0.85f : i == filling ? 0.13f + 0.72f * s.reloadProgress : bSpent ? 0.85f * flick : 0.13f;
+		Rect(f, L.At(x, 6.0f + lift), L.At(x + 3.0f, 19.0f + lift), col, tick * a);
+	}
+}
+
+// The rounds as the stock panel draws them: the weapon's own bullet glyph a round, spent ones dim; a magazine too
+// long for the row ends in "+" as stock does (full, the "+" lit too). Drawn as two strings (full, spent) and the one
+// glyph moving: the round a shot just spent flicking up, or the shell going in filling.
+static void Bullets(const Frame &f, const Local &L, const Senses &s, const NeoQuickInfo::Ammo &ammo, const Color &col, float flick,
+	float glyphW, float a)
+{
+	const float m = static_cast<float>(L.m);
+	const int fit = Max(1, static_cast<int>(ROUNDS_W / glyphW));
+	const bool bOverflow = ammo.maxRounds > fit;
+	const int n = bOverflow ? fit : ammo.maxRounds;
+	const int loaded = bOverflow ? (ammo.rounds >= ammo.maxRounds ? n : Min(ammo.rounds, n - 1)) : ammo.rounds;
+	const bool bSweep = s.bReloading && !s.bReloadShells;
+	const int shown = clamp(bSweep ? static_cast<int>(s.reloadProgress * n) : loaded, 0, n);
+	wchar_t glyphs[128];
+	const int count = Min(n, static_cast<int>(ARRAYSIZE(glyphs)) - 1);
+	for (int i = 0; i < count; ++i)
+		glyphs[i] = (bOverflow && i == count - 1) ? L'+' : ammo.bullet;
+	glyphs[count] = 0;
+	// The one glyph moving: the round just spent, or the shell going in.
+	const bool bSpent = !s.bReloading && flick > 0.0f && shown < count;
+	const bool bFilling = s.bReloading && s.bReloadShells && shown < count;
+	const bool bMoving = bSpent || bFilling;
+	const float w = count * glyphW, y = ROUNDS_Y;
+	// Right-handed the rounds run left to right from the gun's far side; left-handed, mirrored.
+	const auto slotX = [&](int i) { return m > 0.0f ? -w * 0.5f + i * glyphW : w * 0.5f - (i + 1) * glyphW; };
+	wchar_t full[128], empty[128];
+	V_wcsncpy(full, glyphs, sizeof(full));
+	full[shown] = 0;
+	const int emptyFrom = shown + (bMoving ? 1 : 0);
+	V_wcsncpy(empty, glyphs + Min(emptyFrom, count), sizeof(empty));
+	const int emptyN = count - Min(emptyFrom, count);
+	if (m > 0.0f)
+	{
+		Text(f, full, L.At(slotX(0), y).x, L.At(0.0f, y).y, 1, FONT_BULLETS, col, 0.9f * a);
+		if (emptyN > 0)
+			Text(f, empty, L.At(slotX(emptyFrom), y).x, L.At(0.0f, y).y, 1, FONT_BULLETS, col, 0.2f * a);
+	}
+	else
+	{
+		Text(f, full, L.At(w * 0.5f, y).x, L.At(0.0f, y).y, -1, FONT_BULLETS, col, 0.9f * a);
+		if (emptyN > 0)
+			Text(f, empty, L.At(slotX(emptyFrom) + glyphW, y).x, L.At(0.0f, y).y, -1, FONT_BULLETS, col, 0.2f * a);
+	}
+	if (bMoving)
+	{
+		const wchar_t one[2] = { glyphs[shown], 0 };
+		const float lift = bSpent ? -4.0f * flick : 0.0f;
+		const float alpha = bSpent ? 0.2f + 0.7f * flick : 0.2f + 0.7f * s.reloadProgress;
+		Text(f, one, L.At(slotX(shown), y + lift).x, L.At(0.0f, y + lift).y, 1, FONT_BULLETS, col, alpha * a);
+	}
+}
+
 void PaintWeapon(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -181,25 +256,15 @@ void PaintWeapon(const Frame &f)
 	}
 	else if (ammo.maxRounds > 0)
 	{
-		const int n = Min(ammo.maxRounds, 30);
-		const float pitch = Min(6.0f, 150.0f / n), w = n * pitch, per = static_cast<float>(ammo.maxRounds) / n;
 		const bool bLow = s.bAmmoLow;
-		// A reload fills the ticks back in on the weapon's own clock (a magazine over its whole reload; shells as the
-		// real count, the next one filling as it goes in); a shot flicks the tick it spent.
-		const bool bSweep = s.bReloading && !s.bReloadShells;
-		const int loaded = static_cast<int>(ceilf(ammo.rounds / per - 0.001f));
-		const int shown = bSweep ? static_cast<int>(s.reloadProgress * n) : loaded;
-		const int filling = s.bReloading && s.bReloadShells && loaded < n ? loaded : -1;
-		const float flick = 1.0f - clamp((f.now - s.shotTime) / 0.25f, 0.0f, 1.0f);
 		const Color col = bLow && !s.bReloading ? WARN : s.bReloading ? WARN : f.color;
-		for (int i = 0; i < n; ++i)
-		{
-			const float x = m > 0.0f ? -w * 0.5f + i * pitch : w * 0.5f - i * pitch - 3.0f;
-			const bool bSpent = !s.bReloading && i == shown && flick > 0.0f;
-			const float lift = bSpent ? -4.0f * flick : 0.0f;
-			const float tick = i < shown ? 0.85f : i == filling ? 0.13f + 0.72f * s.reloadProgress : bSpent ? 0.85f * flick : 0.13f;
-			Rect(f, L.At(x, 6.0f + lift), L.At(x + 3.0f, 19.0f + lift), col, tick * a);
-		}
+		const float flick = 1.0f - clamp((f.now - s.shotTime) / 0.25f, 0.0f, 1.0f);
+		const wchar_t bulletText[2] = { ammo.bullet, 0 };
+		const float glyphW = ammo.bullet ? TextWidth(bulletText, FONT_BULLETS) / L.k : 0.0f;
+		if (glyphW > 0.5f)
+			Bullets(f, L, s, ammo, col, flick, glyphW, a);
+		else
+			Ticks(f, L, s, ammo, col, flick, a);
 		wchar_t count[16];
 		V_snwprintf(count, ARRAYSIZE(count), L"%d", ammo.rounds);
 		const float countAlpha = Max(look.numbers, bLow ? 1.0f : 0.5f);
