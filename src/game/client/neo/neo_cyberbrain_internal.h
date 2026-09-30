@@ -194,7 +194,9 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 Vector2D RingDeepOffset();
 // The action round you now, 0 calm to 1 a fight (neo_cyberbrain_perceive.cpp).
 float Action(const Senses &s, float now);
-// How closely you listen, eased from the action (neo_cyberbrain_attention.cpp): quiet, the ring, the sounds round you
+// Follows the action into the listening level and mode, once a frame (neo_cyberbrain_perceive.cpp, from Attend).
+void Listen(const Senses &s, float now, float dt, bool bBoot);
+// How closely you listen, eased from the action (neo_cyberbrain_perceive.cpp): quiet, the ring, the sounds round you
 // and your own noise come up; in a fight they draw back. 0 to 1.
 float Listening();
 // Seconds since the listening mode began (the level reached 0.8), or below 0 out of it (it leaves under 0.6).
