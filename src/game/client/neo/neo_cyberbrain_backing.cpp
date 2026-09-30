@@ -69,7 +69,7 @@ void PaintBackings(const Frame &f)
 		}
 		Vector2D centre, half;
 		GroupExtent(f, slot, centre, half);
-		const float att = slot == BRIGHT_RING ? 0.5f : f.pPlaces[slot].att;
+		const float att = slot == BRIGHT_RING ? f.listen : f.pPlaces[slot].att;
 		const float alpha = NeoHudBackingOpacity(f.bright[slot], BACK_MIN, BACK_MAX) * (0.75f + 0.25f * att) * f.alpha;
 		const float feather = (slot == GROUP_LINK ? FEATHER_LINK : FEATHER) * f.s;
 		// On the GPU the noise rises with the group's perception layer: a critical group's patch tears and churns.

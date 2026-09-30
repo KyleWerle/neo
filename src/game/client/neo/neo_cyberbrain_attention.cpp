@@ -41,10 +41,20 @@ constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
 // The focus zone: a group's whole extent kept outside this ellipse round the crosshair (pixels at 1080p, about the
 // spread at the hip), and the gun's knock it rides, followed in full while small, to at most KICK_MAX.
 constexpr float FOCUS_X = 110.0f, FOCUS_Y = 80.0f, KICK_MAX = 14.0f;
-constexpr float LAYER_HYSTERESIS = 0.03f;
-constexpr float DRAWN_PAD = 3.0f;		// pixels at 1080p round what a group drew, for its extent		// how far under a layer's floor its group drops back
+constexpr float LAYER_HYSTERESIS = 0.03f;	// how far under a layer's floor its group drops back
+constexpr float DRAWN_PAD = 3.0f;		// pixels at 1080p round what a group drew, for its extent
+constexpr float FOCUS_GAP = 6.0f;		// pixels at 1080p groups in focus keep between their extents
+constexpr float ORBIT_STEP = 10.0f, ORBIT_MOST = 90.0f;	// degrees a group in focus swings its approach, a step and at most
 
 static struct { Vector2D offset, vel; } s_ringDeep;
+// Listening: quieting down it comes up slowly, over a few seconds; action pulls it straight back.
+constexpr float LISTEN_RISE = 2.5f, LISTEN_FALL = 0.15f;	// seconds
+static float s_listen = 1.0f;
+
+float Listening()
+{
+	return s_listen;
+}
 
 // Moves `at` toward `goal` on the deep spring.
 static void DeepSpring(Vector2D &at, Vector2D &vel, const Vector2D &goal, float dt)
@@ -114,9 +124,121 @@ static float FocusReach(const Frame &f, const Vector2D &dir, const Vector2D &off
 	return hi;
 }
 
+// Whether two boxes (centre, half) come within `gap` of each other.
+static bool Meet(const Vector2D &ca, const Vector2D &ha, const Vector2D &cb, const Vector2D &hb, float gap)
+{
+	return fabsf(ca.x - cb.x) < ha.x + hb.x + gap && fabsf(ca.y - cb.y) < ha.y + hb.y + gap;
+}
+
+// The way each group in focus comes in (from the crosshair, a unit vector). Several criticals at once share the zone:
+// the most attended comes straight in from its near home's side; each after it swings its approach round the
+// crosshair, a step either way at a time (up to a quarter turn), until its extent, at the bound, keeps clear of those
+// already in and inside the screen.
+static void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const float focus[GROUP__COUNT],
+	const Place places[GROUP__COUNT], Vector2D dirs[GROUP__COUNT])
+{
+	int order[GROUP__COUNT], count = 0;
+	for (int g = 0; g < GROUP__COUNT; ++g)
+	{
+		dirs[g] = nearer[g] - f.centre;
+		dirs[g].NormalizeInPlace();
+		if (focus[g] > 0.0f)
+			order[count++] = g;
+	}
+	for (int i = 1; i < count; ++i)	// most attended first
+	{
+		for (int j = i; j > 0 && places[order[j]].att > places[order[j - 1]].att; --j)
+			V_swap(order[j], order[j - 1]);
+	}
+	const float gap = FOCUS_GAP * f.s;
+	Vector2D takenCentre[GROUP__COUNT], takenHalf[GROUP__COUNT];
+	for (int n = 0; n < count; ++n)
+	{
+		const int g = order[n];
+		Vector2D centre, half;
+		GroupExtent(f, g, centre, half);
+		const Vector2D offset = centre - places[g].pos;
+		const float most = (nearer[g] - f.centre).Length(), base = atan2f(dirs[g].y, dirs[g].x);
+		Vector2D chosen = dirs[g], chosenCentre = f.centre + dirs[g] * FocusReach(f, dirs[g], offset, half, most) + offset;
+		bool bFound = false;
+		for (int step = 0; step * ORBIT_STEP <= ORBIT_MOST && !bFound; ++step)
+		{
+			for (int side = 0; side < (step == 0 ? 1 : 2) && !bFound; ++side)
+			{
+				const float angle = base + DEG2RAD((side == 0 ? 1.0f : -1.0f) * step * ORBIT_STEP);
+				const Vector2D dir(cosf(angle), sinf(angle));
+				const Vector2D c = f.centre + dir * FocusReach(f, dir, offset, half, most) + offset;
+				bool bClear = Inside(f, c, half).IsZero(0.5f);
+				for (int m = 0; m < n && bClear; ++m)
+					bClear = !Meet(c, half, takenCentre[m], takenHalf[m], gap);
+				if (bClear)
+				{
+					chosen = dir;
+					chosenCentre = c;
+					bFound = true;
+				}
+			}
+		}
+		dirs[g] = chosen;
+		takenCentre[n] = chosenCentre;
+		takenHalf[n] = half;
+	}
+}
+
+// Groups in focus keep off each other (two criticals at once both come in by the crosshair): where two boxes overlap
+// and either is in focus, the one less in focus steps out along the shallower way, its speed that way dropped, and
+// stays out of the focus bound and inside the screen.
+static void SeparateFocused(const Frame &f, Place places[GROUP__COUNT])
+{
+	const float gap = FOCUS_GAP * f.s;
+	for (int pass = 0; pass < 2; ++pass)
+	{
+		for (int a = 0; a < GROUP__COUNT; ++a)
+		{
+			for (int b = a + 1; b < GROUP__COUNT; ++b)
+			{
+				if (places[a].focus <= 0.0f && places[b].focus <= 0.0f)
+					continue;
+				Vector2D ca, ha, cb, hb;
+				GroupExtent(f, a, ca, ha);
+				GroupExtent(f, b, cb, hb);
+				const float ox = ha.x + hb.x + gap - fabsf(ca.x - cb.x), oy = ha.y + hb.y + gap - fabsf(ca.y - cb.y);
+				if (ox <= 0.0f || oy <= 0.0f)
+					continue;
+				const bool bMoveA = places[a].focus != places[b].focus ? places[a].focus < places[b].focus : places[a].att < places[b].att;
+				const int mover = bMoveA ? a : b;
+				Place &m = places[mover];
+				const Vector2D away = bMoveA ? ca - cb : cb - ca;
+				if (ox < oy)
+				{
+					m.pos.x += away.x < 0.0f ? -ox : ox;
+					m.vel.x = 0.0f;
+				}
+				else
+				{
+					m.pos.y += away.y < 0.0f ? -oy : oy;
+					m.vel.y = 0.0f;
+				}
+				Vector2D centre, half;
+				GroupExtent(f, mover, centre, half);
+				Vector2D dir = m.pos - f.centre;
+				const float at = dir.NormalizeInPlace();
+				if (at > 0.001f && !ClearOfFocus(f, centre, half))
+				{
+					m.pos = f.centre + dir * FocusReach(f, dir, centre - m.pos, half, at + 400.0f * f.s);
+					GroupExtent(f, mover, centre, half);
+				}
+				m.pos += Inside(f, centre, half);
+			}
+		}
+	}
+}
+
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f, float dt, bool bBoot, Place places[GROUP__COUNT])
 {
 	const Comfort comfort = ComfortOf();
+	const float listen = 1.0f - Action(senses, f.now);
+	s_listen = bBoot ? listen : s_listen + (listen - s_listen) * Min(1.0f, dt / (listen > s_listen ? LISTEN_RISE : LISTEN_FALL));
 	const auto mirror = [&](const Vector2D &p) { return f.hand > 0 ? p : Vector2D(f.wide - p.x, p.y); };
 	// Attention: in fast, out slow.
 	for (int g = 0; g < GROUP__COUNT; ++g)
@@ -178,26 +300,34 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 	{
 		DeepSpring(s_ringDeep.offset, s_ringDeep.vel, turn, dt);
 	}
+	// How far each is in focus, and the way each comes in.
+	Vector2D nearHomes[GROUP__COUNT], approach[GROUP__COUNT];
+	float focusGoals[GROUP__COUNT];
+	for (int g = 0; g < GROUP__COUNT; ++g)
+	{
+		nearHomes[g] = homes[g].bLeft ? homes[g].nearer : mirror(homes[g].nearer);
+		focusGoals[g] = cl_neo_hud_focus.GetBool() && !bBoot
+			? clamp((places[g].att - FOCUS_FROM) / (1.0f - FOCUS_FROM), 0.0f, 1.0f) * comfort.focus : 0.0f;
+	}
+	FocusApproaches(f, nearHomes, focusGoals, places, approach);
 	for (int g = 0; g < GROUP__COUNT; ++g)
 	{
 		Place &p = places[g];
 		const Vector2D far = homes[g].bLeft ? homes[g].far : mirror(homes[g].far);
-		const Vector2D nearer = homes[g].bLeft ? homes[g].nearer : mirror(homes[g].nearer);
+		const Vector2D nearer = nearHomes[g];
 		p.balance = bBoot ? 0.0f : p.balance + (shift * (1.0f - p.att) * comfort.travel - p.balance) * Min(1.0f, dt / BALANCE_EASE);
 		Vector2D target = far + (nearer - far) * (Min(1.0f, p.att / FOCUS_FROM) * comfort.travel) + Vector2D(p.balance, 0.0f);
-		// A critical: on in toward the crosshair, from the side its near home is on, until its extent meets the focus
-		// bound; there it rides the gun's knock, followed straight (not through the spring).
-		const float focusGoal = cl_neo_hud_focus.GetBool() && !bBoot
-			? clamp((p.att - FOCUS_FROM) / (1.0f - FOCUS_FROM), 0.0f, 1.0f) * comfort.focus : 0.0f;
-		p.focus = focusGoal;
+		// A critical: on in toward the crosshair, from the side its near home is on (swung round if others are in
+		// already), until its extent meets the focus bound; there it rides the gun's knock, followed straight (not
+		// through the spring).
+		p.focus = focusGoals[g];
 		Vector2D kick(0.0f, 0.0f);
 		if (p.focus > 0.0f)
 		{
 			Vector2D centre, half;
 			GroupExtent(f, g, centre, half);
-			Vector2D dir = nearer - f.centre;
-			const float most = dir.NormalizeInPlace();
-			const float reach = FocusReach(f, dir, centre - p.pos, half, most);
+			const Vector2D dir = approach[g];
+			const float reach = FocusReach(f, dir, centre - p.pos, half, (nearer - f.centre).Length());
 			target += (f.centre + dir * reach - target) * p.focus;
 			const Vector2D knock = NeoGunplayGunKnock(f.wide);
 			const float length = knock.Length(), limit = KICK_MAX * f.s;
@@ -266,6 +396,7 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 			p.vel.y = 0.0f;
 		p.pos += inside;
 	}
+	SeparateFocused(f, places);
 }
 
 Look LookOf(const Frame &f, Group group)

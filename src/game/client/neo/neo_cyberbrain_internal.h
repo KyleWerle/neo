@@ -160,6 +160,7 @@ struct Frame
 	Vector2D ringRadii;
 	float bright[GROUP__COUNT + 1];	// how bright the scene is behind each group and (last) the ring, 0 to 1
 	float contrast;					// what's drawing now: 0 on a dark scene, 1 on a bright one (outlines, text edges)
+	float listen;					// how closely you listen, 0 in a fight to 1 all quiet (Listening())
 };
 constexpr int BRIGHT_RING = GROUP__COUNT;
 
@@ -190,6 +191,11 @@ const Senses *PublishedSenses(Color &color);
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &frame, float dt, bool bBoot, Place places[GROUP__COUNT]);
 // The ring's deep layer offset (it doesn't move, but its chassis drifts as you turn), pixels.
 Vector2D RingDeepOffset();
+// The action round you now, 0 calm to 1 a fight (neo_cyberbrain_perceive.cpp).
+float Action(const Senses &s, float now);
+// How closely you listen, eased from the action (neo_cyberbrain_attention.cpp): quiet, the ring, the sounds round you
+// and your own noise come up; in a fight they draw back. 0 to 1.
+float Listening();
 // How far to move something with this centre and half size (pixels) to keep it inside the screen's edges.
 Vector2D Inside(const Frame &frame, const Vector2D &centre, const Vector2D &half);
 // Whether a screen point is in the keep-out round the crosshair (nothing of the HUD's goes there).

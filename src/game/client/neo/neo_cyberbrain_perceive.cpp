@@ -9,9 +9,10 @@
 // signal a group senses sits in one of four layers, ambient, notable, urgent and critical, each a band of the
 // priority (0 to 0.25, to 0.55, to FOCUS_FROM, to 1). Signals in one layer add up within its band (each fills part of
 // what's left, so it never overflows it); a full layer below spills a share in, so a pile of small things lifts a
-// group within its band but never into the next. A layer takes hold as its strongest signal passes a fifth, so a
-// pulse fading out eases the group down through the bands rather than dropping it. Critical is what brings a group
-// into the focus zone by the crosshair (neo_cyberbrain_attention.cpp).
+// group within its band but never into the next (a full band stops a little short of it, so one strong notable
+// signal, sprinting, doesn't read as urgent). A layer takes hold as its strongest signal passes a fifth, so a pulse
+// fading out eases the group down through the bands rather than dropping it. Critical is what brings a group into
+// the focus zone by the crosshair (neo_cyberbrain_attention.cpp).
 
 namespace NeoCyberbrain
 {
@@ -19,6 +20,7 @@ static const float s_floor[LAYER__COUNT + 1] = { 0.0f, LAYER_FLOOR[LAYER_NOTABLE
 	LAYER_FLOOR[LAYER_CRITICAL], 1.0f };
 constexpr float SPILL = 0.35f;		// how much of a full layer below fills this one
 constexpr float HOLD = 0.2f;		// a layer's strongest signal at this takes its band fully
+constexpr float HEADROOM = 0.05f;	// a full layer tops out this far under the next one's floor (sprinting alone was P2)
 
 class Perception
 {
@@ -38,7 +40,8 @@ public:
 				continue;
 			const float below = k > 0 ? p / s_floor[k] : 0.0f;
 			const float fill = 1.0f - m_rest[k] * (1.0f - SPILL * below);
-			const float band = s_floor[k] + (s_floor[k + 1] - s_floor[k]) * fill;
+			const float top = k + 1 < LAYER__COUNT ? s_floor[k + 1] - HEADROOM : 1.0f;
+			const float band = s_floor[k] + (top - s_floor[k]) * fill;
 			p = Max(p, p + (band - p) * Min(1.0f, m_peak[k] / HOLD));
 		}
 		return p;
@@ -112,5 +115,27 @@ float Perceive(const Senses &s, Group group, float now)
 		break;
 	}
 	return p.Priority();
+}
+
+// The action round you (Kyle, 2026-09-30: "the more action around you, you focus less on noise. when its quiet you
+// really focus on the noise you and your surroundings are making"; the compass the same): being hit, firing, shots
+// and blasts heard from the enemy, the ghost showing someone, sprinting, reloading, each filling part of what's left.
+// Steps and the quieter sounds don't count: those are what a quiet moment listens for.
+float Action(const Senses &s, float now)
+{
+	float calm = 1.0f;
+	const auto add = [&calm](float x) { calm *= 1.0f - clamp(x, 0.0f, 1.0f); };
+	add(Pulse(now, s.hitTime, 1.0f));
+	add(now - s.shotTime < 1.5f ? 0.9f : 0.0f);
+	for (int i = 0; i < s.heardCount; ++i)
+	{
+		const Heard &h = s.heard[i];
+		if (!h.bFriendly && (h.kind == SOUND_GUNFIRE || h.kind == SOUND_BLAST))
+			add((0.5f + 0.5f * h.loud) * (1.0f - (now - h.time) / 2.0f));
+	}
+	add(s.ghostContacts > 0 ? 0.5f : 0.0f);
+	add(s.bSprinting ? 0.35f : 0.0f);
+	add(s.bReloading ? 0.3f : 0.0f);
+	return 1.0f - calm;
 }
 } // namespace NeoCyberbrain

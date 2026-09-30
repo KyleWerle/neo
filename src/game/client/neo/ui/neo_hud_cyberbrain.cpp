@@ -208,10 +208,13 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	f.pPlaces = m_places;
 	f.ringCentre = f.centre;	// placed after the attention step; nothing round it until then
 	f.ringRadii.Init(0.0f, 0.0f);
+	f.listen = 1.0f;
 
 	NC::Home homes[NC::GROUP__COUNT];
 	HomesOf(homes, style);
 	NC::Attend(m_senses, homes, f, dt, bBoot, m_places);
+	f.listen = NC::Listening();
+	const float ringSize = 0.95f + 0.1f * f.listen;	// listening, the ring opens out a touch
 
 	// The ring: small at the bottom centre, or the body's ground disc; it opens as you look down.
 	const float down = clamp(m_senses.pitch / 60.0f, -0.5f, 1.0f);
@@ -220,6 +223,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		const float k = f.s * NC::LookOf(f, NC::GROUP_BODY).scale;
 		f.ringCentre = m_places[NC::GROUP_BODY].pos + Vector2D(0.0f, 60.0f * k);
 		f.ringRadii.Init(m_bodyRingRadius, m_bodyRingRadius * clamp(0.3f + 0.3f * down, 0.12f, 0.66f));
+		f.ringRadii *= ringSize;
 	}
 	else
 	{
@@ -227,6 +231,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		// too much and distracting; they also ran it into the chat and the keep-out).
 		f.ringCentre.Init(f.centre.x, static_cast<float>(m_ringY));
 		f.ringRadii.Init(m_ringRadius, m_ringRadius * clamp(0.24f + 0.16f * down, 0.18f, 0.40f));
+		f.ringRadii *= ringSize;
 		// Opening as you look down, it mustn't swing past the screen's bottom: held inside with its marks.
 		Vector2D centre, half;
 		NC::GroupExtent(f, NC::BRIGHT_RING, centre, half);

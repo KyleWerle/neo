@@ -156,7 +156,7 @@ static float SoundPriority(const Heard &h, float now)
 		+ 0.99f * (0.4f + 0.6f * h.loud) * (0.5f + 0.5f * fresh) - (h.bFriendly ? 10.0f : 0.0f);
 }
 
-constexpr int SOUNDS_LEADING = 4;	// full marks at most at once
+constexpr int SOUNDS_LEADING_BUSY = 2, SOUNDS_LEADING_QUIET = 6;	// full marks at most at once, in a fight and all quiet
 
 void PaintRing(const Frame &f)
 {
@@ -166,17 +166,20 @@ void PaintRing(const Frame &f)
 	const auto rel = [&](float worldYaw) { return AngleNormalize(s.yaw - worldYaw); };
 	const float view = Heading(s.yaw);
 	const float a = bBody ? LookOf(f, GROUP_BODY).alpha : 1.0f;
+	// Listening (Kyle: in a fight you hear less; quiet, the noise round you and your own is what you focus on): the
+	// ring, the compass and the sounds come up as it quiets, and draw back in action. The callouts never do.
+	const float L = f.listen, ringA = a * (0.6f + 0.6f * L), compassA = 0.65f + 0.35f * L;
 
 	// The ring, brighter ahead; ticks every 30 degrees of heading.
 	for (int i = 0; i < 72; ++i)
 	{
 		const float b0 = i * 5.0f - 180.0f;
-		Line(f, ring.At(b0), ring.At(b0 + 5.0f), NEO_GHOST_LIGHT, f.color, (0.1f + 0.22f * Ring::Front(b0 + 2.5f)) * a);
+		Line(f, ring.At(b0), ring.At(b0 + 5.0f), NEO_GHOST_LIGHT, f.color, (0.1f + 0.22f * Ring::Front(b0 + 2.5f)) * ringA);
 	}
 	for (int h = 0; h < 360; h += 30)
 	{
 		const float b = AngleNormalize(h - view);
-		Line(f, ring.At(b), ring.At(b, 10.0f), NEO_GHOST_LIGHT, f.color, 0.45f * (0.3f + 0.7f * Ring::Front(b)) * a);
+		Line(f, ring.At(b), ring.At(b, 10.0f), NEO_GHOST_LIGHT, f.color, 0.45f * (0.3f + 0.7f * Ring::Front(b)) * ringA);
 	}
 	static const wchar_t *s_cardinals[] = { L"N", L"E", L"S", L"W" };
 	// The cardinals, pronounced (Kyle: more than the original compass, and readable): a heavy tick through the ring at
@@ -184,17 +187,17 @@ void PaintRing(const Frame &f)
 	// over the capsule and bright scenes alike; north with its own pointer outward.
 	for (int i = 0; i < 4; ++i)
 	{
-		const float b = AngleNormalize(i * 90.0f - view), front = Ring::Front(b), ca = (0.5f + 0.5f * front) * a;
+		const float b = AngleNormalize(i * 90.0f - view), front = Ring::Front(b), ca = (0.5f + 0.5f * front) * a * compassA;
 		Line(f, ring.At(b, -6.0f), ring.At(b, 14.0f), NEO_GHOST_HEAVY, f.color, ca);
 		const Vector2D at = ring.At(b, bBody ? 30.0f : 34.0f);
 		const float w = TextWidth(s_cardinals[i], FONT_VALUE_LARGE) * 0.5f + 5.0f * f.s, h = 11.0f * f.s;
-		Rect(f, at - Vector2D(w, h), at + Vector2D(w, h), Color(0, 0, 0, 255), 0.55f);
-		Text(f, s_cardinals[i], at.x, at.y, 0, FONT_VALUE_LARGE, f.color, 0.8f + 0.2f * front);
+		Rect(f, at - Vector2D(w, h), at + Vector2D(w, h), Color(0, 0, 0, 255), 0.55f * compassA);
+		Text(f, s_cardinals[i], at.x, at.y, 0, FONT_VALUE_LARGE, f.color, (0.8f + 0.2f * front) * compassA);
 		if (i == 0)
 		{
 			const Vector2D tip = ring.At(b, bBody ? 52.0f : 56.0f), base = ring.At(b, bBody ? 45.0f : 49.0f);
 			const Vector2D across = Vector2D(base.y - tip.y, tip.x - base.x) * 0.8f;
-			NeoGhostBegin(f.color, Alpha(f, 0.9f));
+			NeoGhostBegin(f.color, Alpha(f, 0.9f * compassA));
 			const Vector2D pointer[4] = { tip, base + across, base - across, tip };
 			NeoGhostFill(pointer);
 		}
@@ -240,7 +243,8 @@ void PaintRing(const Frame &f)
 	}
 	bool bLeads[MAX_HEARD] = {};
 	int leading = 0;
-	for (int n = 0; n < s.heardCount && leading < SOUNDS_LEADING; ++n)
+	const int leadMost = SOUNDS_LEADING_BUSY + RoundFloatToInt((SOUNDS_LEADING_QUIET - SOUNDS_LEADING_BUSY) * L);
+	for (int n = 0; n < s.heardCount && leading < leadMost; ++n)
 	{
 		const int i = order[n];
 		if (s.heard[i].bFriendly)
@@ -263,10 +267,11 @@ void PaintRing(const Frame &f)
 			continue;
 		const Heard &h = s.heard[i];
 		const float fade = 1.0f - (f.now - h.time) / 2.0f, b = rel(h.bearing);
-		// A teammate's: shorter and fainter still, so it reads as ours and not a threat.
-		const float reach = h.bFriendly ? 0.4f : 0.7f;
+		// A teammate's: shorter and fainter still, so it reads as ours and not a threat (all but gone in a fight; quiet,
+		// it's part of the noise round you).
+		const float reach = h.bFriendly ? 0.35f + 0.2f * L : 0.7f;
 		Arc(f, f.ringCentre, f.ringRadii, b - span * reach, b + span * reach, NEO_GHOST_LIGHT, f.color,
-			(h.bFriendly ? 0.15f : 0.3f) * fade);
+			(h.bFriendly ? 0.04f + 0.26f * L : 0.15f + 0.3f * L) * fade);
 	}
 	for (int i = 0; i < s.heardCount; ++i)
 	{
@@ -279,16 +284,17 @@ void PaintRing(const Frame &f)
 		for (int layer = 0; layer < (h.loud > 0.6f ? 2 : 1); ++layer)
 		{
 			const Vector2D radii = f.ringRadii + Vector2D(layer * 3.0f, layer * 1.5f) * f.s;
-			Arc(f, f.ringCentre, radii, b - span, b + span, w, c, 0.95f * fade);
+			Arc(f, f.ringCentre, radii, b - span, b + span, w, c, (0.75f + 0.2f * L) * fade);
 		}
 		if (age < 0.3f)
 		{
 			const Vector2D p = ring.At(b, 40.0f * (1.0f - age / 0.3f) + 6.0f);
 			Rect(f, p - Vector2D(2.5f, 2.5f) * f.s, p + Vector2D(2.5f, 2.5f) * f.s, c, 0.9f);
 		}
-		KindGlyph(f, ring.At(b, bBody ? 22.0f : -16.0f), h.kind, c, 0.8f * fade);
+		KindGlyph(f, ring.At(b, bBody ? 22.0f : -16.0f), h.kind, c, (0.65f + 0.3f * L) * fade);
 	}
-	// Your own noise: short ticks pushed out all round, as far as the sound carries (log scale).
+	// Your own noise: short ticks pushed out all round, as far as the sound carries (log scale); faint in a fight, and
+	// quiet, what you listen to most (further out, stronger).
 	for (int i = 0; i < s.noiseCount; ++i)
 	{
 		const Noise &n = s.noise[i];
@@ -299,8 +305,8 @@ void PaintRing(const Frame &f)
 		for (int t = 0; t < count; ++t)
 		{
 			const float b = (t + 0.5f) * 360.0f / count;
-			Line(f, ring.At(b, 3.0f), ring.At(b, 3.0f + 36.0f * reach * grow), bLoud ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT,
-				bLoud ? WARN : f.color, 0.7f * fade);
+			Line(f, ring.At(b, 3.0f), ring.At(b, 3.0f + 36.0f * (0.7f + 0.4f * L) * reach * grow),
+				bLoud ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT, bLoud ? WARN : f.color, (0.25f + 0.65f * L) * fade);
 		}
 	}
 	// The ghost's callouts over everything, just outside the sound icons: On the body the glyphs sit out past the ring

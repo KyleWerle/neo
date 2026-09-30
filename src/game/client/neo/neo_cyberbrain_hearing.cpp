@@ -32,7 +32,7 @@ constexpr float SHOT_DEDUPE = 0.15f;	// seconds a shot's sound and its magazine 
 // The therm-optic's on and off: the server sends them only to players within 50 units (CNEO_Player::PlayCloakSound's
 // MAX_CLOAK_DISTANCE), so that's how far they carry.
 constexpr float CLOAK_UNITS = 50.0f;
-constexpr float AUDIBLE = 0.02f;		// spatialised volume under this: not heard
+constexpr float AUDIBLE = 0.02f;		// spatialised volume under this: not heard (in a fight; listening, down to half)
 constexpr float HEARD_FOR = 2.0f, NOISE_FOR = 1.2f;
 
 const wchar_t *SoundName(SoundKind kind)
@@ -146,6 +146,7 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 	static CUtlVector<SndInfo_t> s_sounds;	// kept, not allocated every frame
 	s_sounds.RemoveAll();
 	enginesound->GetActiveSounds(s_sounds);
+	const float audible = AUDIBLE * (1.0f - 0.5f * Listening());
 	for (const SndInfo_t &snd : s_sounds)
 	{
 		// Taken once, when it first reaches your ears (a sound starts before it's spatialised).
@@ -172,7 +173,7 @@ static void SenseSounds(C_NEO_Player *pPlayer, float now, Senses &out)
 		s_hearing.seenNext = (s_hearing.seenNext + 1) % ARRAYSIZE(s_hearing.seen);
 		const bool bYours = pOwner == pPlayer;
 		const bool bFriendly = !bYours && NEORules()->IsTeamplay() && pOwner->GetTeamNumber() == pPlayer->GetTeamNumber();
-		if (!bYours && (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < AUDIBLE))
+		if (!bYours && (!cl_neo_hud_hearing.GetBool() || snd.m_flLastSpatializedVolume < audible))
 		{
 			continue;
 		}
