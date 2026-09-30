@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_ghost_stroke.h"
+#include "neo_hud_profile.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/MaterialSystemUtil.h"
@@ -169,6 +170,8 @@ static void DrawBatched(const QueuedQuad *pQuads, int count, IMesh *pMesh)
 	}
 	meshBuilder.End();
 	pMesh->Draw();
+	NeoHudCount(NEO_HUD_COUNT_MESHES);
+	NeoHudCount(NEO_HUD_COUNT_QUADS, count);
 }
 
 // A draw call each, through vgui (which moves them by the panel's position: the HUD boot draws in its panel's own
@@ -192,6 +195,8 @@ static void DrawEach(const QueuedQuad *pQuads, int count)
 		quad[3].Init(q.corners[3], Vector2D(0, 1));
 		vgui::surface()->DrawTexturedPolygon(4, quad);
 	}
+	NeoHudCount(NEO_HUD_COUNT_MESHES, count);
+	NeoHudCount(NEO_HUD_COUNT_QUADS, count);
 }
 
 void NeoGhostFlush()

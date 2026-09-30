@@ -10,6 +10,7 @@
 #include "neo_ironsight_optic.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_profile.h"
+#include "neo_hud_profile.h"
 #include "neo_crosshair.h"
 #include "neo_predicted_viewmodel.h"
 #include "c_neo_player.h"
@@ -141,6 +142,7 @@ void NeoCrosshairReadout(const NeoCrosshairFrame &frame, const Vector2D &at, con
 	vgui::surface()->DrawSetTextColor(frame.color.r(), frame.color.g(), frame.color.b(), frame.Alpha(opacity));
 	vgui::surface()->DrawSetTextPos(RoundFloatToInt(at.x), RoundFloatToInt(at.y) - vgui::surface()->GetFontTall(font) / 2);
 	vgui::surface()->DrawPrintText(text, count);
+	NeoHudCount(NEO_HUD_COUNT_TEXT);
 }
 
 // Where the gun's knock and pivot have turned it from the aim, in screen pixels (right, down). The local player's
@@ -198,7 +200,8 @@ bool NeoHudFadedOut()
 
 void NeoGunplayPaintCrosshairLayer(C_NEOBaseCombatWeapon *pWeapon, const Color &colorIn, int x, int y, bool bCentre)
 {
-	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_HUD, "NeoGunplayPaintCrosshairLayer");
+	NEO_HUD_PROFILE(NEO_HUD_PROFILE_CROSSHAIR, "NeoGunplayPaintCrosshairLayer");
+	CNeoIronsightProfileScope ironsightHud(NEO_PROFILE_HUD);	// the ironsight bench's hud column
 	// Under a screen fade (the spawn's fade in from black): the HUD paints over the view's fade, so the layer fades
 	// with it, and isn't drawn at all while nearly black; drawn again, it boots and traces in as the view comes up.
 	const float visible = NeoHudFadeVisible();

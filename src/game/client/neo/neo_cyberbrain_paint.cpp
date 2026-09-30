@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -125,7 +126,9 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	const int edge = Alpha(f, alpha * (0.6f + 0.35f * f.contrast));
 	vgui::surface()->DrawSetTextColor(0, 0, 0, edge);
 	static const int s_offsets[][2] = { { 1, 1 }, { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-	for (int i = 0; i < (f.contrast > 0.3f ? 5 : 1); ++i)
+	const int edges = f.contrast > 0.3f ? 5 : 1;
+	NeoHudCount(NEO_HUD_COUNT_TEXT, edges + 1);
+	for (int i = 0; i < edges; ++i)
 	{
 		vgui::surface()->DrawSetTextPos(tx + s_offsets[i][0], ty + s_offsets[i][1]);
 		vgui::surface()->DrawPrintText(pText, count);
@@ -166,6 +169,7 @@ static bool PlateBox(const Frame &f, const wchar_t *pText, float x, float y, int
 	vgui::surface()->DrawSetTextColor(fg.r(), fg.g(), fg.b(), Alpha(f, alpha));
 	vgui::surface()->DrawSetTextPos(RoundFloatToInt(x0 + pad), RoundFloatToInt(y - tall * 0.5f));
 	vgui::surface()->DrawPrintText(pText, V_wcslen(pText));
+	NeoHudCount(NEO_HUD_COUNT_TEXT);
 	return true;
 }
 

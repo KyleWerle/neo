@@ -8,6 +8,7 @@
 #include "neo/neo_gunplay_crosshair.h"
 #include "neo_ironsights.h"
 #include "neo_ironsight_profile.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
 #include <algorithm>
@@ -184,7 +185,8 @@ void CNEOHud_Cyberbrain::HomesOf(NC::Home homes[NC::GROUP__COUNT], NeoHudStyle s
 
 void CNEOHud_Cyberbrain::DrawNeoHudElement()
 {
-	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_HUD, "CNEOHud_Cyberbrain");
+	NEO_HUD_PROFILE(NEO_HUD_PROFILE_VITALS, "CNEOHud_Cyberbrain");
+	CNeoIronsightProfileScope ironsightHud(NEO_PROFILE_HUD);	// the ironsight bench's hud column
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
 	if (!ShouldDraw() || !pPlayer)
 	{

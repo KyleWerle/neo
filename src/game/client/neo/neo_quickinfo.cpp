@@ -9,6 +9,7 @@
 #include "neo_gamerules.h"
 #include "weapon_neobasecombatweapon.h"
 #include "neo_ironsight_profile.h"
+#include "neo_hud_profile.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -258,7 +259,8 @@ bool NeoQuickInfoShowing()
 
 void NeoQuickInfoPaint(C_NEO_Player *pPlayer, const Color &color)
 {
-	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_HUD, "NeoQuickInfoPaint");
+	NEO_HUD_PROFILE(NEO_HUD_PROFILE_VITALS, "NeoQuickInfoPaint");
+	CNeoIronsightProfileScope ironsightHud(NEO_PROFILE_HUD);	// the ironsight bench's hud column
 	using namespace NeoQuickInfo;
 	// The local player's own, alive, and not where the rules hide the panel it replaces; through a scope too (the
 	// stock panels stay up there). A watched player's therm-optic and aux never reach this client.

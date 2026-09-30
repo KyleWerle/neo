@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_quickinfo_internal.h"
+#include "neo_hud_profile.h"
 #include "c_neo_player.h"
 #include "view.h"
 #include "materialsystem/imaterialsystem.h"
@@ -44,6 +45,7 @@ static float Sample(C_NEO_Player *pPlayer, const Vector2D &pixel, int wide, int 
 {
 	const Vector dir = MainViewForward() + MainViewRight() * ((pixel.x - wide * 0.5f) / pixelsPerTangent)
 		- MainViewUp() * ((pixel.y - tall * 0.5f) / pixelsPerTangent);
+	NeoHudCount(NEO_HUD_COUNT_RAYS);
 	trace_t tr;
 	UTIL_TraceLine(MainViewOrigin(), MainViewOrigin() + dir.Normalized() * REACH, MASK_OPAQUE, pPlayer, COLLISION_GROUP_NONE, &tr);
 	if (tr.surface.flags & SURF_SKY)

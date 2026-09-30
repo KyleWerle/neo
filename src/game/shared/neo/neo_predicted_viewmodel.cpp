@@ -9,6 +9,7 @@
 #include "neo/neo_spread_pivot.h"
 #include "neo/neo_viewmodel_recoil.h"
 #include "neo/neo_cyberbrain_gun.h"
+#include "neo/neo_hud_profile.h"
 #endif
 
 #include "in_buttons.h"
@@ -376,6 +377,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 
 void CNEOPredictedViewModel::DrawCyberbrainGun(int flags)
 {
+	NEO_HUD_PROFILE(NEO_HUD_PROFILE_GUN, "DrawCyberbrainGun");
 	NeoCyberGunPass pass;
 	if (!NeoCyberGunPrepare(this, pass))
 	{

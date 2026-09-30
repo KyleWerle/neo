@@ -7,6 +7,7 @@
 #include "neo_gamerules.h"
 #include "neo/neo_competitive.h"
 #include "neo/neo_cyberbrain.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -119,6 +120,7 @@ float NCo::Print(const Pen &pen, const wchar_t *pText, float x, float y, int ali
 	surface()->DrawSetTextColor(c);
 	surface()->DrawSetTextPos(tx, ty);
 	surface()->DrawPrintText(text, count);
+	NeoHudCount(NEO_HUD_COUNT_TEXT, 2);
 	return static_cast<float>(wide);
 }
 
@@ -166,6 +168,7 @@ void CNEOHud_Competitive::DrawNeoHudElement()
 	// The vitals as the stock panels hide: dead, spectating, the rules' bits, their own switches.
 	if (pPlayer->IsAlive() && !pPlayer->IsObserver() && !gHUD.IsHidden(HIDEHUD_HEALTH | HIDEHUD_PLAYERDEAD))
 	{
+		NEO_HUD_PROFILE(NEO_HUD_PROFILE_VITALS, "CNEOHud_Competitive vitals");
 		static ConVarRef cl_neo_hud_hta_enabled("cl_neo_hud_hta_enabled"), cl_neo_hud_ammo_enabled("cl_neo_hud_ammo_enabled");
 		NCo::PaintVitals(pen, !(hidden & NEO_HUD_ELEMENT_HEALTH_THERMOPTIC_AUX) && cl_neo_hud_hta_enabled.GetBool(),
 			!(hidden & NEO_HUD_ELEMENT_AMMO) && cl_neo_hud_ammo_enabled.GetBool(), !(hidden & NEO_HUD_ELEMENT_COMPASS));
@@ -174,6 +177,7 @@ void CNEOHud_Competitive::DrawNeoHudElement()
 	const int team = GetLocalPlayerTeam();
 	if (team == TEAM_JINRAI || team == TEAM_NSF)
 	{
+		NEO_HUD_PROFILE(NEO_HUD_PROFILE_TEAM, "CNEOHud_Competitive team");
 		if (!(hidden & NEO_HUD_ELEMENT_ROUND_STATE))
 		{
 			NCo::PaintRound(pen);

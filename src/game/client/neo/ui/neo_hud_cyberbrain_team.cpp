@@ -9,6 +9,7 @@
 #include "neo_gamerules.h"
 #include "neo/neo_cyberbrain_team.h"
 #include "neo/neo_gunplay_crosshair.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
 
@@ -115,6 +116,7 @@ void CNEOHud_CyberbrainTeam::DrawNeoHudElement()
 	{
 		return;
 	}
+	NEO_HUD_PROFILE(NEO_HUD_PROFILE_TEAM, "CNEOHud_CyberbrainTeam");
 	NeoCyberbrainPlaceChat();
 
 	NC::Frame f;

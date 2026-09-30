@@ -1721,6 +1721,9 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_gunplay_shots.h
     neo/neo_hud_boot.cpp
     neo/neo_hud_boot.h
+    neo/neo_hud_bench.cpp
+    neo/neo_hud_profile.cpp
+    neo/neo_hud_profile.h
     neo/neo_ironsight_dots.cpp
     neo/neo_ironsight_dots.h
     neo/neo_ironsight_lens.cpp

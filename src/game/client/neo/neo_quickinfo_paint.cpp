@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_quickinfo_internal.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui_controls/Controls.h>
@@ -94,6 +95,7 @@ float Text(const QuickFrame &f, Layer layer, const wchar_t *pText, int count, fl
 	vgui::surface()->DrawSetTextColor(c.r(), c.g(), c.b(), Alpha(f, a));
 	vgui::surface()->DrawSetTextPos(tx, ty);
 	vgui::surface()->DrawPrintText(pText, count);
+	NeoHudCount(NEO_HUD_COUNT_TEXT, 2);
 	return wide / f.s;
 }
 
