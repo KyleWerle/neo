@@ -158,29 +158,38 @@ static float SoundPriority(const Heard &h, float now)
 
 // The listening mode made plain (Kyle: the level alone wasn't noticed): on entering, a ping ripples out from the ring;
 // in it, a sonar sweep circles the ring once every three seconds, a dashed ring of the hearing's reach breathes
-// outside it, and LSTN shows at its side. All of it fades in with the mode and goes as it leaves.
+// outside it, and LSTN shows at its side. All of it fades in with the mode and goes as it leaves. The comfort forms
+// (HUD-REWORK.md's table): Full as built; Calm a 25 px ping, one sweep then held where it ended, the reach steady;
+// Still no ping, sweep or breathing, the reach and LSTN easing in over 0.6 s (and the ring's size fixed, in the
+// element).
 static void PaintListening(const Frame &f, const Ring &ring)
 {
 	const float age = f.listenFor;
 	if (age < 0.0f)
 		return;
+	static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
+	const int motion = cl_neo_hud_motion.IsValid() ? cl_neo_hud_motion.GetInt() : 1;
 	const float in = NeoSmoothStep(age / 0.6f) * f.alpha;
 	const Vector2D c = f.ringCentre, r = f.ringRadii;
 	const float aspect = r.y / Max(r.x, 1.0f);
-	if (age < 0.7f)
+	if (motion > 0 && age < 0.7f)
 	{
-		const float t = age / 0.7f, grow = 60.0f * NeoSmoothStep(t) * f.s;
+		const float t = age / 0.7f, grow = (motion >= 2 ? 60.0f : 25.0f) * NeoSmoothStep(t) * f.s;
 		Arc(f, c, r + Vector2D(grow, grow * aspect), -180.0f, 180.0f, NEO_GHOST_MEDIUM, f.color, 0.6f * (1.0f - t));
 	}
-	// The sweep: a bright head trailing off behind it.
-	const float head = fmodf(age * 120.0f, 360.0f) - 180.0f;
-	for (int k = 0; k < 6; ++k)
+	// The sweep: a bright head trailing off behind it (calm: once round, then held).
+	if (motion > 0)
 	{
-		const float b1 = head - k * 7.0f, b0 = b1 - 7.0f;
-		Arc(f, c, r, b0, b1, k == 0 ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT, f.color, 0.55f * (1.0f - k / 6.0f) * in);
+		const float swept = motion >= 2 ? fmodf(age * 120.0f, 360.0f) : Min(age * 120.0f, 359.0f);
+		const float head = swept - 180.0f;
+		for (int k = 0; k < 6; ++k)
+		{
+			const float b1 = head - k * 7.0f, b0 = b1 - 7.0f;
+			Arc(f, c, r, b0, b1, k == 0 ? NEO_GHOST_MEDIUM : NEO_GHOST_LIGHT, f.color, 0.55f * (1.0f - k / 6.0f) * in);
+		}
 	}
-	// The hearing's reach, dashed, breathing.
-	const float breathe = 0.8f + 0.2f * sinf(age * 2.0f), out = 18.0f * f.s;
+	// The hearing's reach, dashed, breathing (steady below full).
+	const float breathe = motion >= 2 ? 0.8f + 0.2f * sinf(age * 2.0f) : 0.9f, out = 18.0f * f.s;
 	const Vector2D reach = r + Vector2D(out, out * aspect);
 	for (int d = 0; d < 36; d += 2)
 		Arc(f, c, reach, d * 10.0f - 180.0f, d * 10.0f - 175.0f, NEO_GHOST_LIGHT, f.color, 0.22f * breathe * in);

@@ -216,7 +216,9 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	NC::Attend(m_senses, homes, f, dt, bBoot, m_places);
 	f.listen = NC::Listening();
 	f.listenFor = NC::ListeningFor(now);
-	const float ringSize = 0.92f + 0.16f * f.listen;	// listening, the ring opens out; in a fight it draws in
+	// Listening, the ring opens out; in a fight it draws in (still: its size fixed).
+	static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
+	const float ringSize = cl_neo_hud_motion.GetInt() == 0 ? 1.0f : 0.92f + 0.16f * f.listen;
 
 	// The ring: small at the bottom centre, or the body's ground disc; it opens as you look down.
 	const float down = clamp(m_senses.pitch / 60.0f, -0.5f, 1.0f);
