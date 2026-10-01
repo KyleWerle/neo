@@ -8,7 +8,9 @@
 // layer changes"): marks round each group's extent that build up layer by layer. Ambient: none. Notable: short
 // corner ticks. Urgent: longer brackets, a rail along the top and the layer's code. Critical: heavy brackets doubled
 // inside, the code in the critical colour, pulsing its first moments. Rising a layer, the brackets snap in from
-// further out and a scan runs down the group; falling one, the old layer's marks drift out and fade.
+// further out and a scan runs down the group; falling one, the old layer's marks drift out and fade. The comfort forms
+// (HUD-REWORK.md's table): Full as that; Calm snaps in from 8 px over 0.3 s, no scan or pulse, the old marks fading in
+// place over 0.4 s; Still nothing travels, the marks ease in over 0.4 s and out over 0.6 s.
 
 namespace NeoCyberbrain
 {
@@ -65,14 +67,22 @@ void PaintLayer(const Frame &f, Group group)
 	const Vector2D a = centre - half - pad, b = centre + half + pad;
 	const float age = f.now - p.layerChanged, alpha = f.alpha;
 	const bool bRose = p.layer > p.lastLayer;
+	static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
+	const int motion = cl_neo_hud_motion.IsValid() ? cl_neo_hud_motion.GetInt() : 1;
+	const bool bFull = motion >= 2;
 	if (bRose)
 	{
-		const float snap = NeoSmoothStep(age / SNAP_FOR);
+		if (motion == 0)
+		{
+			Marks(f, p.layer, a, b, 0.0f, NeoSmoothStep(age / 0.4f) * alpha);
+			return;
+		}
+		const float snap = NeoSmoothStep(age / (bFull ? SNAP_FOR : 0.3f));
 		float strength = 1.0f;
-		if (p.layer >= LAYER_CRITICAL && age < PULSE_FOR)
+		if (bFull && p.layer >= LAYER_CRITICAL && age < PULSE_FOR)
 			strength = 0.75f + 0.25f * cosf(age * 2.0f * M_PI_F * 2.0f);
-		Marks(f, p.layer, a, b, (1.0f - snap) * 18.0f * f.s, (0.4f + 0.6f * snap) * strength * alpha);
-		if (age < SCAN_FOR)
+		Marks(f, p.layer, a, b, (1.0f - snap) * (bFull ? 18.0f : 8.0f) * f.s, (0.4f + 0.6f * snap) * strength * alpha);
+		if (bFull && age < SCAN_FOR)
 		{
 			const float y = a.y + (b.y - a.y) * (age / SCAN_FOR);
 			Line(f, Vector2D(a.x, y), Vector2D(b.x, y), NEO_GHOST_LIGHT, f.color, 0.6f * (1.0f - age / SCAN_FOR) * alpha);
@@ -80,10 +90,11 @@ void PaintLayer(const Frame &f, Group group)
 		return;
 	}
 	Marks(f, p.layer, a, b, 0.0f, alpha);
-	if (age < FALL_FOR)
+	const float fallFor = bFull ? FALL_FOR : motion == 0 ? 0.6f : 0.4f;
+	if (age < fallFor)
 	{
-		const float t = age / FALL_FOR;
-		Marks(f, p.lastLayer, a, b, t * 12.0f * f.s, (1.0f - t) * alpha);
+		const float t = age / fallFor;
+		Marks(f, p.lastLayer, a, b, bFull ? t * 12.0f * f.s : 0.0f, (1.0f - t) * alpha);
 	}
 }
 } // namespace NeoCyberbrain
