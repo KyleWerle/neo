@@ -21,6 +21,8 @@
 
 		SearchPaths
 		{
+			// Drop-in language packs and fan content: neo/custom/<pack>/ (LOCALIZATION.md); delete the folder and it is gone
+			Game+Mod                         |gameinfo_path|custom/*
 			Game+Mod                         hl2mp/custom/*
 			Game+Mod                         hl2/custom/*
 

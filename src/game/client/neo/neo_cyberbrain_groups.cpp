@@ -131,9 +131,9 @@ void PaintOptics(const Frame &f)
 	{
 		static const wchar_t *const s_kanji = L"\u5149\u5b66";
 		Stack rail = { L.At(0.0f, -edge).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, Word("neo_hud_cb_optics", L"OPTICS"), s_kanji));
+		const float y = rail.Row(PlateTall(f, L"OPTICS", s_kanji));
 		wchar_t word[16];
-		Plate(f, Crystallise(f, GROUP_OPTICS, Word("neo_hud_cb_optics", L"OPTICS"), word, ARRAYSIZE(word)), L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
+		Plate(f, Crystallise(f, GROUP_OPTICS, L"OPTICS", word, ARRAYSIZE(word)), L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
 	}
 	Stack foot = { L.At(0.0f, edge).y + gap, gap, 1 };
 	const float footY = foot.Row(Max(MachinePlateTall(f), FontTall(FONT_LABEL)));
@@ -144,7 +144,8 @@ void PaintOptics(const Frame &f)
 	}
 	else if (bLabels)
 	{
-		const wchar_t *pWord = s.bCloaked ? L"CLOAKED" : bExposed ? L"EXPOSED" : s.light > 0.3f ? L"LIT" : s.light > 0.15f ? L"DIM" : L"DARK";
+		const wchar_t *pWord = s.bCloaked ? Word("neo_hud_cb_cloaked", L"CLOAKED") : bExposed ? Word("neo_hud_cb_exposed", L"EXPOSED")
+			: s.light > 0.3f ? Word("neo_hud_cb_lit", L"LIT") : s.light > 0.15f ? Word("neo_hud_cb_dim", L"DIM") : Word("neo_hud_cb_dark", L"DARK");
 		Text(f, pWord, L.At(0.0f, 0.0f).x, footY, 0, FONT_LABEL, bExposed ? WARN : f.color, look.labels * a);
 	}
 }

@@ -135,7 +135,7 @@ void PaintMotion(const Frame &f)
 		if (look.labels > 0.02f)
 		{
 			wchar_t word[8];
-			Text(f, Crystallise(f, GROUP_MOTION, Word("neo_hud_cb_jmp", L"JMP"), word, ARRAYSIZE(word)), (lo.x + hi.x) * 0.5f,
+			Text(f, Crystallise(f, GROUP_MOTION, L"JMP", word, ARRAYSIZE(word)), (lo.x + hi.x) * 0.5f,
 				hi.y + (ROW_GAP + 5.0f) * L.k, 0, FONT_LABEL, s.bJumpsLocked ? WARN : f.color, look.labels * a);
 		}
 	}
@@ -188,9 +188,9 @@ void PaintMotion(const Frame &f)
 		static const wchar_t *const s_kanji = L"\u6a5f\u52d5";
 		const float gap = ROW_GAP * L.k;
 		Stack rail = { L.At(0.0f, strideY - StrideReach()).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, Word("neo_hud_cb_motion", L"MOTION"), s_kanji));
+		const float y = rail.Row(PlateTall(f, L"MOTION", s_kanji));
 		wchar_t word[16];
-		Plate(f, Crystallise(f, GROUP_MOTION, Word("neo_hud_cb_motion", L"MOTION"), word, ARRAYSIZE(word)), L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
+		Plate(f, Crystallise(f, GROUP_MOTION, L"MOTION", word, ARRAYSIZE(word)), L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
 	}
 }
 } // namespace NeoCyberbrain

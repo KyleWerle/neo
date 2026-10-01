@@ -1718,6 +1718,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_backing.cpp
     neo/neo_cyberbrain_frame.cpp
     neo/neo_cyberbrain_words.cpp
+    neo/neo_loc.cpp
+    neo/neo_loc.h
     neo/neo_cyberbrain_couple.cpp
     neo/neo_cyberbrain_motion.cpp
     neo/neo_crosshair_rifle.cpp

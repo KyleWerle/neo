@@ -160,9 +160,9 @@ void PaintBody(const Frame &f)
 		static const wchar_t *const s_kanji = L"\u751f\u4f53";
 		const float gap = ROW_GAP * L.k;
 		Stack rail = { L.At(0.0f, DISC_Y - 4.0f - LIFT_MOST - CAPSULE_H).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, Word("neo_hud_cb_biomech", L"BIOMECH"), s_kanji));
+		const float y = rail.Row(PlateTall(f, L"BIOMECH", s_kanji));
 		wchar_t word[16];
-		Plate(f, Crystallise(f, GROUP_BODY, Word("neo_hud_cb_biomech", L"BIOMECH"), word, ARRAYSIZE(word)), L.At(m * -34.0f, 0.0f).x, y, -side, look.labels, s_kanji);
+		Plate(f, Crystallise(f, GROUP_BODY, L"BIOMECH", word, ARRAYSIZE(word)), L.At(m * -34.0f, 0.0f).x, y, -side, look.labels, s_kanji);
 	}
 }
 } // namespace NeoCyberbrain

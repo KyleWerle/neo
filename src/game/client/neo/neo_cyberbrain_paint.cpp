@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "neo_cyberbrain_internal.h"
+#include "neo_loc.h"
 #include "neo_hud_draw.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
@@ -384,8 +385,8 @@ void Cross(const Frame &f, const Vector2D &at, float size, float alpha)
 	Line(f, at - Vector2D(0.0f, size), at + Vector2D(0.0f, size), NEO_GHOST_LIGHT, f.color, alpha);
 }
 
-const wchar_t *Word(const char *, const wchar_t *pEnglish)
+const wchar_t *Word(const char *pToken, const wchar_t *pEnglish)
 {
-	return pEnglish;	// the token is the key NeoLoc::Find will take (the base isn't built yet)
+	return NeoLoc::Find(pToken, pEnglish);
 }
 } // namespace NeoCyberbrain

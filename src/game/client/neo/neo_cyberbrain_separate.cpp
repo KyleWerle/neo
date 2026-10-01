@@ -67,7 +67,15 @@ void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const 
 			V_swap(order[j], order[j - 1]);
 	}
 	const float gap = FOCUS_GAP * f.s;
-	Vector2D takenCentre[GROUP__COUNT], takenHalf[GROUP__COUNT];
+	// The compact ring is a taken box too (it stays where it is): a group in focus mustn't approach into it, which at Calm,
+	// with the approach cut to 0.6, stopped the body partway across it when looking down (HUD-REWORK.md, phase 2).
+	Vector2D takenCentre[GROUP__COUNT + 1], takenHalf[GROUP__COUNT + 1];
+	int taken = 0;
+	if (f.ringRadii.x > 0.0f && f.style != NEO_HUD_STYLE_BODY)
+	{
+		GroupExtent(f, BRIGHT_RING, takenCentre[taken], takenHalf[taken]);
+		++taken;
+	}
 	for (int n = 0; n < count; ++n)
 	{
 		const int g = order[n];
@@ -85,7 +93,7 @@ void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const 
 				const Vector2D dir(cosf(angle), sinf(angle));
 				const Vector2D c = f.centre + dir * FocusReach(f, dir, offset, half, most) + offset;
 				bool bClear = Inside(f, c, half).IsZero(0.5f);
-				for (int m = 0; m < n && bClear; ++m)
+				for (int m = 0; m < taken && bClear; ++m)
 					bClear = !Meet(c, half, takenCentre[m], takenHalf[m], gap);
 				if (bClear)
 				{
@@ -96,8 +104,9 @@ void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const 
 			}
 		}
 		dirs[g] = chosen;
-		takenCentre[n] = chosenCentre;
-		takenHalf[n] = half;
+		takenCentre[taken] = chosenCentre;
+		takenHalf[taken] = half;
+		++taken;
 	}
 }
 
