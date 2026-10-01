@@ -30,15 +30,22 @@ void PaintChassis(const Frame &frame)
 		const float left = centre.x - half.x, right = centre.x + half.x, top = centre.y - half.y, rail = centre.y + half.y + 6.0f * s;
 		const float cross = CROSS * s;
 
-		// Registration crosses: both rail ends, and the top corner away from the gun (the ring: its ends and its front).
-		Cross(f, Vector2D(left - 10.0f * s, rail), cross, CROSS_ALPHA);
-		Cross(f, Vector2D(right + 10.0f * s, rail), cross, CROSS_ALPHA);
-		if (slot == BRIGHT_RING)
+		// Registration crosses: a receptor group's are the grid's (its four corners, notching onto the screen's grid);
+		// otherwise both rail ends, and the top corner away from the gun (the ring: its ends and its front).
+		if (slot != BRIGHT_RING && GridOn())
 		{
+			PaintGrid(f, slot, left - 10.0f * s, right + 10.0f * s, top - 8.0f * s, rail);
+		}
+		else if (slot == BRIGHT_RING)
+		{
+			Cross(f, Vector2D(left - 10.0f * s, rail), cross, CROSS_ALPHA);
+			Cross(f, Vector2D(right + 10.0f * s, rail), cross, CROSS_ALPHA);
 			Cross(f, Vector2D(centre.x, top - 12.0f * s), cross, CROSS_ALPHA);
 		}
 		else
 		{
+			Cross(f, Vector2D(left - 10.0f * s, rail), cross, CROSS_ALPHA);
+			Cross(f, Vector2D(right + 10.0f * s, rail), cross, CROSS_ALPHA);
 			Cross(f, Vector2D(m > 0.0f ? left - 10.0f * s : right + 10.0f * s, top - 8.0f * s), cross, CROSS_ALPHA);
 		}
 

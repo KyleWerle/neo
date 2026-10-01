@@ -84,7 +84,6 @@ void PaintBackings(const Frame &f)
 		look.seed = 1.7f * slot;
 		look.motion = s_motionOf[clamp(cl_neo_hud_motion.GetInt(), 0, 2)];
 		NeoHudPaintBacking(centre, half, Vector2D(feather, feather), alpha, BACKING_POINTS, look);
-		PaintGrid(f, slot, centre, half, feather, f.alpha);
 	}
 }
 

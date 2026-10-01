@@ -254,9 +254,10 @@ void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, con
 // The groups and the ring.
 // The marks of a group's perception layer round its extent, and their shift as it changes layer.
 void PaintLayer(const Frame &f, Group group);
-// The registration grid on a group's backing (neo_cyberbrain_grid.cpp): its outline's centre and half size, the soft
-// edge's width (pixels) and the backing's strength.
-void PaintGrid(const Frame &f, int slot, const Vector2D &centre, const Vector2D &half, float feather, float strength);
+// The registration grid (neo_cyberbrain_grid.cpp): a receptor group's corner crosses at these edges (screen pixels, on
+// the deep layer), notching onto the screen's grid with attention, a short trail of it running outward. GridOn: not off.
+bool GridOn();
+void PaintGrid(const Frame &f, int slot, float left, float right, float top, float bottom);
 void PaintBody(const Frame &f);
 void PaintRing(const Frame &f);
 void PaintOptics(const Frame &f);
