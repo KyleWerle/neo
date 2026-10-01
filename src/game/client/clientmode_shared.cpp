@@ -9,6 +9,7 @@
 
 
 #include "cbase.h"
+#include "neo_loc.h"
 #include "clientmode_shared.h"
 #include "iinput.h"
 #include "view_shared.h"
@@ -362,7 +363,7 @@ void ClientModeShared::ReloadScheme( bool flushLowLevel )
 
 	BuildGroup::ClearResFileCache();
 
-	m_pViewport->ReloadScheme( "resource/ClientScheme.res" );
+	m_pViewport->ReloadScheme( NeoLoc::ClientSchemePath() );
 }
 
 

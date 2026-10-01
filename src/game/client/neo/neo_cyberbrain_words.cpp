@@ -63,6 +63,12 @@ static void UpdateWords(const Frame &f)
 		critical += f.pPlaces[order[i]].layer >= LAYER_CRITICAL ? 1 : 0;
 	const int slots = Max(critical, 1 + RoundFloatToInt((MOST_WORDS - 1) * Listening()));
 
+	static ConVar cl_neo_hud_words_debug("cl_neo_hud_words_debug", "0", FCVAR_NONE,
+		"Cyberbrain HUD: print the words budget (listening level, slots, each group's reveal) once a second.", true, 0, true, 1);
+	if (cl_neo_hud_words_debug.GetBool() && static_cast<int>(f.now) != static_cast<int>(f.now - gpGlobals->frametime))
+		Msg("words: listening %.2f action %.2f slots %d critical %d | reveal body %.2f optics %.2f weapon %.2f motion %.2f | att %.2f %.2f %.2f %.2f\n",
+			Listening(), Action(*f.pSenses, f.now), slots, critical, s_reveal[GROUP_BODY], s_reveal[GROUP_OPTICS], s_reveal[GROUP_WEAPON],
+			s_reveal[GROUP_MOTION], f.pPlaces[GROUP_BODY].att, f.pPlaces[GROUP_OPTICS].att, f.pPlaces[GROUP_WEAPON].att, f.pPlaces[GROUP_MOTION].att);
 	const WordForm form = WordFormOf();
 	float s_shown[GROUP__COUNT] = {};
 	for (int i = 0; i < n && i < slots; ++i)

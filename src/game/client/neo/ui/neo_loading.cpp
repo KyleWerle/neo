@@ -1,6 +1,7 @@
 #include "neo_loading.h"
 
 #include "cbase.h"
+#include "neo_loc.h"
 #include "ienginevgui.h"
 #include "ui/neo_root.h"
 #include "vgui/ISurface.h"
@@ -27,7 +28,7 @@ CNeoLoading::CNeoLoading()
 	SetupNTRETheme(&m_uiCtx);
 
 	vgui::HScheme neoscheme = vgui::scheme()->LoadSchemeFromFileEx(
-		enginevgui->GetPanel(PANEL_CLIENTDLL), "resource/ClientScheme.res", "ClientScheme");
+		enginevgui->GetPanel(PANEL_CLIENTDLL), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(neoscheme);
 
 	SetMouseInputEnabled(true);

@@ -7,6 +7,7 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
+#include "neo_loc.h"
 #include <stdarg.h>
 #include "vguicenterprint.h"
 #include "ivrenderview.h"
@@ -86,7 +87,7 @@ CCenterStringLabel::CCenterStringLabel( vgui::VPANEL parent ) :
 	// NEO HACK (nullsystem): This is still needed for ClientScheme.res
 	vgui::HScheme neoscheme = vgui::scheme()->LoadSchemeFromFileEx(
 				enginevgui->GetPanel(PANEL_CLIENTDLL),
-				"resource/ClientScheme.res", "ClientScheme");
+				NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(neoscheme);
 	SetBgColor(COLOR_TRANSPARENT);
 #endif
@@ -125,7 +126,7 @@ void CCenterStringLabel::OnScreenSizeChanged(int iOldWide, int iOldTall)
 #ifdef NEO
 	vgui::HScheme neoscheme = vgui::scheme()->LoadSchemeFromFileEx(
 	enginevgui->GetPanel(PANEL_CLIENTDLL),
-		"resource/ClientScheme.res", "ClientScheme");
+		NeoLoc::ClientSchemePath(), "ClientScheme");
 	vgui::IScheme* pScheme = vgui::scheme()->GetIScheme(neoscheme);
 	ApplySchemeSettings(pScheme);
 #endif

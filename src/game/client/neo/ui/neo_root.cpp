@@ -1,4 +1,5 @@
 #include "cbase.h"
+#include "neo_loc.h"
 #include "neo_root.h"
 #include "IOverrideInterface.h"
 
@@ -368,7 +369,7 @@ CNeoRoot::CNeoRoot(VPANEL parent)
 	SetupNTRETheme(&g_uiCtx);
 	
 	vgui::HScheme neoscheme = vgui::scheme()->LoadSchemeFromFileEx(
-		enginevgui->GetPanel(PANEL_CLIENTDLL), "resource/ClientScheme.res", "ClientScheme");
+		enginevgui->GetPanel(PANEL_CLIENTDLL), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(neoscheme);
 
 	for (int i = 0; i < MMBTN__TOTAL; ++i)

@@ -4,6 +4,7 @@
 
 
 #include "cbase.h"
+#include "neo_loc.h"
 #include "inputsystem/iinputsystem.h"
 #include "input.h"
 #include "iinput.h"
@@ -228,7 +229,7 @@ CVoteSetupDialog::CVoteSetupDialog( vgui::Panel *parent ) : BaseClass( parent, "
 #endif // TF_CLIENT_DLL
 
 #ifdef TF_CLIENT_DLL
-	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ClientScheme.res", "ClientScheme");
+	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(scheme);
 #else
 	SetScheme( "ClientScheme" );
@@ -1000,7 +1001,7 @@ CHudVote::CHudVote( const char *pElementName ) : CHudElement( pElementName ), Ba
 	SetParent( pParent );
 
 #ifdef TF_CLIENT_DLL
-	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ClientScheme.res", "ClientScheme");
+	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(scheme);
 #endif
 
@@ -1921,7 +1922,7 @@ CHudVotePanel::CHudVotePanel( vgui::Panel *pParent, int nIdx ) : BaseClass( NULL
 	SetParent( pParent );
 
 #ifdef TF_CLIENT_DLL
-	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ClientScheme.res", "ClientScheme");
+	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(scheme);
 #endif
 

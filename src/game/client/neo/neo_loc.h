@@ -14,4 +14,10 @@ namespace NeoLoc
 const wchar_t *Find(const char *pToken, const wchar_t *pEnglish = nullptr);
 // Whether pseudo-localization is on (neo_loc_pseudo), for code that formats its own text.
 bool IsPseudo();
+// The game's language (lower case, "english" if nothing says otherwise): the -language launch option, else Steam's.
+const char *Language();
+// The client scheme to load: resource/ClientScheme_<language>.res if the language is not English and that file exists in any
+// search path (a language pack's, which #base-includes ClientScheme.res and overrides only the faces it needs), else
+// resource/ClientScheme.res. Every load of the "ClientScheme" scheme uses it, so there is only ever one.
+const char *ClientSchemePath();
 }

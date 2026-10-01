@@ -14,6 +14,7 @@
 #pragma warning( disable : 4800  )  // disable forcing int to bool performance warning
 
 #include "cbase.h"
+#include "neo_loc.h"
 #include <cdll_client_int.h>
 #include <cdll_util.h>
 #include <globalvars_base.h>
@@ -184,7 +185,7 @@ CBaseViewport::CBaseViewport() : vgui::EditablePanel( NULL, "CBaseViewport")
 	g_lastPanel = NULL;
 
 
-	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx(enginevgui->GetPanel(PANEL_CLIENTDLL), "resource/ClientScheme.res", "ClientScheme");
+	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFileEx(enginevgui->GetPanel(PANEL_CLIENTDLL), NeoLoc::ClientSchemePath(), "ClientScheme");
 	SetScheme(scheme);
 	SetProportional( true );
 

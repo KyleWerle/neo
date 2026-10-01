@@ -1,5 +1,7 @@
 #include "cbase.h"
 #include "neo_loc.h"
+#include "cdll_client_int.h"
+#include "steam/steam_api.h"
 #include <vgui/ILocalize.h>
 #include <string>
 #include <unordered_map>
@@ -55,6 +57,37 @@ static std::unordered_map<std::string, std::wstring> &English()
 bool IsPseudo()
 {
 	return neo_loc_pseudo.GetBool();
+}
+
+const char *Language()
+{
+	static char s_language[64] = "";
+	if (!s_language[0])
+	{
+		const char *pLanguage = CommandLine() ? CommandLine()->ParmValue("-language", "") : "";
+		if ((!pLanguage || !pLanguage[0]) && steamapicontext && steamapicontext->SteamApps())
+			pLanguage = steamapicontext->SteamApps()->GetCurrentGameLanguage();
+		V_strncpy(s_language, (pLanguage && pLanguage[0]) ? pLanguage : "english", sizeof(s_language));
+		V_strlower(s_language);
+	}
+	return s_language;
+}
+
+const char *ClientSchemePath()
+{
+	static char s_path[128] = "";
+	if (!s_path[0])
+	{
+		V_strncpy(s_path, "resource/ClientScheme.res", sizeof(s_path));
+		if (V_stricmp(Language(), "english") != 0)
+		{
+			char localized[128];
+			V_snprintf(localized, sizeof(localized), "resource/ClientScheme_%s.res", Language());
+			if (g_pFullFileSystem->FileExists(localized, "GAME"))
+				V_strncpy(s_path, localized, sizeof(s_path));
+		}
+	}
+	return s_path;
 }
 
 // Cyrillic look-alikes for the Latin letters that have one, and the stand-ins for the rest.
