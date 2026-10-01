@@ -110,30 +110,39 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 	const Color nameColour = pOverride ? *pOverride : f.color;
 	// The rank mark (NT's killfeed glyphs, as the spectator overlay picks them).
 	const wchar_t rank[2] = { static_cast<wchar_t>(NEO_HUD_DEATHNOTICEICON_RANKLESS_DOG + GetRank(g_PR->GetXP(player))), L'\0' };
+	// The right end first, so the row gives way when a name runs long: health and the name always show, then the
+	// squadmate's ping, and the class label goes first.
+	static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
+	const int mode = cl_neo_hud_health_mode.GetInt();
+	const int percent = bAlive ? g_PR->GetDisplayedHealth(player, 0) : 0;
+	const Color hc = percent <= 25 ? CRIT : percent <= 50 ? WARN : f.color;
+	wchar_t health[16] = L"", ping[16] = L"";
+	if (bAlive)
+		V_snwprintf(health, ARRAYSIZE(health), mode ? L"%dHP" : L"%d%%", g_PR->GetDisplayedHealth(player, mode));
+	if (bAlive && !bSmall)
+	{
+		if (g_PR->IsFakePlayer(player))
+			V_wcsncpy(ping, L"BOT", sizeof(ping));
+		else
+			V_snwprintf(ping, ARRAYSIZE(ping), L"%d MS", g_PR->GetPing(player));
+	}
+	const float gap = 8.0f * s;
+	const float healthLeft = right - (bAlive ? TextWidth(health, FONT_VALUE) : TextWidth(L"KIA", FONT_PLATE) + 12.0f * s);
+	const float pingLeft = ping[0] ? healthLeft - 10.0f * s - TextWidth(ping, FONT_LABEL) : healthLeft;
+
 	float tx = x + icon + 6.0f * s;
 	tx += Text(f, rank, tx, mid, 1, FONT_ICONS, f.color, 0.6f * a) + 5.0f * s;
 	tx += Text(f, name, tx, mid, 1, FONT_NAME, nameColour, a) + 7.0f * s;
-	Text(f, cls, tx, mid, 1, FONT_LABEL, f.color, 0.6f * a);
+	const bool bPing = ping[0] && tx <= pingLeft - gap;
+	if (tx + TextWidth(cls, FONT_LABEL) <= (bPing ? pingLeft : healthLeft) - gap)
+		Text(f, cls, tx, mid, 1, FONT_LABEL, f.color, 0.6f * a);
 
 	if (bAlive)
 	{
-		static ConVarRef cl_neo_hud_health_mode("cl_neo_hud_health_mode");
-		const int mode = cl_neo_hud_health_mode.GetInt();
-		const int shown = g_PR->GetDisplayedHealth(player, mode), percent = g_PR->GetDisplayedHealth(player, 0);
-		const Color hc = percent <= 25 ? CRIT : percent <= 50 ? WARN : f.color;
-		wchar_t health[16];
-		V_snwprintf(health, ARRAYSIZE(health), mode ? L"%dHP" : L"%d%%", shown);
-		const float healthW = Text(f, health, right, mid, -1, FONT_VALUE, hc, a);
+		Text(f, health, right, mid, -1, FONT_VALUE, hc, a);
 		// A squadmate's ping by their health (the party view: their branch's line is the same ping).
-		if (!bSmall)
-		{
-			wchar_t ping[16];
-			if (g_PR->IsFakePlayer(player))
-				V_wcsncpy(ping, L"BOT", sizeof(ping));
-			else
-				V_snwprintf(ping, ARRAYSIZE(ping), L"%d MS", g_PR->GetPing(player));
-			Text(f, ping, right - healthW - 10.0f * s, mid, -1, FONT_LABEL, f.color, 0.6f * a);
-		}
+		if (bPing)
+			Text(f, ping, healthLeft - 10.0f * s, mid, -1, FONT_LABEL, f.color, 0.6f * a);
 		// A line of health under the row (two pixels: not a hairline).
 		const float x0 = x + icon + 6.0f * s, x1 = x0 + (right - x0) * clamp(percent / 100.0f, 0.0f, 1.0f);
 		Rect(f, Vector2D(x0, y + h - 3.0f * s), Vector2D(right, y + h - 1.0f * s), f.color, 0.1f);
