@@ -35,7 +35,8 @@ constexpr float SCREEN_MARGIN = 6.0f;				// pixels at 1080p every group keeps fr
 constexpr float GUN_X = 330.0f, GUN_Y = 150.0f;	// where the viewmodel's weight sits, from the gun hand's corner (1080p)
 constexpr float BALANCE_GAIN = 0.35f, BALANCE_MAX = 40.0f, BALANCE_EASE = 1.5f;
 // The deep layer: a softer spring (a touch under-damped, as the racer band's layers), and the drift as you turn,
-// capped at a few pixels (the racer band's sway).
+// capped at a few pixels (the racer band's sway). Calm: critically damped and half the drift; still: none
+// (HUD-REWORK.md's comfort table).
 constexpr float DEEP_OMEGA = 7.0f, DEEP_DAMPING = 0.7f;
 constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
 // The focus zone: a group's whole extent kept outside this ellipse round the crosshair (pixels at 1080p, about the
@@ -50,7 +51,7 @@ static struct { Vector2D offset, vel; } s_ringDeep;
 // Moves `at` toward `goal` on the deep spring.
 static void DeepSpring(Vector2D &at, Vector2D &vel, const Vector2D &goal, float dt)
 {
-	NeoHudSpring(at, vel, goal, DEEP_OMEGA, DEEP_DAMPING, dt);
+	NeoHudSpring(at, vel, goal, DEEP_OMEGA, cl_neo_hud_motion.GetInt() >= 2 ? DEEP_DAMPING : 1.0f, dt);
 	if (!at.IsValid() || !vel.IsValid())
 	{
 		at = goal;
@@ -279,7 +280,8 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 	const float shift = clamp(-moment / mass * BALANCE_GAIN, -BALANCE_MAX * f.s, BALANCE_MAX * f.s);
 	// Turning right, the deep layer trails left; looking down, it trails up (still: none).
 	const Vector2D turn = comfort.travel > 0.0f
-		? Vector2D(clamp(senses.yawRate * TURN_GAIN, -TURN_MAX, TURN_MAX), clamp(-senses.pitchRate * TURN_GAIN, -TURN_MAX, TURN_MAX)) * (f.s * DEEP_DEPTH)
+		? Vector2D(clamp(senses.yawRate * TURN_GAIN, -TURN_MAX, TURN_MAX), clamp(-senses.pitchRate * TURN_GAIN, -TURN_MAX, TURN_MAX))
+			* (f.s * DEEP_DEPTH * (comfort.travel >= 1.0f ? 1.0f : 0.5f))
 		: Vector2D(0.0f, 0.0f);
 	if (bBoot || comfort.travel <= 0.0f)
 	{
