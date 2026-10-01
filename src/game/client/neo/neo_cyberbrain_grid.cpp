@@ -16,7 +16,8 @@
 // - Linked grids: while a group is quiet its crosses sit where its shape puts them; as its attention rises they notch
 //   (four notches) onto the screen's grid, so the groups that matter register with each other: the neural link.
 // - From each corner a short trail of the grid runs outward, away from the readout (never down past the channel
-//   codes): one faint cross at rest, more with attention.
+//   codes): one faint cross at rest, more with attention. A trail stops where it would leave the screen, enter the
+//   crosshair's keep-out, another group, the ring or the squad list.
 // - An activation (the group rising a perception layer) dissolves it, the trail scattered and thinned in the
 //   highlight colour, the corners knocked off, and it reforms into register.
 // - Aiming focuses it (Kyle: the world past the sight tuned out, the HUD clicking into register round it): every
@@ -147,6 +148,37 @@ static void GridMark(const Frame &f, const Lens &lens, const Vector2D &at, float
 	}
 }
 
+// The boxes a trail mustn't run into this frame: the other groups, the ring (not the body's own disc on the body),
+// the squad list (pixels, centre and half).
+struct GridBlock { Vector2D centre, half; };
+static int GridBlocks(const Frame &f, int slot, GridBlock *pOut)
+{
+	int n = 0;
+	for (int g = 0; g <= BRIGHT_RING; ++g)
+	{
+		if (g == slot || g == GROUP_LINK || (g == GROUP_WEAPON && !f.pSenses->ammo.bShown) || (g == BRIGHT_RING && (f.ringRadii.x <= 0.0f || (slot == GROUP_BODY && f.style == NEO_HUD_STYLE_BODY))))
+			continue;
+		GroupExtent(f, g, pOut[n].centre, pOut[n].half);
+		++n;
+	}
+	// The squad list's corner (the team element, top left): layout_check.py's box.
+	pOut[n].centre.Init(184.0f * f.s, 130.0f * f.s);
+	pOut[n].half.Init(176.0f * f.s, 130.0f * f.s);
+	return n + 1;
+}
+
+static bool GridClear(const Frame &f, const GridBlock *pBlocks, int blocks, const Vector2D &at, float pad)
+{
+	if (at.x < pad || at.y < pad || at.x > f.wide - pad || at.y > f.tall - pad || InKeepout(f, at))
+		return false;
+	for (int b = 0; b < blocks; ++b)
+	{
+		if (fabsf(at.x - pBlocks[b].centre.x) < pBlocks[b].half.x + pad && fabsf(at.y - pBlocks[b].centre.y) < pBlocks[b].half.y + pad)
+			return false;
+	}
+	return true;
+}
+
 void PaintGrid(const Frame &f, int slot, float left, float right, float top, float bottom)
 {
 	const Place &p = f.pPlaces[slot];
@@ -180,6 +212,8 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 	const int trail = Min(TRAIL_MAX + 1, 1 + static_cast<int>(p.att * TRAIL_MAX + 0.5f) + (lens.aim > 0.5f ? 1 : 0));
 	const float strength = (0.6f + 0.4f * p.att) * (1.0f + 0.5f * lens.aim);
 
+	GridBlock blocks[BRIGHT_RING + 2];
+	const int nBlocks = GridBlocks(f, slot, blocks);
 	const Vector2D corners[4] = { Vector2D(left, top), Vector2D(right, top), Vector2D(left, bottom), Vector2D(right, bottom) };
 	for (int k = 0; k < 4; ++k)
 	{
@@ -201,6 +235,8 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 			for (int n = 1; n <= trail; ++n)
 			{
 				Vector2D t = at + (axis == 0 ? Vector2D(out.x * sub * n, 0.0f) : Vector2D(0.0f, out.y * sub * n));
+				if (!GridClear(f, blocks, nBlocks, t, 6.0f * s))
+					break;	// the trail ends here
 				float a = TRAIL_ALPHA * strength * (1.0f - n / (trail + 1.0f));
 				Color c = base;
 				if (broken > 0.0f)
