@@ -141,5 +141,13 @@ CON_COMMAND(neo_loc_find, "Prints a localization token as the engine sees it and
 	const char *pToken = args.Arg(1);
 	const wchar_t *pEngine = g_pVGuiLocalize ? g_pVGuiLocalize->Find(pToken) : nullptr;
 	Msg("engine: %ls\n", pEngine ? pEngine : L"(none)");
-	Msg("find:   %ls\n", NeoLoc::Find(pToken));
+	// The console cannot print Cyrillic (the C runtime drops the whole line): non-ASCII goes out as U+ code points.
+	const wchar_t *pFound = NeoLoc::Find(pToken);
+	char line[512];
+	int at = 0;
+	for (int i = 0; pFound[i] && at < static_cast<int>(sizeof(line)) - 12; ++i)
+		at += pFound[i] < 0x80 ? V_snprintf(line + at, sizeof(line) - at, "%c", static_cast<char>(pFound[i]))
+			: V_snprintf(line + at, sizeof(line) - at, "<U+%04X>", static_cast<unsigned>(pFound[i]));
+	line[at] = 0;
+	Msg("find:   %s (%d characters)\n", line, static_cast<int>(wcslen(pFound)));
 }
