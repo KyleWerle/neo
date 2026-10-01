@@ -103,7 +103,8 @@ float Perceive(const Senses &s, Group group, float now)
 		}
 		p.Add(LAYER_CRITICAL, s.bReloading ? 0.8f : 0.0f);
 		p.Add(LAYER_CRITICAL, s.heatLevel >= 2 ? 1.0f : 0.0f);
-		p.Add(LAYER_CRITICAL, s.ammo.bShown && s.ammo.rounds == 0 ? 1.0f : 0.0f);
+		// Empty: only a weapon with a magazine (the BALC's charge and a knife leave rounds at 0; the heat is its own).
+		p.Add(LAYER_CRITICAL, s.ammo.bShown && !s.ammo.bHeat && s.ammo.maxRounds > 0 && s.ammo.rounds == 0 ? 1.0f : 0.0f);
 		p.Add(LAYER_URGENT, s.bAmmoLow ? 0.8f : 0.0f);
 		p.Add(LAYER_URGENT, s.heatLevel == 1 ? 0.7f : 0.0f);
 		p.Add(LAYER_NOTABLE, now - s.shotTime < 1.0f ? 0.8f : 0.0f);
