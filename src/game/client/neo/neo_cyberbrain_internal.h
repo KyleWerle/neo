@@ -235,8 +235,27 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 float TextWidth(const wchar_t *pText, Font font);
 // A face's cell height, pixels (0 if it didn't load): rows are placed by it plus a gap (R3), not by constants.
 float FontTall(Font font);
+// Rows placed by what's in them (R3), screen pixels: from an edge outward (dir 1 down, -1 up), each row's middle half
+// its height past the edge, the next row a gap further on. R4's slots use it: the top rail stacks up from the top of a
+// group's graphics, the foot down from their bottom, the outer side down from the big number. The gap is ROW_GAP at
+// the group's scale: gaps follow attention, text doesn't.
+constexpr float ROW_GAP = 3.0f;		// pixels at 1080p
+struct Stack
+{
+	float edge, gap;
+	int dir;
+	float Row(float tall)
+	{
+		const float mid = edge + dir * tall * 0.5f;
+		edge += dir * (tall + gap);
+		return mid;
+	}
+};
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
+// How tall a plate (with its kanji, if given) and a machine plate draw, pixels: what a row holding one needs.
+float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji = nullptr);
+float MachinePlateTall(const Frame &f, bool bSmall = false);
 // What the machine says (RELOAD, OVERHEAT, the vision mode): dark pixel letters on a light plate with a yellow bar at
 // its leading edge, as NT's own JGR56 ACTIVE plate. Critical: the plate in the critical colour, no bar (OUT). Small:
 // the list-row size (the squad list's KIA).
@@ -276,6 +295,8 @@ void PaintUplink(const Frame &f, const Local &L, float alpha, float labels);
 // The stride waveform over the speed trace (neo_cyberbrain_stride.cpp): each step, and each other sound you make,
 // landing live as a burst; from left to right at height y, in the motion group's local frame.
 void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha);
+// How far the stride waveform reaches above and below its line at its loudest, pixels at 1080p.
+float StrideReach();
 // Takes your new noises into the stride waveform's level (neo_cyberbrain_stride.cpp): returns it now, 0 to 1.5, and
 // whether a sound in it carried 16 m or more.
 float StrideListen(const Senses &s, float now, bool &bLoud);

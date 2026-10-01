@@ -245,10 +245,27 @@ void MachinePlate(const Frame &f, const wchar_t *pText, float x, float y, int al
 		bCritical ? Color(252, 235, 235, 255) : s_ink, x0, w, bCritical ? nullptr : &s_bar);
 }
 
+// Plates of four letters or fewer a step larger (gate 1).
+static Font PlateFont(const wchar_t *pText)
+{
+	return pText && V_wcslen(pText) <= 4 ? FONT_PLATE_SHORT : FONT_PLATE;
+}
+
+float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji)
+{
+	const float plate = FontTall(PlateFont(pText)) + 2.0f * f.s;
+	return pKanji ? Max(plate, FontTall(FONT_KANJI)) : plate;
+}
+
+float MachinePlateTall(const Frame &f, bool bSmall)
+{
+	return FontTall(bSmall ? FONT_MACHINE_SMALL : FONT_MACHINE) + 2.0f * f.s;
+}
+
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji)
 {
 	float x0, w;
-	const Font font = pText && V_wcslen(pText) <= 4 ? FONT_PLATE_SHORT : FONT_PLATE;
+	const Font font = PlateFont(pText);
 	if (!PlateBox(f, font, pText, x, y, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
 	{
 		return;

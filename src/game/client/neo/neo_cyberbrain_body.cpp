@@ -17,6 +17,7 @@ constexpr float DISC_Y = 60.0f, DISC_RX = 42.0f, DISC_RY = 12.0f;
 constexpr float CAPSULE_H = 128.0f, HEAD_R = 11.0f, BODY_W = 38.0f;
 constexpr float SHOULDER = 10.0f;	// the body's cut top corners
 constexpr float CELL_PAD = 4.0f;
+constexpr float LIFT_MOST = 24.0f;	// how far the capsule lifts at the top of a jump
 constexpr float TRAIL_RATE = 0.5f;	// the hit afterimage drains this much integrity a second
 
 static struct { float trail = 1.0f, last = -100.0f; } s_body;
@@ -107,7 +108,7 @@ void PaintBody(const Frame &f)
 	}
 
 	// The capsule, in your posture.
-	const float h = CAPSULE_H * (1.0f - 0.28f * s.crouch), lift = s.air * 24.0f, angle = s.lean * 0.2f;
+	const float h = CAPSULE_H * (1.0f - 0.28f * s.crouch), lift = s.air * LIFT_MOST, angle = s.lean * 0.2f;
 	const Posture p = { &L, cosf(angle), sinf(angle), lift };
 	const Color outline = bHit ? CRIT : col;
 	const float top = -h, bodyTop = top + HEAD_R * 2.0f + 4.0f, bodyH = -bodyTop;
@@ -145,17 +146,22 @@ void PaintBody(const Frame &f)
 		Line(f, L.At(0.0f, DISC_Y - 4.0f), L.At(0.0f, DISC_Y - 2.0f - lift), NEO_GHOST_LIGHT, f.color, 0.35f * a);
 	}
 
-	// Integrity: the one big number, beside the torso away from the gun, always at full strength.
+	// Integrity: the one big number on the outer side (R4), beside the torso away from the gun, always at full strength.
 	const int side = L.m > 0 ? 1 : -1;
 	wchar_t number[16];
 	V_snwprintf(number, ARRAYSIZE(number), L"%d", s.hpNumber);
 	// Well clear of the capsule (Kyle: it sat too close to the body).
 	const Vector2D na = L.At(-m * (BODY_W * 0.5f + 22.0f), DISC_Y - 4.0f - h * 0.5f);
 	Text(f, number, na.x, na.y, -side, FONT_INTEGRITY, bHit ? CRIT : col, 1.0f);
+	// The top rail: the plate a gap above the highest the head goes (standing, at a jump's full lift), so it never
+	// moves with the posture.
 	if (look.labels > 0.02f)
 	{
-		const Vector2D pa = L.At(m * -34.0f, -CAPSULE_H + 18.0f);
-		Plate(f, L"BIOMECH", pa.x, pa.y, -side, look.labels, L"\u751f\u4f53");
+		static const wchar_t *const s_kanji = L"\u751f\u4f53";
+		const float gap = ROW_GAP * L.k;
+		Stack rail = { L.At(0.0f, DISC_Y - 4.0f - LIFT_MOST - CAPSULE_H).y - gap, gap, -1 };
+		const float y = rail.Row(PlateTall(f, L"BIOMECH", s_kanji));
+		Plate(f, L"BIOMECH", L.At(m * -34.0f, 0.0f).x, y, -side, look.labels, s_kanji);
 	}
 }
 } // namespace NeoCyberbrain

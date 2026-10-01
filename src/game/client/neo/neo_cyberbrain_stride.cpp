@@ -78,6 +78,11 @@ float StrideListen(const Senses &s, float now, bool &bLoud)
 	return s_stride.level;
 }
 
+float StrideReach()
+{
+	return STRIDE_HEIGHT * 1.5f;	// StrideListen's level tops out at 1.5
+}
+
 void PaintStrideStrip(const Frame &f, const Local &L, float left, float right, float y, float alpha)
 {
 	// The baseline, faint.

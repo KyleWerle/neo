@@ -152,11 +152,16 @@ void PaintMotion(const Frame &f)
 	// Over the trace: the stride waveform, your steps and sounds landing live (it took the chevrons' and the noise
 	// waveform's place: one strip for gait and noise), on the trace's own samples: Kyle, the two graphs on one
 	// timescale, so a step sits over the speed it was taken at.
-	PaintStrideStrip(f, L, left, right, TRACE_TOP - 16.0f, Max(a, 0.6f));
+	const float strideY = TRACE_TOP - 16.0f;
+	PaintStrideStrip(f, L, left, right, strideY, Max(a, 0.6f));
+	// The top rail: the plate a gap above the waveform at its loudest (R4; it sat inside a shot's reach).
 	if (look.labels > 0.02f)
 	{
-		const Vector2D pa = L.At(left, TRACE_TOP - 40.0f);
-		Plate(f, L"MOTION", pa.x, pa.y, 1, look.labels, L"\u6a5f\u52d5");
+		static const wchar_t *const s_kanji = L"\u6a5f\u52d5";
+		const float gap = ROW_GAP * L.k;
+		Stack rail = { L.At(0.0f, strideY - StrideReach()).y - gap, gap, -1 };
+		const float y = rail.Row(PlateTall(f, L"MOTION", s_kanji));
+		Plate(f, L"MOTION", L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
 	}
 }
 } // namespace NeoCyberbrain

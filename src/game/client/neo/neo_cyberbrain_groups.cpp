@@ -95,24 +95,30 @@ void PaintOptics(const Frame &f)
 				bar(from, from + (to - from) * t, !s.bCloaked, frame, (t < 1.0f ? 0.75f : 0.9f) * a);
 		}
 	}
-	// A word only when it's pulled in.
-	if (look.labels > 0.02f)
+	// R4's slots, a gap off the brackets (the group's outermost marks): the plate on the top rail, and at the foot what
+	// the machine says (the vision mode, the JGR56), or when it says nothing the state word, only when pulled in. The
+	// foot's row is as tall as either, so neither moves when the other takes it (as gate 3's rail: the call takes it,
+	// the word yields).
+	const float gap = ROW_GAP * L.k;
+	const bool bLabels = look.labels > 0.02f;
+	if (bLabels)
+	{
+		static const wchar_t *const s_kanji = L"\u5149\u5b66";
+		Stack rail = { L.At(0.0f, -edge).y - gap, gap, -1 };
+		const float y = rail.Row(PlateTall(f, L"OPTICS", s_kanji));
+		Plate(f, L"OPTICS", L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
+	}
+	Stack foot = { L.At(0.0f, edge).y + gap, gap, 1 };
+	const float footY = foot.Row(Max(MachinePlateTall(f), FontTall(FONT_LABEL)));
+	const wchar_t *pMachine = s.bVision && s.pVision ? s.pVision : bJuggernaut ? L"JGR56 ACTIVE" : nullptr;
+	if (pMachine)
+	{
+		MachinePlate(f, pMachine, L.At(0.0f, 0.0f).x, footY, 0, 0.9f);
+	}
+	else if (bLabels)
 	{
 		const wchar_t *pWord = s.bCloaked ? L"CLOAKED" : bExposed ? L"EXPOSED" : s.light > 0.3f ? L"LIT" : s.light > 0.15f ? L"DIM" : L"DARK";
-		const Vector2D wa = L.At(m * 56.0f, 0.0f);
-		Text(f, pWord, wa.x, wa.y, side, FONT_LABEL, bExposed ? WARN : f.color, look.labels * a);
-		const Vector2D pa = L.At(m * -40.0f, -58.0f);
-		Plate(f, L"OPTICS", pa.x, pa.y, -side, look.labels, L"\u5149\u5b66");
-	}
-	if (s.bVision && s.pVision)
-	{
-		const Vector2D pa = L.At(0.0f, 74.0f);
-		MachinePlate(f, s.pVision, pa.x, pa.y, 0, 0.9f);
-	}
-	else if (bJuggernaut)
-	{
-		const Vector2D pa = L.At(0.0f, 74.0f);
-		MachinePlate(f, L"JGR56 ACTIVE", pa.x, pa.y, 0, 0.9f);
+		Text(f, pWord, L.At(0.0f, 0.0f).x, footY, 0, FONT_LABEL, bExposed ? WARN : f.color, look.labels * a);
 	}
 }
 

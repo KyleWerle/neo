@@ -44,7 +44,7 @@ constexpr float TURN_GAIN = 0.022f, TURN_MAX = 4.0f, DEEP_DEPTH = 1.3f;
 constexpr float FOCUS_X = 110.0f, FOCUS_Y = 80.0f, KICK_MAX = 14.0f;
 constexpr float LAYER_HYSTERESIS = 0.03f;	// how far under a layer's floor its group drops back
 constexpr float DRAWN_PAD = 3.0f;		// pixels at 1080p round what a group drew, for its extent
-constexpr float FOCUS_GAP = 6.0f;		// pixels at 1080p groups in focus keep between their extents
+constexpr float FOCUS_GAP = 6.0f;		// pixels at 1080p groups keep between their extents (in focus, and stepping off)
 constexpr float ORBIT_STEP = 10.0f, ORBIT_MOST = 90.0f;	// degrees a group in focus swings its approach, a step and at most
 
 static struct { Vector2D offset, vel; } s_ringDeep;
@@ -226,6 +226,53 @@ static void SeparateFocused(const Frame &f, Place places[GROUP__COUNT])
 	}
 }
 
+// R5: every group steps off, not only those in focus. Where a pulled-in group's box, at its target, comes within the
+// gap of a less attended neighbour's, the neighbour's target steps out the shallower way, so it eases off on the
+// placement spring rather than jumping. Most attended first, so a group pushed while pulled in passes it on. Groups at
+// rest never push (their homes are clear at near size), groups in focus keep their own pass (SeparateFocused), and only
+// what's been measured counts (the link draws nothing). Each box is the group's own: the body's without the ring's
+// disc, which doesn't move.
+static void StepOff(const Frame &f, const Place places[GROUP__COUNT], Vector2D targets[GROUP__COUNT])
+{
+	const float gap = FOCUS_GAP * f.s;
+	const auto box = [&](int g, Vector2D &centre, Vector2D &half)
+	{
+		centre = targets[g] + places[g].drawnCentre;
+		half = places[g].drawnHalf + Vector2D(DRAWN_PAD, DRAWN_PAD) * f.s;
+	};
+	int order[GROUP__COUNT], count = 0;
+	for (int g = 0; g < GROUP__COUNT; ++g)
+	{
+		if (places[g].bDrawn && places[g].focus <= 0.0f)
+			order[count++] = g;
+	}
+	for (int i = 1; i < count; ++i)
+	{
+		for (int j = i; j > 0 && places[order[j]].att > places[order[j - 1]].att; --j)
+			V_swap(order[j], order[j - 1]);
+	}
+	for (int i = 0; i < count; ++i)
+	{
+		const int a = order[i];
+		if (places[a].layer == LAYER_AMBIENT)
+			continue;
+		for (int j = i + 1; j < count; ++j)
+		{
+			const int b = order[j];
+			Vector2D ca, ha, cb, hb;
+			box(a, ca, ha);
+			box(b, cb, hb);
+			const float ox = ha.x + hb.x + gap - fabsf(ca.x - cb.x), oy = ha.y + hb.y + gap - fabsf(ca.y - cb.y);
+			if (ox <= 0.0f || oy <= 0.0f)
+				continue;
+			if (ox < oy)
+				targets[b].x += cb.x < ca.x ? -ox : ox;
+			else
+				targets[b].y += cb.y < ca.y ? -oy : oy;
+		}
+	}
+}
+
 void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f, float dt, bool bBoot, Place places[GROUP__COUNT])
 {
 	const Comfort comfort = ComfortOf();
@@ -302,6 +349,7 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 			? clamp((places[g].att - FOCUS_FROM) / (1.0f - FOCUS_FROM), 0.0f, 1.0f) * comfort.focus : 0.0f;
 	}
 	FocusApproaches(f, nearHomes, focusGoals, places, approach);
+	Vector2D targets[GROUP__COUNT];
 	for (int g = 0; g < GROUP__COUNT; ++g)
 	{
 		Place &p = places[g];
@@ -332,6 +380,18 @@ void Attend(const Senses &senses, const Home homes[GROUP__COUNT], const Frame &f
 		p.kick = kick;
 		// Never past the screen's edges, whatever its size or shape: the group's extent (at its scale now, moved to the
 		// target) held inside, so the spring eases up to the edge rather than being stopped at it.
+		Vector2D centre, half;
+		GroupExtent(f, g, centre, half);
+		targets[g] = target + Inside(f, centre + (target - p.pos), half);
+	}
+	// Still: nothing changes place but data motion, so nothing steps off (the homes are clear at near size).
+	if (!bBoot && comfort.travel > 0.0f)
+		StepOff(f, places, targets);
+	for (int g = 0; g < GROUP__COUNT; ++g)
+	{
+		Place &p = places[g];
+		Vector2D target = targets[g];
+		// A step-off can push it back over an edge: held inside again.
 		Vector2D centre, half;
 		GroupExtent(f, g, centre, half);
 		target += Inside(f, centre + (target - p.pos), half);
