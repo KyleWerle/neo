@@ -19,6 +19,8 @@ namespace NeoCyberbrain
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
 constexpr float ROUNDS_W = 150.0f, ROUNDS_Y = 12.5f;	// pixels at 1080p: the rounds' row, and its middle
 constexpr float SYNC_Y = 30.0f, SYNC_ARM = 6.0f, SYNC_SPREAD = 10.0f;	// pixels at 1080p: where, a cross's arm, the most out of register
+constexpr float ROW_TOP = 6.0f, OUTER_X = 84.0f, PIP_TALL = 12.0f;	// pixels at 1080p: the rounds' row's top, the outer column, a slug pip
+constexpr float ROW_GAP = 3.0f;		// pixels at 1080p between stacked rows (R3)
 
 static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wchar_t *pMode, float a)
 {
@@ -53,7 +55,7 @@ static void ModeGlyph(const Frame &f, const Local &L, float x, float y, const wc
 // The rounds on the gun itself: a short leader out from the muzzle (Kyle: the muzzle, not the magazine; level, toward
 // the screen's centre side, then a drop), the count at its end, riding with the gun. False when the muzzle isn't on
 // screen or sits in the crosshair's keep-out (on the sights), and the group shows the count instead.
-static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a, Vector2D &below, int &align)
+static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, float a)
 {
 	// Stubbed (Kyle: the muzzle readout sits too inconsistently across the guns; it needs placing by hand, per gun).
 	if (!cl_neo_hud_gun_count.GetBool())
@@ -71,22 +73,26 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_NUMBER, c, a);
 	MeasurePause(false);
-	below.Init(end.x + out * 4.0f, end.y + 30.0f * f.s);
-	align = f.hand > 0 ? -1 : 1;
 	return true;
 }
 
-// The ammo calls (Kyle's pick): NT's plates hung under the count, saying what to do while the state holds: RELOAD (the
-// magazine's empty, spares left), LOW (the last magazine in, no spares), OUT in red (nothing left). Kyle's words. Each
-// blinks off once as it starts (motion only for the event).
-enum AmmoCall { CALL_NONE, CALL_RELOAD, CALL_LAST, CALL_NONE_LEFT };
+// The machine's calls (Kyle's pick): what to do while the state holds: RELOAD (the magazine's empty, spares left), LOW
+// (the last magazine in, no spares), OUT in red (nothing left), OVERHEAT (the BALC can't fire). Kyle's words. Each
+// blinks off once as it starts (motion only for the event). Gate 3 (Kyle, 2026-10-01, "calls on the rail"): a call takes
+// the top rail's middle, where the weapon's name sits, the edge nearest the crosshair; the name yields while it's up.
+enum AmmoCall { CALL_NONE, CALL_RELOAD, CALL_LAST, CALL_NONE_LEFT, CALL_OVERHEAT };
 
-static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoHud::Ammo &ammo, const Vector2D &at, int align)
+// The call this frame (null for none), whether it's red, and whether one holds the rail (through its blink too).
+static const wchar_t *AmmoCallOf(const Frame &f, const Senses &s, const NeoHud::Ammo &ammo, bool &bCritical, bool &bHeld)
 {
 	static AmmoCall s_call = CALL_NONE;
 	static float s_since = -100.0f;
 	AmmoCall call = CALL_NONE;
-	if (!s.bReloading && ammo.maxRounds > 0 && !ammo.bHeat && !(ammo.pMode && !V_wcscmp(ammo.pMode, L"THROW")))
+	if (ammo.bHeat)
+	{
+		call = ammo.bOverheated ? CALL_OVERHEAT : CALL_NONE;
+	}
+	else if (!s.bReloading && ammo.maxRounds > 0 && !(ammo.pMode && !V_wcscmp(ammo.pMode, L"THROW")))
 	{
 		call = ammo.rounds == 0 ? (ammo.bMagsOut ? CALL_NONE_LEFT : CALL_RELOAD) : ammo.bMagsOut ? CALL_LAST : CALL_NONE;
 	}
@@ -95,13 +101,12 @@ static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoHud::Ammo &a
 		s_call = call;
 		s_since = f.now;
 	}
-	if (call == CALL_NONE)
-		return;
+	bCritical = call == CALL_NONE_LEFT;
+	bHeld = call != CALL_NONE;
 	const float age = f.now - s_since;
-	if (age > 0.08f && age < 0.16f)
-		return;	// the one blink
-	const wchar_t *pText = call == CALL_RELOAD ? L"RELOAD" : call == CALL_LAST ? L"LOW" : L"OUT";
-	MachinePlate(f, pText, at.x, at.y, align, call == CALL_NONE_LEFT ? 1.0f : 0.95f, call == CALL_NONE_LEFT);
+	if (call == CALL_NONE || (age > 0.08f && age < 0.16f))
+		return nullptr;	// none, or the one blink
+	return call == CALL_RELOAD ? L"RELOAD" : call == CALL_LAST ? L"LOW" : call == CALL_OVERHEAT ? L"OVERHEAT" : L"OUT";
 }
 
 // The rounds as ticks (weapons without a bullet glyph: the detpack): the magazine a tick each (or grouped past 30).
@@ -178,6 +183,10 @@ static void Bullets(const Frame &f, const Local &L, const Senses &s, const NeoHu
 	}
 }
 
+// Gate 3's stack C (art\hud-next\wstack-01.png): the top rail (the WPN plate at the side away from the gun; the name
+// or a call in the middle), the rounds' row with the count on its outer side, the magazines and the mode stacked under
+// the count, SYNC under the rounds, the range under SYNC's knock room. Each row sits by the measured height of what's
+// in it plus a gap (R3): the faces may change, the rows don't collide.
 void PaintWeapon(const Frame &f)
 {
 	const Senses &s = *f.pSenses;
@@ -196,19 +205,17 @@ void PaintWeapon(const Frame &f)
 	}
 	const float a = look.alpha, m = static_cast<float>(L.m);
 	const int side = L.m > 0 ? 1 : -1;
+	const float gap = ROW_GAP * L.k;	// gaps follow attention, text doesn't (R3)
+	const auto local = [&](float screenY) { return (screenY - L.origin.y) / L.k; };	// a screen height in the group's units
+
+	// The rounds' row (or the BALC's heat), and the count on its outer side.
 	if (ammo.bHeat)
 	{
 		const Color hc = s.heatLevel == 2 ? CRIT : s.heatLevel == 1 ? WARN : f.color;
 		const float w = 150.0f, hw = w * ammo.heat;
-		Rect(f, L.At(-w * 0.5f, 6.0f), L.At(w * 0.5f, 15.0f), f.color, 0.12f * a);
-		Rect(f, L.At(m > 0.0f ? -w * 0.5f : w * 0.5f - hw, 6.0f), L.At(m > 0.0f ? -w * 0.5f + hw : w * 0.5f, 15.0f), hc,
+		Rect(f, L.At(-w * 0.5f, ROW_TOP), L.At(w * 0.5f, ROW_TOP + 9.0f), f.color, 0.12f * a);
+		Rect(f, L.At(m > 0.0f ? -w * 0.5f : w * 0.5f - hw, ROW_TOP), L.At(m > 0.0f ? -w * 0.5f + hw : w * 0.5f, ROW_TOP + 9.0f), hc,
 			(ammo.bOverheated ? 0.6f + 0.35f * sinf(f.now * 12.0f) : 0.85f) * a);
-		// The stock panel's word, while it can't fire.
-		if (ammo.bOverheated)
-		{
-			const Vector2D oa = L.At(0.0f, -8.0f);
-			MachinePlate(f, L"OVERHEAT", oa.x, oa.y, 0, 0.95f);
-		}
 	}
 	else if (ammo.maxRounds > 0)
 	{
@@ -224,36 +231,34 @@ void PaintWeapon(const Frame &f)
 		wchar_t count[16];
 		V_snwprintf(count, ARRAYSIZE(count), L"%d", ammo.rounds);
 		const float countAlpha = Max(look.numbers, bLow ? 1.0f : 0.5f);
-		Vector2D callAt;
-		int callAlign;
-		if (!RoundsOnGun(f, count, col, countAlpha, callAt, callAlign))
-		{
-			const Vector2D ca = L.At(m * 84.0f, 12.0f);
+		const Vector2D ca = L.At(m * OUTER_X, ROUNDS_Y);
+		if (!RoundsOnGun(f, count, col, countAlpha))
 			Text(f, count, ca.x, ca.y, side, FONT_NUMBER, col, countAlpha);
-			callAt = L.At(0.0f, 62.0f);
-			callAlign = 0;
-		}
-		PaintAmmoCall(f, s, ammo, callAt, callAlign);
-		ModeGlyph(f, L, m > 0.0f ? 84.0f : -96.0f, 34.0f, ammo.pMode, 0.7f * a);
-		// Magazines as pips over the count (the Supa 7: shells, then slugs as taller pips).
+
+		// Under the count: the magazines as pips (the Supa 7: shells, then slugs as taller pips), or past what the pips
+		// hold the stock panel's count, never fewer shown than you carry; then the fire mode.
+		float below = ca.y + FontTall(FONT_NUMBER) * 0.5f + gap;
 		const int mags = ammo.magCount, slugs = ammo.slugCount;
-		// More than the pips hold (a Supa 7's reserve of shells): the stock panel's count instead, never fewer shown
-		// than you carry.
 		if (mags > MAX_MAG_PIPS || slugs > MAX_SLUG_PIPS)
 		{
-			const Vector2D ma = L.At(m * 84.0f, -10.0f);
-			Text(f, ammo.mags, ma.x, ma.y, side, FONT_VALUE, f.color, 0.8f * a);
+			const float tall = FontTall(FONT_VALUE);
+			Text(f, ammo.mags, ca.x, below + tall * 0.5f, side, FONT_VALUE, f.color, 0.8f * a);
+			below += tall + gap;
 		}
-		else
+		else if (mags + slugs > 0)
 		{
+			const float bottom = local(below) + PIP_TALL;
 			for (int i = 0; i < mags + slugs; ++i)
 			{
 				const bool bSlug = i >= mags;
-				const float x = m * (84.0f + i * 6.0f) - (m < 0.0f ? 4.0f : 0.0f);
-				Rect(f, L.At(x, bSlug ? -16.0f : -12.0f), L.At(x + 4.0f, -4.0f), ammo.bMagsOut ? CRIT : f.color, 0.75f * a);
+				const float x = m * (OUTER_X + i * 6.0f) - (m < 0.0f ? 4.0f : 0.0f);
+				Rect(f, L.At(x, bottom - (bSlug ? PIP_TALL : PIP_TALL - 4.0f)), L.At(x + 4.0f, bottom), ammo.bMagsOut ? CRIT : f.color, 0.75f * a);
 			}
+			below = L.At(0.0f, bottom).y + gap;
 		}
+		ModeGlyph(f, L, m > 0.0f ? OUTER_X : -OUTER_X - 12.0f, local(below), ammo.pMode, 0.7f * a);
 	}
+
 	// SYNC, the aim settle, as registration (Kyle's pick over the bar): two of the HUD's registration crosses knocked out
 	// of register by each shot and drifting back together as the aim settles, until they're one aligned cross with its
 	// target ring: in register, ready. It moves only after a shot.
@@ -277,7 +282,7 @@ void PaintWeapon(const Frame &f)
 			}
 		}
 	}
-	// The range while aiming (the rangefinder's), under the settle: the ring only says where.
+	// The range while aiming (the rangefinder's), under the room SYNC's crosses take when knocked furthest.
 	if (s.bRange)
 	{
 		wchar_t range[24];
@@ -285,15 +290,23 @@ void PaintWeapon(const Frame &f)
 			V_wcsncpy(range, L"RNG ---", sizeof(range));
 		else
 			V_snwprintf(range, ARRAYSIZE(range), L"RNG %.0f M", s.rangeMetres);
-		const Vector2D rp = L.At(0.0f, 46.0f);
-		Text(f, range, rp.x, rp.y, 0, FONT_VALUE, f.color, Max(0.7f, look.numbers));
+		const Vector2D rp = L.At(0.0f, SYNC_Y + SYNC_ARM + SYNC_SPREAD * 0.6f);
+		Text(f, range, rp.x, rp.y + gap + FontTall(FONT_VALUE) * 0.5f, 0, FONT_VALUE, f.color, Max(0.7f, look.numbers));
 	}
-	if (look.labels > 0.02f)
-	{
-		const Vector2D na = L.At(0.0f, -22.0f);
-		Text(f, ammo.name, na.x, na.y, 0, FONT_LABEL, f.color, look.labels * a);
-		const Vector2D pa = L.At(m * -84.0f, -22.0f);
-		Plate(f, L"WPN", pa.x, pa.y, -side, look.labels, L"\u6b8b\u5f3e");
-	}
+
+	// The top rail, its middle the rail's tallest occupant's height plus a gap above the rounds' row.
+	bool bCritical, bHeld;
+	const wchar_t *pCall = AmmoCallOf(f, s, ammo, bCritical, bHeld);
+	const bool bLabels = look.labels > 0.02f;
+	if (!bLabels && !bHeld)
+		return;
+	const float railHalf = 0.5f * Max(Max(FontTall(FONT_MACHINE), FontTall(FONT_PLATE_SHORT)) + 2.0f * f.s, FontTall(FONT_LABEL));
+	const float railY = L.At(0.0f, ROW_TOP).y - gap - railHalf;
+	if (pCall)
+		MachinePlate(f, pCall, L.At(0.0f, 0.0f).x, railY, 0, bCritical ? 1.0f : 0.95f, bCritical);
+	else if (bLabels && !bHeld)
+		Text(f, ammo.name, L.At(0.0f, 0.0f).x, railY, 0, FONT_LABEL, f.color, look.labels * a);
+	if (bLabels)
+		Plate(f, L"WPN", L.At(m * -OUTER_X, 0.0f).x, railY, -side, look.labels, L"\u6b8b\u5f3e");
 }
 } // namespace NeoCyberbrain

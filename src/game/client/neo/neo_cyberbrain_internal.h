@@ -233,6 +233,8 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Font font, const Color &c, float alpha);
 // How wide text would draw, pixels.
 float TextWidth(const wchar_t *pText, Font font);
+// A face's cell height, pixels (0 if it didn't load): rows are placed by it plus a gap (R3), not by constants.
+float FontTall(Font font);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
 // What the machine says (RELOAD, OVERHEAT, the vision mode): dark pixel letters on a light plate with a yellow bar at

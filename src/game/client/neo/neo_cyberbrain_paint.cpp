@@ -207,6 +207,12 @@ float TextWidth(const wchar_t *pText, Font font)
 	return static_cast<float>(wide);
 }
 
+float FontTall(Font font)
+{
+	const vgui::HFont handle = GetFont(font);
+	return handle == vgui::INVALID_FONT ? 0.0f : static_cast<float>(vgui::surface()->GetFontTall(handle));
+}
+
 // The plate's box and text, returning its left edge and width. A bar, if given, marks its leading edge.
 static bool PlateBox(const Frame &f, Font font, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg,
 	float &x0, float &w, const Color *pBar = nullptr)
