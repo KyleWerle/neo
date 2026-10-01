@@ -98,11 +98,14 @@ void CNEOHud_CyberbrainTeam::DrawNeoHudElement()
 	// The score and squad list follow the rules' round state bit, as the stock element does; the feed has none.
 	if (!(NEORules()->GetHiddenHudElements() & NEO_HUD_ELEMENT_ROUND_STATE))
 	{
+		NC::ProbeOwner(NC::PROBE_SCORE);
 		NC::PaintScore(f);
+		NC::ProbeOwner(NC::PROBE_SQUAD);
 		NC::PaintSquad(f);
 	}
 	if (!gHUD.IsHidden(HIDEHUD_MISCSTATUS))
 	{
+		NC::ProbeOwner(NC::PROBE_FEED);
 		NC::PaintFeed(f);
 	}
 	NeoGhostFlush();

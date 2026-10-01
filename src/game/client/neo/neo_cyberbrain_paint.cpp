@@ -190,6 +190,7 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	const int tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(y) - tall / 2;
 	Measure(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), alpha);
+	ProbeText(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), pText, alpha);
 	// A shadow on a dark scene; a dark edge all round on a bright one.
 	NeoHudPrintText(handle, pText, count, tx, ty, Color(c.r(), c.g(), c.b(), Alpha(f, alpha)),
 		f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW, Alpha(f, alpha * (0.6f + 0.35f * f.contrast)));
@@ -221,6 +222,7 @@ static bool PlateBox(const Frame &f, Font font, const wchar_t *pText, float x, f
 	w = wide + pad * 2.0f;
 	x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;
 	Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), bg, 0.85f * alpha);
+	ProbeText(Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), pText, alpha);
 	if (pBar)
 		Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + Max(2.0f, 3.0f * f.s), y + h * 0.5f), *pBar, alpha);
 	NeoGhostFlush();

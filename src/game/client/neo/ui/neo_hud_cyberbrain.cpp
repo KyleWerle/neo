@@ -253,6 +253,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	if (!bRingOnBody)
 	{
 		part.Switch(NEO_HUD_PROFILE_VITALS_RING);
+		NC::ProbeOwner(NC::PROBE_RING);
 		NC::PaintRing(NC::ForGroup(f, NC::BRIGHT_RING));
 	}
 	part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
@@ -263,6 +264,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		if (g == NC::GROUP_LINK)
 			continue;	// the party view, in the team element
 		const NC::Frame gf = NC::ForGroup(f, g);
+		NC::ProbeOwner(static_cast<NC::ProbeOwnerId>(g));
 		NC::MeasureBegin();
 		switch (g)
 		{
@@ -280,9 +282,11 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		NC::Frame ring = NC::ForGroup(f, NC::BRIGHT_RING);
 		ring.contrast = Max(ring.contrast, 0.8f);
 		NeoGhostOutline(0.8f);
+		NC::ProbeOwner(NC::PROBE_RING);
 		NC::PaintRing(ring);
 		part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
 	}
 	NeoGhostFlush();
 	NeoGhostOutline(-1.0f);	// back to the setting for everything else
+	NC::PaintProbe();
 }

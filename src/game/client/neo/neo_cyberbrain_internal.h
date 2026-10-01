@@ -281,4 +281,12 @@ float StrideListen(const Senses &s, float now, bool &bLoud);
 // the waveform's level at sample i (0 the oldest).
 int MotionSamples();
 float MotionNoiseAt(int i, bool &bLoud);
+
+// The layout probe (neo_cyberbrain_probe.cpp, cl_neo_hud_layout_debug): who owns the text drawn next, each text box
+// as it's drawn (Text and the plates call it), and the red marks where two cross (painted last).
+enum ProbeOwnerId { PROBE_BODY, PROBE_OPTICS, PROBE_WEAPON, PROBE_LINK, PROBE_MOTION, PROBE_RING, PROBE_SCORE, PROBE_SQUAD,
+	PROBE_FEED, PROBE__COUNT };
+void ProbeOwner(ProbeOwnerId owner);
+void ProbeText(const Vector2D &lo, const Vector2D &hi, const wchar_t *pText, float alpha);
+void PaintProbe();
 } // namespace NeoCyberbrain

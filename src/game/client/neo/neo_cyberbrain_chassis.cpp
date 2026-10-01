@@ -58,6 +58,7 @@ void PaintChassis(const Frame &frame)
 			continue;
 		}
 		const Frame f = ForGroup(frame, slot);
+		ProbeOwner(static_cast<ProbeOwnerId>(slot));	// a group owns its frame (R1); the ring is PROBE_RING
 		Vector2D centre, half;
 		GroupExtent(f, slot, centre, half);
 		centre += (slot == BRIGHT_RING) ? RingDeepOffset() : f.pPlaces[slot].deep - f.pPlaces[slot].pos;
