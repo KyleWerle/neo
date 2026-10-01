@@ -246,7 +246,9 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	NC::MeasureBrightness(pPlayer, f, dt, bBoot);
 	part.Switch(NEO_HUD_PROFILE_VITALS_BACKING);
 	NC::PaintBackings(f);
-	NC::PaintChassis(f);
+	part.Switch(NEO_HUD_PROFILE_VITALS_FRAME);
+	NC::PaintFrame(f);
+	NC::PaintCouplings(f);
 	// The compact ring sits under the groups; the ring on the body goes over it (the body stands in front of where
 	// you're facing on it), outlined so it reads across the capsule.
 	const bool bRingOnBody = style == NEO_HUD_STYLE_BODY;

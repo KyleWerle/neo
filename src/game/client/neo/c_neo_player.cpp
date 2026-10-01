@@ -1531,6 +1531,16 @@ void C_NEO_Player::SuperJump(void)
 	ApplyAbsVelocityImpulse(forward * boostIntensity);
 }
 
+float C_NEO_Player::CloakPower_CapSeconds(void) const
+{
+	switch (GetClass())
+	{
+	case NEO_CLASS_RECON:	return 13.0f;
+	case NEO_CLASS_ASSAULT:	return 8.0f;
+	default:				return 0.0f;
+	}
+}
+
 float C_NEO_Player::CloakPower_CurrentVisualPercentage(void) const
 {
 	const float cloakPowerRounded = roundf(m_HL2Local.m_cloakPower);

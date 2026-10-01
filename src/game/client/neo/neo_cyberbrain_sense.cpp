@@ -58,6 +58,7 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	out.neoClass = neoClass;
 	out.bHasCloak = neoClass == NEO_CLASS_RECON || neoClass == NEO_CLASS_ASSAULT || neoClass == NEO_CLASS_VIP;
 	out.bHasJumps = neoClass == NEO_CLASS_RECON;
+	out.bJumpsLocked = out.bHasJumps && pPlayer->HasBeenAirborneTooLongForSuperJump();
 	out.bHasSprint = neoClass == NEO_CLASS_ASSAULT || neoClass == NEO_CLASS_VIP || neoClass == NEO_CLASS_JUGGERNAUT;
 	out.bArmour = neoClass == NEO_CLASS_SUPPORT;
 	out.pVision = neoClass == NEO_CLASS_RECON ? L"NIGHT VISION" : neoClass == NEO_CLASS_ASSAULT ? L"MOTION VISION"
@@ -75,9 +76,15 @@ void Sense(C_NEO_Player *pPlayer, float dt, float now, bool bBoot, Senses &out)
 	out.hpNumber = pPlayer->GetDisplayedHealth(cl_neo_hud_health_mode.GetInt());
 	const float cloakRaw = clamp(pPlayer->CloakPower_CurrentVisualPercentage() / 100.0f, 0.0f, 1.0f);
 	out.cloak = bBoot ? cloakRaw : out.cloak + (cloakRaw - out.cloak) * ease;
+	out.cloakCap = pPlayer->CloakPower_CapSeconds();
+	{
+		const float seconds = clamp(pPlayer->CloakPower_Seconds(), 0.0f, Max(out.cloakCap, 0.0f));
+		out.cloakSeconds = bBoot ? seconds : out.cloakSeconds + (seconds - out.cloakSeconds) * ease;
+	}
 	const float auxRaw = clamp(pPlayer->m_HL2Local.m_flSuitPower, 0.0f, 100.0f);
 	out.aux = bBoot ? auxRaw : out.aux + (auxRaw - out.aux) * ease;
 	out.bCloaked = pPlayer->IsCloaked();
+	out.cloakFactor = pPlayer->GetCloakFactor();
 	out.bVision = pPlayer->IsInVision();
 	out.bSprinting = pPlayer->IsSprinting();
 	out.bInAim = pPlayer->IsInAim();

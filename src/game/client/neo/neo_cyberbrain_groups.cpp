@@ -14,6 +14,7 @@ namespace NeoCyberbrain
 {
 constexpr int HALFTONE_CELLS = 5;
 constexpr float CLOAK_BAR = 5.0f;		// the therm-optic frame's bars, pixels at 1080p
+constexpr float CLOAK_LOW_SECONDS = 3.0f;	// the frame and its number go amber under this many seconds of cloak
 constexpr float HALFTONE_PITCH = 13.0f, HALFTONE_MIN = 1.5f;	// pixels at 1080p: a cell, and a square in the dark
 
 void PaintOptics(const Frame &f)
@@ -65,8 +66,13 @@ void PaintOptics(const Frame &f)
 	{
 		const float r = half + 6.0f, out = s.bCloaked ? 2.0f : 0.0f, seg = r, thick = CLOAK_BAR * 0.5f;	// each segment half a side
 		const Vector2D corners[4] = { Vector2D(-r, -r), Vector2D(r, -r), Vector2D(r, r), Vector2D(-r, r) };
-		const Color frame = s.cloak < 0.25f ? WARN : f.color;
-		const float lit = s.cloak * 8.0f;
+		// Seconds, not percent (Kyle, 2026-10-01: the frame must show the seconds of cloak you have): eight bars for the
+		// class's whole cloak (13 s recon, 8 s assault), filled by the unrounded seconds left, a tick on the track at
+		// every whole second, and the number beside the patch. Amber under three seconds, for both classes.
+		const float cap = Max(s.cloakCap, 1.0f);
+		const bool bLow = s.cloakSeconds < CLOAK_LOW_SECONDS;
+		const Color frame = bLow ? WARN : f.color;
+		const float lit = s.cloakSeconds / cap * 8.0f;
 		for (int i = 0; i < 8; ++i)
 		{
 			// Segment i: the half side from corner i/2, clockwise (mirrored with the hand).
@@ -91,9 +97,29 @@ void PaintOptics(const Frame &f)
 				}
 			};
 			bar(from, to, true, f.color, 0.15f * a);
+			// The seconds on the track: a tick at each whole second falling inside this segment.
+			for (int sec = 1; sec < static_cast<int>(cap); ++sec)
+			{
+				const float u = sec / cap * 8.0f - i;
+				if (u < 0.0f || u >= 1.0f)
+					continue;
+				const Vector2D p = c0 + dir * (seg * ((i % 2) + u));
+				Line(f, at(p + normal * thick), at(p + normal * (thick + 3.0f)), NEO_GHOST_LIGHT, f.color, 0.5f * a);
+			}
 			if (t > 0.0f)
 				bar(from, from + (to - from) * t, !s.bCloaked, frame, (t < 1.0f ? 0.75f : 0.9f) * a);
 		}
+	}
+	// The seconds as a number on the outer side of the patch (a real number, so it holds principle 3): whole seconds
+	// drain one a second, the recharge goes in tenths. Always at least faint; full while cloaked or under three seconds.
+	if (s.bHasCloak)
+	{
+		wchar_t secs[16];
+		V_snwprintf(secs, ARRAYSIZE(secs), L"%.1f S", s.cloakSeconds);
+		const bool bLow = s.cloakSeconds < CLOAK_LOW_SECONDS;
+		const float strength = Max(Max(look.numbers, 0.45f), (s.bCloaked || bLow) ? 1.0f : 0.0f);
+		Text(f, secs, L.At(-m * (half + 6.0f + CLOAK_BAR + 6.0f), 0.0f).x, L.At(0.0f, 0.0f).y, -side, FONT_VALUE,
+			bLow ? WARN : f.color, strength * a);
 	}
 	// R4's slots, a gap off the brackets (the group's outermost marks): the plate on the top rail, and at the foot what
 	// the machine says (the vision mode, the JGR56), or when it says nothing the state word, only when pulled in. The
@@ -105,8 +131,9 @@ void PaintOptics(const Frame &f)
 	{
 		static const wchar_t *const s_kanji = L"\u5149\u5b66";
 		Stack rail = { L.At(0.0f, -edge).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, L"OPTICS", s_kanji));
-		Plate(f, L"OPTICS", L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
+		const float y = rail.Row(PlateTall(f, Word("neo_hud_cb_optics", L"OPTICS"), s_kanji));
+		wchar_t word[16];
+		Plate(f, Crystallise(f, GROUP_OPTICS, Word("neo_hud_cb_optics", L"OPTICS"), word, ARRAYSIZE(word)), L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
 	}
 	Stack foot = { L.At(0.0f, edge).y + gap, gap, 1 };
 	const float footY = foot.Row(Max(MachinePlateTall(f), FontTall(FONT_LABEL)));

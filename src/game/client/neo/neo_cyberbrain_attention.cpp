@@ -270,12 +270,11 @@ Look LookOf(const Frame &f, Group group)
 {
 	const float a = f.pPlaces[group].att;
 	// In focus a touch smaller again, to keep clear of what you're aiming at.
-	return { 0.86f + 0.3f * a - 0.14f * f.pPlaces[group].focus, 0.4f + 0.6f * a, NeoSmoothStep((a - 0.15f) / 0.35f), NeoSmoothStep((a - 0.35f) / 0.35f) };
+	return { 0.86f + 0.3f * a - 0.14f * f.pPlaces[group].focus, 0.4f + 0.6f * a, NeoSmoothStep((a - 0.15f) / 0.35f), WordAlpha(f, group) };
 }
 
-// A slot's centre and half size on screen (pixels): each group round its point at its attention's scale, the ring
-// round itself.
-void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
+// A slot's box before the chassis: each group round its point at its attention's scale, the ring round itself.
+static void GroupBox(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 {
 	if (slot == BRIGHT_RING)
 	{
@@ -325,5 +324,21 @@ void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 	}
 	centre = f.pPlaces[slot].pos + offset * k;
 	half = size * k;
+}
+} // namespace NeoCyberbrain
+
+namespace NeoCyberbrain
+{
+// A slot's centre and half size on screen (pixels), with its chassis: the etched rail, ruler and channel codes hang
+// below what it drew (neo_cyberbrain_frame.cpp), so the screen's edge and the other groups keep clear of them too
+// (Kyle, 2026-10-01: the compact ring's and the body's bottom registration clipped the screen's bottom).
+void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
+{
+	GroupBox(f, slot, centre, half);
+	if (slot == GROUP_LINK || half.y <= 0.0f)
+		return;
+	const float below = CHASSIS_BELOW * f.s;
+	centre.y += below * 0.5f;
+	half.y += below * 0.5f;
 }
 } // namespace NeoCyberbrain

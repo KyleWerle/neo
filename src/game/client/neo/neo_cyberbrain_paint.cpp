@@ -344,7 +344,7 @@ void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, con
 		const float t = clamp(fill * n - i, 0.0f, 1.0f);
 		if (t >= 0.999f)
 		{
-			CellShape(f, a.x, y0, b.x, y1, c, style.chamfer, true, style.fill, 0.85f * alpha);
+			CellShape(f, a.x, y0, b.x, y1, c, style.chamfer, !style.bLocked, style.fill, (style.bLocked ? 0.7f : 0.85f) * alpha);
 			continue;
 		}
 		CellShape(f, a.x, y0, b.x, y1, c, style.chamfer, false, f.color, (t > 0.0f ? 0.8f : 0.25f) * alpha);
@@ -353,7 +353,16 @@ void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, con
 			// Filling from the bottom, clear of the cut corner; its edge flares just past each quarter (an event read
 			// from the fill itself, no loop).
 			const float pad = 1.5f * f.s, top = Max(y1 - (h - pad) * t, y0 + c);
-			Rect(f, Vector2D(a.x + pad, top), Vector2D(b.x - pad, y1 - pad), style.fill, 0.6f * alpha);
+			if (style.bStrips)
+			{
+				// Strips, not a solid fill: the half-rate recharge reads as thinner (a bar every second pixel row pair).
+				for (float y = y1 - pad; y > top; y -= 4.0f * f.s)
+					Rect(f, Vector2D(a.x + pad, Max(y - 2.0f * f.s, top)), Vector2D(b.x - pad, y), style.fill, 0.6f * alpha);
+			}
+			else
+			{
+				Rect(f, Vector2D(a.x + pad, top), Vector2D(b.x - pad, y1 - pad), style.fill, 0.6f * alpha);
+			}
 			const float quarter = t * 4.0f - floorf(t * 4.0f);
 			const float edge = style.bCharging && quarter < 0.1f ? 1.0f : 0.7f;
 			Line(f, Vector2D(a.x + pad, top), Vector2D(b.x - pad, top), NEO_GHOST_MEDIUM, style.fill, edge * alpha);
@@ -373,5 +382,10 @@ void Cross(const Frame &f, const Vector2D &at, float size, float alpha)
 {
 	Line(f, at - Vector2D(size, 0.0f), at + Vector2D(size, 0.0f), NEO_GHOST_LIGHT, f.color, alpha);
 	Line(f, at - Vector2D(0.0f, size), at + Vector2D(0.0f, size), NEO_GHOST_LIGHT, f.color, alpha);
+}
+
+const wchar_t *Word(const char *, const wchar_t *pEnglish)
+{
+	return pEnglish;	// the token is the key NeoLoc::Find will take (the base isn't built yet)
 }
 } // namespace NeoCyberbrain

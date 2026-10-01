@@ -114,6 +114,9 @@ public:
 	virtual int GetMaxHealth(void) const override;
 
 	float CloakPower_CurrentVisualPercentage(void) const;
+	// The therm-optic in seconds of cloak (it drains one a second, recharges 0.55 a second as recon, 0.25 as assault): what is left, and the class's most.
+	float CloakPower_Seconds(void) const { return m_HL2Local.m_cloakPower; }
+	float CloakPower_CapSeconds(void) const;
 
 	float GetNormSpeed_WithActiveWepEncumberment(void) const;
 	float GetCrouchSpeed_WithActiveWepEncumberment(void) const;
@@ -167,6 +170,7 @@ public:
 	inline bool IsCloaked() const { return m_bInThermOpticCamo; }
 	bool IsDrawnTransparent() const;
 	float GetCloakFactor() const { return m_flTocFactor; }
+	bool HasBeenAirborneTooLongForSuperJump() const { return m_bHasBeenAirborneForTooLongToSuperJump; }
 	bool IsAirborne() const { return (!(GetFlags() & FL_ONGROUND)); }
 	bool IsInVision() const { return m_bInVision; }
 	bool IsInAim() const { return m_bInAim; }

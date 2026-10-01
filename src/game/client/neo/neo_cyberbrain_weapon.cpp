@@ -301,12 +301,15 @@ void PaintWeapon(const Frame &f)
 	if (!bLabels && !bHeld)
 		return;
 	Stack rail = { L.At(0.0f, ROW_TOP).y - gap, gap, -1 };
-	const float railY = rail.Row(Max(Max(MachinePlateTall(f), PlateTall(f, L"WPN", WPN_KANJI)), FontTall(FONT_LABEL)));
+	const float railY = rail.Row(Max(Max(MachinePlateTall(f), PlateTall(f, Word("neo_hud_cb_wpn", L"WPN"), WPN_KANJI)), FontTall(FONT_LABEL)));
 	if (pCall)
 		MachinePlate(f, pCall, L.At(0.0f, 0.0f).x, railY, 0, bCritical ? 1.0f : 0.95f, bCritical);
 	else if (bLabels && !bHeld)
 		Text(f, ammo.name, L.At(0.0f, 0.0f).x, railY, 0, FONT_LABEL, f.color, look.labels * a);
 	if (bLabels)
-		Plate(f, L"WPN", L.At(m * -OUTER_X, 0.0f).x, railY, -side, look.labels, WPN_KANJI);
+	{
+		wchar_t word[16];
+		Plate(f, Crystallise(f, GROUP_WEAPON, Word("neo_hud_cb_wpn", L"WPN"), word, ARRAYSIZE(word)), L.At(m * -OUTER_X, 0.0f).x, railY, -side, look.labels, WPN_KANJI);
+	}
 }
 } // namespace NeoCyberbrain

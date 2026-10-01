@@ -38,8 +38,9 @@ ConVar cl_neo_hud_grid("cl_neo_hud_grid", "1", FCVAR_ARCHIVE,
 namespace NeoCyberbrain
 {
 constexpr int GRID_ROWS = 13, GRID_SUB = 3;		// the screen's rows; the trails step in thirds of a cell
-constexpr int TRAIL_MAX = 3;					// grid crosses per arm of a corner's trail, at full attention
+constexpr int TRAIL_MAX = 1;					// grid crosses per arm of a corner's trail, at full attention
 constexpr float CORNER = 4.0f, TRAIL = 2.5f;	// arm lengths, pixels at 1080p
+constexpr float LOOSE = 12.0f;				// how far a quiet corner sits from its place, pixels at 1080p (to tune)
 constexpr float CORNER_ALPHA = 0.5f, TRAIL_ALPHA = 0.35f;
 const Color GRID_NEUTRAL(208, 123, 43, 255);	// Grupo 6 orange (ART-DIRECTION.md)
 
@@ -49,15 +50,15 @@ bool GridOn()
 }
 
 // The comfort forms: how fast the notching eases and how long an activation takes to reform; whether anything travels.
-struct GridMotion { float notchFor, reformFor; bool bTravel; };
+struct GridMotion { float notchFor, reformFor; bool bTravel; float loose; };
 static GridMotion GridMotionOf()
 {
 	static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
 	switch (cl_neo_hud_motion.IsValid() ? cl_neo_hud_motion.GetInt() : 1)
 	{
-	case 0:		return { 0.5f, 0.6f, false };
-	case 2:		return { 0.12f, 0.45f, true };
-	default:	return { 0.25f, 0.6f, true };
+	case 0:		return { 0.5f, 0.6f, false, 0.0f };
+	case 2:		return { 0.12f, 0.45f, true, 1.0f };
+	default:	return { 0.25f, 0.6f, true, 0.6f };
 	}
 }
 
@@ -215,9 +216,12 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 	GridBlock blocks[BRIGHT_RING + 2];
 	const int nBlocks = GridBlocks(f, slot, blocks);
 	const Vector2D corners[4] = { Vector2D(left, top), Vector2D(right, top), Vector2D(left, bottom), Vector2D(right, bottom) };
+	// Loose when quiet, ordered in a fight (gate 5; Kyle, 2026-10-01): each corner sits at its own seeded offset by the
+	// listening level, which is eased already; Still keeps them in order. Sideways outward, always up (the bottom edge is the screen's).
+	const float loose = Listening() * m.loose * LOOSE * s;
 	for (int k = 0; k < 4; ++k)
 	{
-		const Vector2D natural = corners[k];
+		const Vector2D natural = corners[k] + Vector2D((k % 2 ? 1.0f : -1.0f) * GridHash(k, slot, 11), -1.0f * GridHash(slot, k, 17)) * loose;
 		const int gi = RoundFloatToInt((natural.x - origin.x) / sub), gj = RoundFloatToInt((natural.y - origin.y) / sub);
 		const Vector2D snapped(origin.x + gi * sub, origin.y + gj * sub);
 		Vector2D at = natural + (snapped - natural) * notch;

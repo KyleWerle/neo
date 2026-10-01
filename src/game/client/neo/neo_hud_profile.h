@@ -19,6 +19,8 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_VITALS_BACKING,
 	NEO_HUD_PROFILE_VITALS_RING,
 	NEO_HUD_PROFILE_VITALS_GROUPS,
+	NEO_HUD_PROFILE_VITALS_FRAME,		// the frame, the grid's corners and the couplings (split from backing 2026-10-01)
+	NEO_HUD_PROFILE_VITALS_WORDS,		// the language budget (once a frame, inside the groups' draw; timed on its own)
 	NEO_HUD_PROFILE__COUNT,
 };
 

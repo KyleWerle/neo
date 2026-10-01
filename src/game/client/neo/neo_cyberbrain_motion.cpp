@@ -100,15 +100,43 @@ void PaintMotion(const Frame &f)
 	}
 	if (s.bHasJumps)
 	{
-		for (int i = 0; i < 2; ++i)
+		// Two level cells, stacked, the fill aux over what two jumps cost (phase 5): the recharge shows as the fill, in strips
+		// while sprinting (half rate), the banked ones as outlines when too long in the air to use them.
+		const float x = 22.0f;
+		CellStyle style;
+		style.count = 2;
+		style.chamfer = chamfer;
+		style.bCharging = s.aux < 2.0f * JUMP_COST - 0.5f && fmodf(s.aux, JUMP_COST) > 0.01f;
+		style.bStrips = s.bSprinting && style.bCharging;
+		style.bLocked = s.bJumpsLocked;
+		style.fill = f.color;
+		const Vector2D p0 = L.At(d * x, -10.0f), p1 = L.At(d * (x + 13.0f), 40.0f);
+		const Vector2D lo(Min(p0.x, p1.x), p0.y), hi(Max(p0.x, p1.x), p1.y);
+		Cells(f, lo, hi, clamp(s.aux / (2.0f * JUMP_COST), 0.0f, 1.0f), style, a);
+
+		// The ready flare: a cell becoming usable gives one brief outline round the stack, a rise and fall over 0.15 s at
+		// Full, 0.25 s at Calm, 0.4 s at Still (slower, never shorter, and never a burst).
+		static int s_ready = 0;
+		static float s_readyAt = -100.0f;
+		const int ready = static_cast<int>(s.aux / JUMP_COST);
+		if (ready > s_ready && f.now - s_motion.lastSeen < 0.5f)
+			s_readyAt = f.now;
+		s_ready = ready;
+		static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
+		const int motion = cl_neo_hud_motion.IsValid() ? cl_neo_hud_motion.GetInt() : 1;
+		const float flareFor = motion >= 2 ? 0.15f : motion == 1 ? 0.25f : 0.4f, age = f.now - s_readyAt;
+		if (age >= 0.0f && age < flareFor)
 		{
-			const float fill = clamp((s.aux - i * JUMP_COST) / JUMP_COST, 0.0f, 1.0f), x = 22.0f + i * 17.0f;
-			CellStyle style;
-			style.chamfer = chamfer;
-			style.bCharging = fill > 0.0f && fill < 1.0f;
-			style.fill = f.color;
-			const Vector2D p0 = L.At(d * x, -10.0f), p1 = L.At(d * (x + 13.0f), 40.0f);
-			Cells(f, Vector2D(Min(p0.x, p1.x), p0.y), Vector2D(Max(p0.x, p1.x), p1.y), fill, style, a);
+			const float pad = 3.0f * f.s, pulse = sinf(age / flareFor * M_PI_F);
+			RectOutline(f, lo - Vector2D(pad, pad), hi + Vector2D(pad, pad), NEO_GHOST_MEDIUM, f.color, 0.9f * pulse * a);
+		}
+
+		// JMP: a budget word at the stack's foot (R7), crystallising with the group's plate.
+		if (look.labels > 0.02f)
+		{
+			wchar_t word[8];
+			Text(f, Crystallise(f, GROUP_MOTION, Word("neo_hud_cb_jmp", L"JMP"), word, ARRAYSIZE(word)), (lo.x + hi.x) * 0.5f,
+				hi.y + (ROW_GAP + 5.0f) * L.k, 0, FONT_LABEL, s.bJumpsLocked ? WARN : f.color, look.labels * a);
 		}
 	}
 
@@ -160,8 +188,9 @@ void PaintMotion(const Frame &f)
 		static const wchar_t *const s_kanji = L"\u6a5f\u52d5";
 		const float gap = ROW_GAP * L.k;
 		Stack rail = { L.At(0.0f, strideY - StrideReach()).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, L"MOTION", s_kanji));
-		Plate(f, L"MOTION", L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
+		const float y = rail.Row(PlateTall(f, Word("neo_hud_cb_motion", L"MOTION"), s_kanji));
+		wchar_t word[16];
+		Plate(f, Crystallise(f, GROUP_MOTION, Word("neo_hud_cb_motion", L"MOTION"), word, ARRAYSIZE(word)), L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
 	}
 }
 } // namespace NeoCyberbrain

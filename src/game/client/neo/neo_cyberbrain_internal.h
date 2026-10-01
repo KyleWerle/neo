@@ -54,12 +54,15 @@ using NeoHud::MAX_CALLOUTS;
 struct Senses
 {
 	int neoClass = -1;
+	bool bJumpsLocked = false;			// recon: too long in the air for a super jump (the banked jumps are spent until it lands)
 	bool bHasCloak = false, bHasJumps = false, bHasSprint = false, bArmour = false;
 	const wchar_t *pVision = nullptr;	// the class's vision mode's plate, or none
 	float hp = 1.0f;					// 0 to 1, eased
 	int hpNumber = 100;					// as cl_neo_hud_health_mode displays it
-	float cloak = 1.0f;					// therm-optic power, 0 to 1, eased
+	float cloak = 1.0f;					// therm-optic power, 0 to 1, eased (the game's visual percentage: whole seconds over the cap)
+	float cloakSeconds = 0.0f, cloakCap = 0.0f;	// the same in seconds, unrounded and eased: what you have left, and the class's most
 	bool bCloaked = false;
+	float cloakFactor = 0.0f;			// the game's own cloak interference (C_NEO_Player::GetCloakFactor): 0 unseen to 1 plain, rising as you move
 	float aux = 100.0f;					// 0 to 100, eased
 	bool bSprinting = false, bVision = false, bInAim = false;
 	// Posture and motion.
@@ -130,7 +133,7 @@ constexpr float FOCUS_FROM = LAYER_FLOOR[LAYER_CRITICAL];
 
 // focus: how far into the focus zone by the crosshair (0 out, 1 all the way; neo_cyberbrain_attention.cpp); kick: the
 // gun's knock it rides there, as it was last frame. layer: the perception layer its attention is in now, lastLayer
-// the one before, layerChanged when (the marks' shift, neo_cyberbrain_layers.cpp).
+// the one before, layerChanged when (the marks' shift, neo_cyberbrain_frame.cpp).
 struct Place
 {
 	float att = 0.0f, attVel = 0.0f, sal = 0.0f, balance = 0.0f, focus = 0.0f;
@@ -174,9 +177,13 @@ constexpr int BRIGHT_RING = GROUP__COUNT;
 void MeasureBrightness(C_NEO_Player *pPlayer, Frame &f, float dt, bool bBoot);
 // A group's (or the ring's) centre and half size on screen, pixels (neo_cyberbrain_attention.cpp, with the layout).
 void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half);
-// The etched chassis on the deep layer (neo_cyberbrain_chassis.cpp): registration crosses, rulers, channel codes.
-void PaintChassis(const Frame &f);
+// The etched chassis on the deep layer (neo_cyberbrain_frame.cpp): registration crosses, rulers, channel codes.
+void PaintFrame(const Frame &f);
 void PaintBackings(const Frame &f);
+// A module's registration cross nearest a point (the frame's, neo_cyberbrain_frame.cpp), false if it draws no frame; and the
+// couplings between modules that act together (neo_cyberbrain_couple.cpp, after the frame).
+bool FrameCross(const Frame &f, int slot, const Vector2D &toward, Vector2D &out);
+void PaintCouplings(const Frame &f);
 // The frame for drawing one group (or the ring): its contrast set, the strokes' outline to match.
 Frame ForGroup(const Frame &f, int slot);
 
@@ -210,6 +217,7 @@ float ListeningFor(float now);
 // the way each group in focus comes in; groups in focus keeping off each other; every pulled-in group stepping off its
 // quieter neighbours' targets (R5).
 constexpr float DRAWN_PAD = 3.0f;	// pixels at 1080p round what a group drew, for its extent
+constexpr float CHASSIS_BELOW = 28.0f;	// and how far its chassis (rail, ruler, channel codes) hangs below the extent
 bool ClearOfFocus(const Frame &f, const Vector2D &centre, const Vector2D &half);
 float FocusReach(const Frame &f, const Vector2D &dir, const Vector2D &offset, const Vector2D &half, float most);
 void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const float focus[GROUP__COUNT],
@@ -222,6 +230,12 @@ Vector2D Inside(const Frame &frame, const Vector2D &centre, const Vector2D &half
 bool InKeepout(const Frame &frame, const Vector2D &p);
 // A group's look at its attention: scale, strength, and how far its numbers and labels have come in.
 struct Look { float scale, alpha, numbers, labels; };
+// The language budget (neo_cyberbrain_words.cpp): a group's plate and layer code are words the HUD affords or not; full
+// when quiet, down to the critical groups in a fight. Reveal 0 to 1 (eased by the comfort form); alpha for drawing the
+// word; the word cut to the glyphs crystallised so far (whole at Still) into pBuf.
+float WordReveal(const Frame &f, Group group);
+float WordAlpha(const Frame &f, Group group);
+const wchar_t *Crystallise(const Frame &f, Group group, const wchar_t *pWord, wchar_t *pBuf, int size);
 Look LookOf(const Frame &frame, Group group);
 
 // Drawing helpers (neo_cyberbrain_paint.cpp). A Local draws round a point at a scale; its coordinates are pixels at
@@ -262,6 +276,9 @@ struct Stack
 		return mid;
 	}
 };
+// A HUD word by its token (LOCALIZATION.md, "The cyberbrain HUD in the plan"): the English until NeoLoc::Find exists, then
+// the player's language with the English as the fallback. New words go through this, never a bare literal.
+const wchar_t *Word(const char *pToken, const wchar_t *pEnglish);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
 // How tall a plate (with its kanji, if given) and a machine plate draw, pixels: what a row holding one needs.
@@ -285,7 +302,9 @@ int NoiseArcs(const Senses &s);
 // the box from a (top left) to b (bottom right), each with its top corner cut on the `chamfer` side (1 right, -1
 // left); full ones solid, the one charging outlined and filling from its bottom (its top edge flaring as it fills),
 // empty ones a faint outline. No vessel, no cap. bRow lays them left to right, filling from the left.
-struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; bool bRow = false; Color fill; };
+// bStrips: the charging fill drawn in strips, a half-rate recharge (a recon sprinting); bLocked: full cells drawn as outlines,
+// banked but not usable (a recon too long in the air).
+struct CellStyle { int count = 1; int chamfer = 1; bool bCharging = false; bool bRow = false; bool bStrips = false; bool bLocked = false; Color fill; };
 void Cells(const Frame &f, const Vector2D &a, const Vector2D &b, float fill, const CellStyle &style, float alpha);
 
 // The groups and the ring.

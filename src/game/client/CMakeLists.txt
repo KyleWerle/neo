@@ -1695,7 +1695,6 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_sense.cpp
     neo/neo_cyberbrain_hearing.cpp
     neo/neo_cyberbrain_perceive.cpp
-    neo/neo_cyberbrain_layers.cpp
     neo/neo_cyberbrain_attention.cpp
     neo/neo_cyberbrain_paint.cpp
     neo/neo_cyberbrain_body.cpp
@@ -1717,7 +1716,9 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_ring.cpp
     neo/neo_cyberbrain_groups.cpp
     neo/neo_cyberbrain_backing.cpp
-    neo/neo_cyberbrain_chassis.cpp
+    neo/neo_cyberbrain_frame.cpp
+    neo/neo_cyberbrain_words.cpp
+    neo/neo_cyberbrain_couple.cpp
     neo/neo_cyberbrain_motion.cpp
     neo/neo_crosshair_rifle.cpp
     neo/neo_crosshair_smg.cpp
