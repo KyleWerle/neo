@@ -2,6 +2,7 @@
 #include "neo_cyberbrain_internal.h"
 #include "neo_hud_model_team.h"
 #include "neo_hud_spring.h"
+#include "neo_enums.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -18,6 +19,12 @@
 //   codes): one faint cross at rest, more with attention.
 // - An activation (the group rising a perception layer) dissolves it, the trail scattered and thinned in the
 //   highlight colour, the corners knocked off, and it reforms into register.
+// - Aiming focuses it (Kyle: the world past the sight tuned out, the HUD clicking into register round it): every
+//   group's crosses register, they strengthen, and the trails run one cross further.
+// - Vision modes put it through the class's sensor, never competing with what the mode shows, never looking like a
+//   target (Kyle: "still visible but distorted based on vision mode"): night vision, phosphor (green, grain, a
+//   little bloom); thermal, cold (dark blue, a slight shimmer), never warm; motion vision, near gone while you hold
+//   still and shown by your own turning, a short smear in the HUD's colour, never the mode's highlight.
 // Team: your team's colour, its faction's crosses (Jinrai's cut through the middle, NSF's long and fine). Neutral: the
 // issued grid, plain crosses in the HUD's colour, orange highlights (small, less intense pops, as the style guide has
 // them). Still motion: always registered, nothing scatters; only strength changes.
@@ -80,6 +87,66 @@ static void GridCross(const Frame &f, const Vector2D &at, float arm, int hand, c
 	Line(f, Vector2D(at.x, at.y - arm * k), Vector2D(at.x, at.y + arm * k), NEO_GHOST_LIGHT, c, a);
 }
 
+// What the grid is seen through this frame: the aim's focus and the vision mode.
+enum GridVision { VISION_NONE, VISION_NIGHT, VISION_THERMAL, VISION_MOTION };
+struct Lens { float aim = 0.0f; GridVision vision = VISION_NONE; float turn = 0.0f, motionSeen = 1.0f; bool bTravel = true; };
+static Lens LensOf(const Frame &f, const GridMotion &m)
+{
+	static Lens s_lens;
+	static int s_frame = -1;
+	if (s_frame == gpGlobals->framecount)
+		return s_lens;
+	s_frame = gpGlobals->framecount;
+	const Senses &sense = *f.pSenses;
+	// The aim eases as the ADS blend does (0.35 s); still, it's there or not.
+	const float goal = sense.bInAim ? 1.0f : 0.0f;
+	s_lens.aim = m.bTravel ? Approach(goal, s_lens.aim, gpGlobals->frametime / 0.35f) : goal;
+	s_lens.vision = !sense.bVision ? VISION_NONE : sense.neoClass == NEO_CLASS_RECON ? VISION_NIGHT
+		: sense.neoClass == NEO_CLASS_SUPPORT ? VISION_THERMAL : sense.neoClass == NEO_CLASS_ASSAULT ? VISION_MOTION : VISION_NONE;
+	// Motion vision: seen by how fast you turn (degrees a second), the smear opposite the turn.
+	const float rate = sqrtf(sense.yawRate * sense.yawRate + sense.pitchRate * sense.pitchRate);
+	s_lens.motionSeen = clamp(rate / 120.0f, 0.08f, 1.0f);
+	s_lens.turn = clamp(sense.yawRate * 0.04f, -14.0f, 14.0f);
+	s_lens.bTravel = m.bTravel;
+	return s_lens;
+}
+
+const Color GRID_PHOSPHOR(120, 255, 140, 255), GRID_COLD(70, 100, 180, 255);
+
+// One grid cross through the lens; i, j seed its grain.
+static void GridMark(const Frame &f, const Lens &lens, const Vector2D &at, float arm, int hand, const Color &c, float a, int i, int j)
+{
+	switch (lens.vision)
+	{
+	case VISION_NIGHT:
+	{
+		// Phosphor: the tube's green, its grain crawling (held still at Still), a faint bloom round each cross.
+		const float grain = lens.bTravel ? 0.55f + 0.45f * GridHash(i, j, static_cast<int>(f.now * 20.0f)) : 0.8f;
+		GridCross(f, at, arm * 1.8f, hand, GRID_PHOSPHOR, 0.2f * a);
+		GridCross(f, at, arm, hand, GRID_PHOSPHOR, 0.8f * a * grain);
+		return;
+	}
+	case VISION_THERMAL:
+	{
+		// Cold: the palette's dark end, a slight heat shimmer (none at Still).
+		const float shimmer = lens.bTravel ? sinf(f.now * 6.0f + at.x * 0.05f) * 1.2f * f.s : 0.0f;
+		GridCross(f, Vector2D(at.x, at.y + shimmer), arm, hand, GRID_COLD, 0.75f * a);
+		return;
+	}
+	case VISION_MOTION:
+	{
+		// Near gone held still; your turning shows it, a short smear trailing the turn (no smear at Still).
+		const float seen = a * lens.motionSeen;
+		GridCross(f, at, arm, hand, c, seen);
+		if (lens.bTravel && fabsf(lens.turn) > 1.0f)
+			Line(f, at, Vector2D(at.x - lens.turn * f.s, at.y), NEO_GHOST_LIGHT, c, 0.6f * seen);
+		return;
+	}
+	default:
+		GridCross(f, at, arm, hand, c, a);
+	}
+}
+
 void PaintGrid(const Frame &f, int slot, float left, float right, float top, float bottom)
 {
 	const Place &p = f.pPlaces[slot];
@@ -96,21 +163,22 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 	const float sub = pitch / GRID_SUB;
 	const Vector2D origin((f.wide - floorf(f.wide / pitch) * pitch) * 0.5f, (f.tall - GRID_ROWS * pitch) * 0.5f);
 
-	// Notched attention: four registrations, eased between (always registered when still).
+	// Notched attention: four registrations, eased between (always registered when still); aiming registers all.
+	const Lens lens = LensOf(f, m);
 	static float s_notch[GROUP__COUNT], s_notchVel[GROUP__COUNT];
 	float &notch = s_notch[slot];
 	if (!m.bTravel)
 		notch = 1.0f;
 	else
-		NeoHudSpring(notch, s_notchVel[slot], floorf(clamp(p.att, 0.0f, 1.0f) * 4.0f + 0.5f) / 4.0f, 5.0f / m.notchFor, 1.0f,
-			gpGlobals->frametime);
+		NeoHudSpring(notch, s_notchVel[slot], Max(floorf(clamp(p.att, 0.0f, 1.0f) * 4.0f + 0.5f) / 4.0f, lens.aim > 0.5f ? 1.0f : 0.0f),
+			5.0f / m.notchFor, 1.0f, gpGlobals->frametime);
 	notch = clamp(notch, 0.0f, 1.0f);
 
 	// An activation dissolves it; it reforms.
 	const float age = f.now - p.layerChanged;
 	const float broken = m.bTravel && p.layer > p.lastLayer && age < m.reformFor ? 1.0f - NeoSmoothStep(age / m.reformFor) : 0.0f;
-	const int trail = Min(TRAIL_MAX, 1 + static_cast<int>(p.att * TRAIL_MAX + 0.5f));
-	const float strength = 0.6f + 0.4f * p.att;
+	const int trail = Min(TRAIL_MAX + 1, 1 + static_cast<int>(p.att * TRAIL_MAX + 0.5f) + (lens.aim > 0.5f ? 1 : 0));
+	const float strength = (0.6f + 0.4f * p.att) * (1.0f + 0.5f * lens.aim);
 
 	const Vector2D corners[4] = { Vector2D(left, top), Vector2D(right, top), Vector2D(left, bottom), Vector2D(right, bottom) };
 	for (int k = 0; k < 4; ++k)
@@ -122,8 +190,8 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 		const Vector2D out(k % 2 ? 1.0f : -1.0f, k < 2 ? -1.0f : 1.0f);	// away from the readout
 		if (broken > 0.0f)
 			at += Vector2D(GridHash(gi, gj, slot) - 0.5f, GridHash(gj, gi, slot + 3) - 0.5f) * (0.8f * sub * broken);
-		GridCross(f, Vector2D(roundf(at.x), roundf(at.y)), CORNER * s, hand, broken > 0.0f ? highlight : base,
-			Min(1.0f, CORNER_ALPHA * strength * (1.0f + broken)));
+		GridMark(f, lens, Vector2D(roundf(at.x), roundf(at.y)), CORNER * s, hand, broken > 0.0f ? highlight : base,
+			Min(1.0f, CORNER_ALPHA * strength * (1.0f + broken)), gi, gj);
 
 		// The trail: the grid continuing outward along both of the corner's outer edges.
 		for (int axis = 0; axis < 2; ++axis)
@@ -143,7 +211,7 @@ void PaintGrid(const Frame &f, int slot, float left, float right, float top, flo
 					c = highlight;
 					a = Min(1.0f, a * (1.0f + 1.5f * broken));
 				}
-				GridCross(f, Vector2D(roundf(t.x), roundf(t.y)), TRAIL * s, hand, c, a);
+				GridMark(f, lens, Vector2D(roundf(t.x), roundf(t.y)), TRAIL * s, hand, c, Min(1.0f, a), gi * 8 + n, gj * 8 + axis);
 			}
 		}
 	}
