@@ -28,6 +28,8 @@ bool NeoHudUplinkReplaced();
 // The team side, dead included: the round state and the death notice keep running (the spectator commands' player
 // order, the countdown beep, the kills the scoreboard marks) and only stop drawing. A spectator keeps them.
 bool NeoHudTeamReplaced();
+// You dead or spectating (on a team or not): the cyberbrain's spectator ring takes the compass's place.
+bool NeoHudSpectating();
 
 // Calls pfnChanged whenever the style changes (a style tidying what it moved, as the cyberbrain's chat). Register at
 // startup; a few listeners at most.

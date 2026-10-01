@@ -48,9 +48,18 @@ bool NeoHudVitalsReplaced()
 	return (NeoHudCyberbrainStyle(style) || style == NEO_HUD_STYLE_COMPETITIVE) && LocalInOwnEyes();
 }
 
+bool NeoHudSpectating()
+{
+	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
+	return pPlayer && (!pPlayer->IsAlive() || pPlayer->IsObserver());
+}
+
 bool NeoHudCompassReplaced()
 {
 	const NeoHudStyle style = NeoHudStyleCurrent();
+	// Spectating, the cyberbrain's spectator ring (ui/neo_hud_cyberbrain_spectate.cpp); Competitive keeps the stock one.
+	if (NeoHudCyberbrainStyle(style) && NeoHudSpectating())
+		return true;
 	return (NeoHudCyberbrainStyle(style) || style == NEO_HUD_STYLE_COMPETITIVE) && LocalInOwnEyes();
 }
 

@@ -297,6 +297,8 @@ bool GridOn();
 void PaintGrid(const Frame &f, int slot, float left, float right, float top, float bottom);
 void PaintBody(const Frame &f);
 void PaintRing(const Frame &f);
+// The ring for a spectator (dead or spectating), in the stock compass's place: the compass, the range, the callouts.
+void PaintSpectatorRing(const Frame &f, const Color &objective);
 void PaintOptics(const Frame &f);
 void PaintWeapon(const Frame &f);
 void PaintMotion(const Frame &f);

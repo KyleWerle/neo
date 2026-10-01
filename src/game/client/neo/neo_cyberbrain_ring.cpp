@@ -199,17 +199,15 @@ static void PaintListening(const Frame &f, const Ring &ring)
 
 constexpr int SOUNDS_LEADING_BUSY = 2, SOUNDS_LEADING_QUIET = 6;	// full marks at most at once, in a fight and all quiet
 
-void PaintRing(const Frame &f)
+// The compass on the ring: the ring brighter ahead, the heading's ticks, the cardinals, your heading's notch, and the
+// objective in `oc` with its distance. a: the ring's strength; L: how closely you listen (the ring comes up quiet).
+static void PaintCompass(const Frame &f, const Ring &ring, float a, float L, const Color &oc)
 {
 	const Senses &s = *f.pSenses;
 	const bool bBody = f.style == NEO_HUD_STYLE_BODY;
-	const Ring ring = { &f, f.ringCentre, f.ringRadii, bBody ? 0.45f : 0.6f };
 	const auto rel = [&](float worldYaw) { return AngleNormalize(s.yaw - worldYaw); };
 	const float view = Heading(s.yaw);
-	const float a = bBody ? LookOf(f, GROUP_BODY).alpha : 1.0f;
-	// Listening (Kyle: in a fight you hear less; quiet, the noise round you and your own is what you focus on): the
-	// ring, the compass and the sounds come up as it quiets, and draw back in action. The callouts never do.
-	const float L = f.listen, ringA = a * (0.45f + 0.75f * L), compassA = 0.6f + 0.4f * L;
+	const float ringA = a * (0.45f + 0.75f * L), compassA = 0.6f + 0.4f * L;
 
 	// The ring, brighter ahead; ticks every 30 degrees of heading.
 	for (int i = 0; i < 72; ++i)
@@ -252,7 +250,6 @@ void PaintRing(const Frame &f)
 	// team, red with theirs.
 	if (s.bObjective)
 	{
-		const Color oc = s.carrier == CARRIER_OURS ? TEAM_OURS : s.carrier == CARRIER_THEIRS ? CRIT : WARN;
 		const float b = rel(s.objectiveYaw), d = 6.0f * f.s;
 		const Vector2D p = ring.At(b);
 		NeoGhostBegin(oc, Alpha(f, (0.4f + 0.5f * Ring::Front(b)) * a));
@@ -261,6 +258,19 @@ void PaintRing(const Frame &f)
 		Line(f, ring.At(b, 8.0f), ring.At(b, 8.0f + 30.0f * DistanceReach(s.objectiveMetres)), NEO_GHOST_LIGHT, oc,
 			(0.3f + 0.5f * Ring::Front(b)) * a);
 	}
+}
+
+void PaintRing(const Frame &f)
+{
+	const Senses &s = *f.pSenses;
+	const bool bBody = f.style == NEO_HUD_STYLE_BODY;
+	const Ring ring = { &f, f.ringCentre, f.ringRadii, bBody ? 0.45f : 0.6f };
+	const auto rel = [&](float worldYaw) { return AngleNormalize(s.yaw - worldYaw); };
+	const float a = bBody ? LookOf(f, GROUP_BODY).alpha : 1.0f;
+	// Listening (Kyle: in a fight you hear less; quiet, the noise round you and your own is what you focus on): the
+	// ring, the compass and the sounds come up as it quiets, and draw back in action. The callouts never do.
+	const float L = f.listen;
+	PaintCompass(f, ring, a, L, s.carrier == CARRIER_OURS ? TEAM_OURS : s.carrier == CARRIER_THEIRS ? CRIT : WARN);
 	for (int i = 0; i < s.mates; ++i)
 	{
 		const Vector2D p = ring.At(rel(s.mateYaw[i]));
@@ -354,5 +364,28 @@ void PaintRing(const Frame &f)
 	// The ghost's callouts over everything, just outside the sound icons: On the body the glyphs sit out past the ring
 	// (22), so the callouts start beyond them; Compact's sit inside it, so just outside the ring.
 	PaintCallouts(f, ring, rel, bBody ? 32.0f : 6.0f);
+}
+
+// Spectating (dead and watching, or a spectator): the stock compass's place, in the ring's form. Only what the stock
+// compass shows (parity): the view's heading, the objective, the ghost's callouts to a dead teammate (none to a
+// spectator; the model filters them as the compass does), and the range while the watched player aims. No sounds,
+// mates or noise: those are your own senses, and you have none now. Always as quiet (L 1): nothing to fight.
+void PaintSpectatorRing(const Frame &f, const Color &objective)
+{
+	const Senses &s = *f.pSenses;
+	const Ring ring = { &f, f.ringCentre, f.ringRadii, 0.6f };
+	const auto rel = [&](float worldYaw) { return AngleNormalize(s.yaw - worldYaw); };
+	PaintCompass(f, ring, 1.0f, 1.0f, objective);
+	if (s.bRange)
+	{
+		wchar_t range[24];
+		if (s.rangeMetres < 0.0f)
+			V_wcsncpy(range, L"RNG ---", sizeof(range));
+		else
+			V_snwprintf(range, ARRAYSIZE(range), L"RNG %.0f M", s.rangeMetres);
+		const Vector2D at = ring.At(90.0f, 34.0f);
+		Text(f, range, at.x, at.y, 1, FONT_VALUE, f.color, 0.9f);
+	}
+	PaintCallouts(f, ring, rel, 6.0f);
 }
 } // namespace NeoCyberbrain

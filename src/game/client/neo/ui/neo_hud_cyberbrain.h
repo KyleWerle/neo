@@ -23,6 +23,9 @@ public:
 	virtual void Paint() override;
 	virtual bool ShouldDraw() override;
 	virtual void LevelInit() override;
+	// The compact ring's place and size, screen pixels (the spectator's ring takes them too).
+	int RingY() const { return m_ringY; }
+	float RingRadius() const { return m_ringRadius; }
 
 protected:
 	virtual void UpdateStateForNeoHudElementDraw() override;

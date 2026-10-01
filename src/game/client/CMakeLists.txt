@@ -1658,6 +1658,8 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_cyberbrain.cpp
     neo/ui/neo_hud_cyberbrain_team.cpp
     neo/ui/neo_hud_cyberbrain_team.h
+    neo/ui/neo_hud_cyberbrain_spectate.cpp
+    neo/ui/neo_hud_cyberbrain_spectate.h
     neo/ui/neo_hud_competitive.cpp
     neo/ui/neo_hud_competitive.h
     neo/ui/neo_hud_quickinfo.cpp
