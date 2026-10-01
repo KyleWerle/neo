@@ -1702,6 +1702,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_feed.cpp
     neo/neo_cyberbrain_score.cpp
     neo/neo_cyberbrain_squad.cpp
+    neo/neo_cyberbrain_grid.cpp
     neo/neo_cyberbrain_stride.cpp
     neo/neo_cyberbrain_uplink.cpp
     neo/neo_cyberbrain_team.h

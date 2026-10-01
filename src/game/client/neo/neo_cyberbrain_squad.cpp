@@ -178,7 +178,7 @@ static Party s_party;
 // The comfort forms (cl_neo_hud_motion): how long a branch takes to trace out (and the stagger down the list), and a
 // death's break. Lower is slower, never shorter; still, nothing travels: branches fade in whole.
 struct PartyMotion { float trace, stagger, breakFor; bool bTravel; };
-static PartyMotion MotionOf()
+static PartyMotion PartyMotionOf()
 {
 	static ConVarRef cl_neo_hud_motion("cl_neo_hud_motion");
 	switch (cl_neo_hud_motion.IsValid() ? cl_neo_hud_motion.GetInt() : 1)
@@ -276,7 +276,7 @@ void PaintSquad(const Frame &f)
 	SquadEntry order[MAX_PLAYERS];
 	const int count = SquadOrder(order);
 	TrackParty(order, count, pLocal->GetStar(), f.now);
-	const PartyMotion motion = MotionOf();
+	const PartyMotion motion = PartyMotionOf();
 	const Color teamColour = TeamColour(team);
 	float y = LIST_Y * f.s, spineEnd = 0.0f;
 	int k = 0;
