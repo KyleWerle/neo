@@ -123,7 +123,7 @@ void PaintUplink(const Frame &f, const Local &L, float alpha, float labels)
 	const float row = h * 0.5f + 6.0f;
 	if (!bWorking)
 	{
-		Plate(f, L"HOLSTERED", L.At(0.0f, row + 6.0f).x, L.At(0.0f, row + 6.0f).y, 0, 0.8f * alpha);
+		MachinePlate(f, L"HOLSTERED", L.At(0.0f, row + 6.0f).x, L.At(0.0f, row + 6.0f).y, 0, 0.8f * alpha);
 	}
 	else if (!bOnline)
 	{

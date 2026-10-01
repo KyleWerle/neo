@@ -116,12 +116,12 @@ void PaintOptics(const Frame &f)
 	if (s.bVision && s.pVision)
 	{
 		const Vector2D pa = L.At(0.0f, 74.0f);
-		Plate(f, s.pVision, pa.x, pa.y, 0, 0.9f);
+		MachinePlate(f, s.pVision, pa.x, pa.y, 0, 0.9f);
 	}
 	else if (bJuggernaut)
 	{
 		const Vector2D pa = L.At(0.0f, 74.0f);
-		Plate(f, L"JGR56 ACTIVE", pa.x, pa.y, 0, 0.9f);
+		MachinePlate(f, L"JGR56 ACTIVE", pa.x, pa.y, 0, 0.9f);
 	}
 }
 
@@ -175,7 +175,7 @@ static bool RoundsOnGun(const Frame &f, const wchar_t *pCount, const Color &c, f
 	Line(f, at + Vector2D(b, -b), at + Vector2D(b, b), NEO_GHOST_LIGHT, c, 0.7f * a);
 	Line(f, at, elbow, NEO_GHOST_LIGHT, c, 0.6f * a);
 	Line(f, elbow, end, NEO_GHOST_LIGHT, c, 0.6f * a);
-	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_VALUE_LARGE, c, a);
+	Text(f, pCount, end.x + out * 4.0f, end.y + 8.0f * f.s, f.hand > 0 ? -1 : 1, FONT_NUMBER, c, a);
 	MeasurePause(false);
 	below.Init(end.x + out * 4.0f, end.y + 30.0f * f.s);
 	align = f.hand > 0 ? -1 : 1;
@@ -207,10 +207,7 @@ static void PaintAmmoCall(const Frame &f, const Senses &s, const NeoHud::Ammo &a
 	if (age > 0.08f && age < 0.16f)
 		return;	// the one blink
 	const wchar_t *pText = call == CALL_RELOAD ? L"RELOAD" : call == CALL_LAST ? L"LOW" : L"OUT";
-	if (call == CALL_NONE_LEFT)
-		PlateIn(f, pText, at.x, at.y, align, 1.0f, CRIT, Color(252, 235, 235, 255));
-	else
-		Plate(f, pText, at.x, at.y, align, 0.95f);
+	MachinePlate(f, pText, at.x, at.y, align, call == CALL_NONE_LEFT ? 1.0f : 0.95f, call == CALL_NONE_LEFT);
 }
 
 // The rounds as ticks (weapons without a bullet glyph: the detpack): the magazine a tick each (or grouped past 30).
@@ -316,7 +313,7 @@ void PaintWeapon(const Frame &f)
 		if (ammo.bOverheated)
 		{
 			const Vector2D oa = L.At(0.0f, -8.0f);
-			Plate(f, L"OVERHEAT", oa.x, oa.y, 0, 0.95f);
+			MachinePlate(f, L"OVERHEAT", oa.x, oa.y, 0, 0.95f);
 		}
 	}
 	else if (ammo.maxRounds > 0)
@@ -338,7 +335,7 @@ void PaintWeapon(const Frame &f)
 		if (!RoundsOnGun(f, count, col, countAlpha, callAt, callAlign))
 		{
 			const Vector2D ca = L.At(m * 84.0f, 12.0f);
-			Text(f, count, ca.x, ca.y, side, FONT_VALUE_LARGE, col, countAlpha);
+			Text(f, count, ca.x, ca.y, side, FONT_NUMBER, col, countAlpha);
 			callAt = L.At(0.0f, 62.0f);
 			callAlign = 0;
 		}

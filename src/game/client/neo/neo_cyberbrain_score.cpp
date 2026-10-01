@@ -71,8 +71,8 @@ void PaintScore(const Frame &f)
 	if (r.bPaused)
 		Text(f, r.round, cx, SCORE_Y * s, 0, FONT_LABEL, CRIT, 1.0f);
 	else
-		Plate(f, r.round, cx, SCORE_Y * s, 0, 0.85f);
-	Text(f, r.clock, cx, CLOCK_Y * s, 0, FONT_VALUE_LARGE, r.bRed ? CRIT : f.color, 1.0f);
+		MachinePlate(f, r.round, cx, SCORE_Y * s, 0, 0.85f);
+	Text(f, r.clock, cx, CLOCK_Y * s, 0, FONT_NUMBER, r.bRed ? CRIT : f.color, 1.0f);
 
 	// The frame: registration crosses at the corners, a rule under the clock.
 	Cross(f, Vector2D(cx - 172.0f * s, 6.0f * s), 5.0f * s, 0.45f);

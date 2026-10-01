@@ -14,7 +14,7 @@ ConVar cl_neo_hud_text_baked("cl_neo_hud_text_baked", "1", FCVAR_ARCHIVE,
 
 // Each face's baked variants, found with it (a fallback face has none).
 struct NeoHudBaked { vgui::HFont base, edged, shadow; };
-static NeoHudBaked s_baked[16];
+static NeoHudBaked s_baked[24];
 static int s_bakedCount = 0;
 
 static const NeoHudBaked *BakedOf(vgui::HFont font)

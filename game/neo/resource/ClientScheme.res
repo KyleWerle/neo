@@ -2722,7 +2722,1566 @@ Scheme
 				//"additive"	"1"
 			}
 		}
-		// The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the cyberbrain weapon group's row.
+		// ---- The cyberbrain HUD's fonts: written by art\hud-fonts\scheme_fonts.py, don't edit by hand ----
+		// The cyberbrain's small values and codes (NOCR).
+		NHudCyberValue
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberValue with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValue_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberValue with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValue_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"8"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"17"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"23"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"34"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The cyberbrain's larger readings: the ring's cardinals (NOCR).
+		NHudCyberValueLarge
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"52"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberValueLarge with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValueLarge_Outline
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"52"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberValueLarge with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberValueLarge_Shadow
+		{
+			"1"
+			{
+				"name"		"NOCR"
+				"tall"		"13"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"NOCR"
+				"tall"		"16"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"NOCR"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"NOCR"
+				"tall"		"26"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"NOCR"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
+				"tall"		"35"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"52"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The cyberbrain's labels, state words and names (Zrnic).
+		NHudCyberLabel
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Zrnic"
+				"tall"		"25"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Zrnic"
+				"tall"		"38"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberLabel with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberLabel_Outline
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Zrnic"
+				"tall"		"25"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Zrnic"
+				"tall"		"38"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberLabel with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberLabel_Shadow
+		{
+			"1"
+			{
+				"name"		"Zrnic"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Zrnic"
+				"tall"		"12"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Zrnic"
+				"tall"		"15"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Zrnic"
+				"tall"		"19"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Zrnic"
+				"tall"		"21"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Zrnic"
+				"tall"		"25"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Zrnic"
+				"tall"		"38"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// Who you are: the group plates past four letters (BIOMECH, OPTICS), dark on NT's grey. Alpha Flight bold, a step under NT's NHudText.
+		NHudCyberPlate
+		{
+			"1"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"10"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"12"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"16"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"20"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"22"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"27"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"40"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// Who you are, four letters or fewer (WPN, LINK): Alpha Flight bold at NT's own NHudText size.
+		NHudCyberPlateShort
+		{
+			"1"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"12"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"15"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"19"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"24"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"27"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"32"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Alpha Flight"
+				"tall"		"48"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// What the machine says (RELOAD, LOW, OUT, OVERHEAT, the vision mode, the round): Bit Cheese, the face of NT's JGR56 ACTIVE plate, dark on a light plate.
+		NHudCyberMachine
+		{
+			"1"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"20"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"20"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"20"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"30"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"40"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// The machine's words in a list row (the squad list's KIA): Bit Cheese at its own size.
+		NHudCyberMachineSmall
+		{
+			"1"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"10"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Bit Cheese10 (sRB)"
+				"tall"		"20"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// The cyberbrain's kanji beside its plates. A system Japanese face for now (Windows: Yu Gothic); to ship, an open-licence subset (Noto Sans JP, OFL) in CustomFontFiles so every platform has it.
+		NHudCyberKanji
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"7"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"16"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"28"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberKanji with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberKanji_Outline
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"7"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"16"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"28"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberKanji with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberKanji_Shadow
+		{
+			"1"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"7"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"9"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"11"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"14"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"16"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"19"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Yu Gothic"
+				"tall"		"28"
+				"weight"	"500"
+				"range"		"0x3000 0x9FFF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The cyberbrain's integrity number, the one big value, and the teams' rounds won: Green Mountain 3 bold, NT's NHudNumbers.
+		NHudCyberIntegrity
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"21"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"26"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"34"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"42"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"47"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"56"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"84"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberIntegrity with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberIntegrity_Outline
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"21"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"26"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"34"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"42"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"47"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"56"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"84"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberIntegrity with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberIntegrity_Shadow
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"21"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"26"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"34"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"42"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"47"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"56"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"84"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The cyberbrain's counted numbers: the rounds in the magazine, the round clock. Green Mountain 3 bold, NT's NHudNumbersSmall.
+		NHudCyberNumber
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"12"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"15"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"19"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"24"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"27"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"32"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"48"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberNumber with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberNumber_Outline
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"12"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"15"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"19"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"24"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"27"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"32"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"48"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberNumber with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberNumber_Shadow
+		{
+			"1"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"12"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"15"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"19"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"24"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"27"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"32"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Green Mountain 3"
+				"tall"		"48"
+				"weight"	"900"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the weapon group's row.
 		NHudCyberBullets
 		{
 			"1"
@@ -2737,7 +4296,7 @@ Scheme
 			"2"
 			{
 				"name"		"NOCR"
-				"tall"		"14"
+				"tall"		"15"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"600 767"
@@ -2746,7 +4305,7 @@ Scheme
 			"3"
 			{
 				"name"		"NOCR"
-				"tall"		"18"
+				"tall"		"19"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"768 1023"
@@ -2764,10 +4323,28 @@ Scheme
 			"5"
 			{
 				"name"		"NOCR"
+				"tall"		"27"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
 				"tall"		"32"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"48"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
 				"antialias"	"1"
 			}
 		}
@@ -2787,7 +4364,7 @@ Scheme
 			"2"
 			{
 				"name"		"NOCR"
-				"tall"		"14"
+				"tall"		"15"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"600 767"
@@ -2797,7 +4374,7 @@ Scheme
 			"3"
 			{
 				"name"		"NOCR"
-				"tall"		"18"
+				"tall"		"19"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"768 1023"
@@ -2817,10 +4394,30 @@ Scheme
 			"5"
 			{
 				"name"		"NOCR"
+				"tall"		"27"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
 				"tall"		"32"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"48"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
 				"antialias"	"1"
 				"outline"	"1"
 			}
@@ -2841,7 +4438,7 @@ Scheme
 			"2"
 			{
 				"name"		"NOCR"
-				"tall"		"14"
+				"tall"		"15"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"600 767"
@@ -2851,7 +4448,7 @@ Scheme
 			"3"
 			{
 				"name"		"NOCR"
-				"tall"		"18"
+				"tall"		"19"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
 				"yres"		"768 1023"
@@ -2871,14 +4468,35 @@ Scheme
 			"5"
 			{
 				"name"		"NOCR"
+				"tall"		"27"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"NOCR"
 				"tall"		"32"
 				"weight"	"0"
 				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"NOCR"
+				"tall"		"48"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
 				"antialias"	"1"
 				"dropshadow"	"1"
 			}
 		}
+		// ---- end of the cyberbrain HUD's fonts ----
 		// The Competitive HUD's text (cl_neo_hud_style 4): Neuropol2, the stock HUD's face, lowercase.
 		NHudCompText
 		{
@@ -2975,841 +4593,6 @@ Scheme
 				"range"		"0x0000 0x017F"
 				"yres"		"1200 6000"
 				"antialias"	"1"
-			}
-		}
-		// The cyberbrain HUD (neo_cyberbrain_paint.cpp): values in NT's NOCR, labels in Zrnic, plates in Alpha Flight.
-		NHudCyberValue
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"8"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"11"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"14"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"17"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"23"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// NHudCyberValue with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberValue_Outline
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"8"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"11"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"14"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"17"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"23"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-		}
-		// NHudCyberValue with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberValue_Shadow
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"8"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"11"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"14"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"17"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"23"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-		}
-		// The cyberbrain's large values (integrity, rounds).
-		NHudCyberValueLarge
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"13"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"16"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"35"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// NHudCyberValueLarge with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberValueLarge_Outline
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"13"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"16"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"35"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-		}
-		// NHudCyberValueLarge with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberValueLarge_Shadow
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"13"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"16"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"35"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-		}
-		// The cyberbrain's labels.
-		NHudCyberLabel
-		{
-			"1"
-			{
-				"name"		"Zrnic"
-				"tall"		"10"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"Zrnic"
-				"tall"		"12"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"Zrnic"
-				"tall"		"15"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"Zrnic"
-				"tall"		"19"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"Zrnic"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// NHudCyberLabel with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberLabel_Outline
-		{
-			"1"
-			{
-				"name"		"Zrnic"
-				"tall"		"10"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"2"
-			{
-				"name"		"Zrnic"
-				"tall"		"12"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"3"
-			{
-				"name"		"Zrnic"
-				"tall"		"15"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"4"
-			{
-				"name"		"Zrnic"
-				"tall"		"19"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"5"
-			{
-				"name"		"Zrnic"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-		}
-		// NHudCyberLabel with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberLabel_Shadow
-		{
-			"1"
-			{
-				"name"		"Zrnic"
-				"tall"		"10"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"2"
-			{
-				"name"		"Zrnic"
-				"tall"		"12"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"3"
-			{
-				"name"		"Zrnic"
-				"tall"		"15"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"4"
-			{
-				"name"		"Zrnic"
-				"tall"		"19"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"5"
-			{
-				"name"		"Zrnic"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-		}
-		// The cyberbrain's plates (dark text on NT's grey).
-		NHudCyberPlate
-		{
-			"1"
-			{
-				"name"		"Alpha Flight"
-				"tall"		"8"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"Alpha Flight"
-				"tall"		"8"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"Alpha Flight"
-				"tall"		"10"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"Alpha Flight"
-				"tall"		"12"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"Alpha Flight"
-				"tall"		"16"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// The cyberbrain's kanji beside its plates. A system Japanese face for now (Windows: Yu Gothic); to ship, an
-		// open-licence subset (Noto Sans JP, OFL) in CustomFontFiles so every platform has it (HUD-REDESIGN.md, kanji).
-		NHudCyberKanji
-		{
-			"1"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"8"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"9"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"11"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"14"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"19"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// NHudCyberKanji with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberKanji_Outline
-		{
-			"1"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"8"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"2"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"9"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"3"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"11"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"4"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"14"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"5"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"19"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-		}
-		// NHudCyberKanji with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberKanji_Shadow
-		{
-			"1"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"8"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"2"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"9"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"3"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"11"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"4"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"14"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"5"
-			{
-				"name"		"Yu Gothic"
-				"tall"		"19"
-				"weight"	"500"
-				"range"		"0x3000 0x9FFF"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-		}
-		// The cyberbrain's integrity number: the one big value (NOCR).
-		NHudCyberIntegrity
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"34"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"42"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"57"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-			}
-		}
-		// NHudCyberIntegrity with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberIntegrity_Outline
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"34"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"42"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"57"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"outline"	"1"
-			}
-		}
-		// NHudCyberIntegrity with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
-		NHudCyberIntegrity_Shadow
-		{
-			"1"
-			{
-				"name"		"NOCR"
-				"tall"		"21"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"480 599"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"2"
-			{
-				"name"		"NOCR"
-				"tall"		"26"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"600 767"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"3"
-			{
-				"name"		"NOCR"
-				"tall"		"34"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"768 1023"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"4"
-			{
-				"name"		"NOCR"
-				"tall"		"42"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1024 1199"
-				"antialias"	"1"
-				"dropshadow"	"1"
-			}
-			"5"
-			{
-				"name"		"NOCR"
-				"tall"		"57"
-				"weight"	"0"
-				"range"		"0x0000 0x017F"
-				"yres"		"1200 6000"
-				"antialias"	"1"
-				"dropshadow"	"1"
 			}
 		}
 		NHudBullets
@@ -5150,6 +5933,7 @@ Scheme
 		"12"		"resource/neotokyo_press_n.ttf"
 		"13"		"resource/killfeedicons.ttf"
 		"14"		"resource/montserrat-regular.ttf"
+		"15"		"resource/BitCheese.TTF"
 	}
 
 }

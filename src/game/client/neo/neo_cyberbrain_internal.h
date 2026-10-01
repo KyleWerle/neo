@@ -22,12 +22,14 @@ namespace NeoCyberbrain
 // (neo_cyberbrain_squad.cpp, Kyle 2026-09-30), so it has no backing, chassis, layer marks or attention.
 enum Group { GROUP_BODY, GROUP_OPTICS, GROUP_WEAPON, GROUP_LINK, GROUP_MOTION, GROUP__COUNT };
 
-// NT's own shipped faces, from ClientScheme.res: NOCR for values, Zrnic for labels, Alpha Flight for plates; the
-// kanji beside the plates in a Japanese face; NT's own killfeed icons (weapons, headshot, ghost, ranks) as glyphs;
-// players' names in Zrnic too (NOCR is digits and capitals only: its lowercase slots hold NT's weapon glyphs).
-// The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the weapon group's row.
+// NT's own shipped faces, from ClientScheme.res (written by art\hud-fonts\scheme_fonts.py; the picks: HUD-FONTS.md,
+// gate 1): NOCR for values, Zrnic for labels, Alpha Flight bold for who you are (the plates, short ones a step
+// larger), Bit Cheese for what the machine says, Green Mountain 3 bold for the numbers (integrity, rounds, the
+// clock); the kanji beside the plates in a Japanese face; NT's own killfeed icons (weapons, headshot, ghost, ranks)
+// as glyphs; players' names in Zrnic too (NOCR is digits and capitals only: its lowercase slots hold NT's weapon
+// glyphs). The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the weapon group's row.
 enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT_ICONS, FONT_NAME, FONT_BULLETS,
-	FONT__COUNT };
+	FONT_PLATE_SHORT, FONT_MACHINE, FONT_MACHINE_SMALL, FONT_NUMBER, FONT__COUNT };
 // What the fonts resolved to (the cl_neo_hud_fonts command).
 void PrintFonts();
 
@@ -233,8 +235,11 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 float TextWidth(const wchar_t *pText, Font font);
 // NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
-// A plate in other colours (the ammo calls: OUT in red).
-void PlateIn(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg);
+// What the machine says (RELOAD, OVERHEAT, the vision mode): dark pixel letters on a light plate with a yellow bar at
+// its leading edge, as NT's own JGR56 ACTIVE plate. Critical: the plate in the critical colour, no bar (OUT). Small:
+// the list-row size (the squad list's KIA).
+void MachinePlate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, bool bCritical = false,
+	bool bSmall = false);
 void Cross(const Frame &f, const Vector2D &at, float size, float alpha);
 // Measuring what a group draws (neo_cyberbrain_paint.cpp): between Begin and End every stroke, fill and text it draws
 // with any strength goes into one box, kept on its place for GroupExtent next frame. Paused: drawn far from the group

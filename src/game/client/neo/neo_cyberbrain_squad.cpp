@@ -127,7 +127,7 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 			V_snwprintf(ping, ARRAYSIZE(ping), L"%d MS", g_PR->GetPing(player));
 	}
 	const float gap = 8.0f * s;
-	const float healthLeft = right - (bAlive ? TextWidth(health, FONT_VALUE) : TextWidth(L"KIA", FONT_PLATE) + 12.0f * s);
+	const float healthLeft = right - (bAlive ? TextWidth(health, FONT_VALUE) : TextWidth(L"KIA", FONT_MACHINE_SMALL) + 12.0f * s);
 	const float pingLeft = ping[0] ? healthLeft - 10.0f * s - TextWidth(ping, FONT_LABEL) : healthLeft;
 
 	float tx = x + icon + 6.0f * s;
@@ -150,7 +150,7 @@ static float Row(const Frame &f, int player, float y, bool bSmall, const Color *
 	}
 	else
 	{
-		Plate(f, L"KIA", right, mid, -1, 0.5f);
+		MachinePlate(f, L"KIA", right, mid, -1, 0.5f, false, true);
 	}
 	return y + h;
 }

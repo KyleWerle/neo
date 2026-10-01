@@ -134,10 +134,17 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 static vgui::HFont GetFont(Font font)
 {
 	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons", "NHudCyberLabel",
-		"NHudCyberBullets" };
-	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive", "NHudBullets" };
-	static vgui::HFont s_fonts[FONT__COUNT] = { vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT, vgui::INVALID_FONT,
-		vgui::INVALID_FONT, vgui::INVALID_FONT };
+		"NHudCyberBullets", "NHudCyberPlateShort", "NHudCyberMachine", "NHudCyberMachineSmall", "NHudCyberNumber" };
+	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive", "NHudBullets",
+		"NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive" };
+	static vgui::HFont s_fonts[FONT__COUNT];
+	static bool s_bInit = false;
+	if (!s_bInit)
+	{
+		for (vgui::HFont &h : s_fonts)
+			h = vgui::INVALID_FONT;
+		s_bInit = true;
+	}
 	return NeoHudSchemeFont(s_fonts[font], s_names[font], s_fallbacks[font]);
 }
 
@@ -145,8 +152,9 @@ void PrintFonts()
 {
 	// The engine gives no family name for these, and a missing face falls back silently at the asked height; what
 	// does tell: NOCR is fixed pitch (every glyph as wide), the fallbacks aren't, and the others are proportional.
-	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name", "bullets" };
-	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, true, false, false, true };
+	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name", "bullets",
+		"plate short", "machine", "machine small", "number" };
+	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, false, false, false, true, false, false, false, false };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));
@@ -198,11 +206,11 @@ float TextWidth(const wchar_t *pText, Font font)
 	return static_cast<float>(wide);
 }
 
-// The plate's box and text, returning its left edge and width.
-static bool PlateBox(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg,
-	float &x0, float &w)
+// The plate's box and text, returning its left edge and width. A bar, if given, marks its leading edge.
+static bool PlateBox(const Frame &f, Font font, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg,
+	float &x0, float &w, const Color *pBar = nullptr)
 {
-	const vgui::HFont handle = GetFont(FONT_PLATE);
+	const vgui::HFont handle = GetFont(font);
 	if (handle == vgui::INVALID_FONT || !pText)
 	{
 		return false;
@@ -213,22 +221,27 @@ static bool PlateBox(const Frame &f, const wchar_t *pText, float x, float y, int
 	w = wide + pad * 2.0f;
 	x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;
 	Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + w, y + h * 0.5f), bg, 0.85f * alpha);
+	if (pBar)
+		Rect(f, Vector2D(x0, y - h * 0.5f), Vector2D(x0 + Max(2.0f, 3.0f * f.s), y + h * 0.5f), *pBar, alpha);
 	NeoGhostFlush();
 	NeoHudPrintText(handle, pText, V_wcslen(pText), RoundFloatToInt(x0 + pad), RoundFloatToInt(y - tall * 0.5f),
 		Color(fg.r(), fg.g(), fg.b(), Alpha(f, alpha)), NEO_HUD_TEXT_PLAIN, 0);
 	return true;
 }
 
-void PlateIn(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const Color &bg, const Color &fg)
+void MachinePlate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, bool bCritical, bool bSmall)
 {
+	static const Color s_paper(223, 226, 220, 255), s_ink(21, 25, 27, 255), s_bar(232, 200, 50, 255);
 	float x0, w;
-	PlateBox(f, pText, x, y, align, alpha, bg, fg, x0, w);
+	PlateBox(f, bSmall ? FONT_MACHINE_SMALL : FONT_MACHINE, pText, x, y, align, alpha, bCritical ? CRIT : s_paper,
+		bCritical ? Color(252, 235, 235, 255) : s_ink, x0, w, bCritical ? nullptr : &s_bar);
 }
 
 void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji)
 {
 	float x0, w;
-	if (!PlateBox(f, pText, x, y, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
+	const Font font = pText && V_wcslen(pText) <= 4 ? FONT_PLATE_SHORT : FONT_PLATE;
+	if (!PlateBox(f, font, pText, x, y, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
 	{
 		return;
 	}
