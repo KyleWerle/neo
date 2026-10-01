@@ -205,6 +205,17 @@ void Listen(const Senses &s, float now, float dt, bool bBoot);
 float Listening();
 // Seconds since the listening mode began (the level reached 0.8), or below 0 out of it (it leaves under 0.6).
 float ListeningFor(float now);
+// Keeping groups apart (neo_cyberbrain_separate.cpp, from Attend). Whether a box (centre, half) keeps clear of the
+// focus bound round the crosshair; how far along `dir` a box offset from its point first does (searched up to `most`);
+// the way each group in focus comes in; groups in focus keeping off each other; every pulled-in group stepping off its
+// quieter neighbours' targets (R5).
+constexpr float DRAWN_PAD = 3.0f;	// pixels at 1080p round what a group drew, for its extent
+bool ClearOfFocus(const Frame &f, const Vector2D &centre, const Vector2D &half);
+float FocusReach(const Frame &f, const Vector2D &dir, const Vector2D &offset, const Vector2D &half, float most);
+void FocusApproaches(const Frame &f, const Vector2D nearer[GROUP__COUNT], const float focus[GROUP__COUNT],
+	const Place places[GROUP__COUNT], Vector2D dirs[GROUP__COUNT]);
+void SeparateFocused(const Frame &f, Place places[GROUP__COUNT]);
+void StepOff(const Frame &f, const Place places[GROUP__COUNT], Vector2D targets[GROUP__COUNT]);
 // How far to move something with this centre and half size (pixels) to keep it inside the screen's edges.
 Vector2D Inside(const Frame &frame, const Vector2D &centre, const Vector2D &half);
 // Whether a screen point is in the keep-out round the crosshair (nothing of the HUD's goes there).

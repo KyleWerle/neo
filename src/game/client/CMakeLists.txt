@@ -1701,6 +1701,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_cyberbrain_gun.h
     neo/neo_cyberbrain_feed.cpp
     neo/neo_cyberbrain_score.cpp
+    neo/neo_cyberbrain_separate.cpp
     neo/neo_cyberbrain_squad.cpp
     neo/neo_cyberbrain_grid.cpp
     neo/neo_cyberbrain_probe.cpp
