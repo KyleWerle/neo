@@ -1,7 +1,7 @@
 // The HUD's backings (Neo_HudBacking): a blurred, darkened patch of the finished frame behind each HUD group, with
 // a cyberbrain's noise in it. Bright pixels are pulled down toward a target and dark ones left as they are, so the
-// linework reads on any scene with nothing to calibrate. Over it: a slow fractal cloud darkening through it with its
-// contours drifting as faint lines, scanlines, now and then a row torn sideways, and an ordered dither into a few
+// linework reads on any scene with nothing to calibrate. Over it: a slow swell of long waves darkening through it with
+// its contours rolling as thin lines, scanlines, now and then a row torn sideways, and an ordered dither into a few
 // levels (all scaled by the glitch amount). With motion (the HUD's full motion; none when still): blocks of it now and
 // then torn out of place, their colours rotated, and the rows tearing. All arithmetic: the nine taps of the blur are
 // its only reads.
@@ -21,15 +21,6 @@ struct PS_INPUT
 float Hash( float2 p )
 {
 	return frac( sin( dot( p, float2( 12.9898f, 78.233f ) ) ) * 43758.5453f );
-}
-
-float ValueNoise( float2 p )
-{
-	const float2 i = floor( p );
-	float2 f = frac( p );
-	f = f * f * ( 3.0f - 2.0f * f );
-	const float a = Hash( i ), b = Hash( i + float2( 1, 0 ) ), c = Hash( i + float2( 0, 1 ) ), d = Hash( i + float2( 1, 1 ) );
-	return lerp( lerp( a, b, f.x ), lerp( c, d, f.x ), f.y );
 }
 
 float4 main( const PS_INPUT i ) : COLOR
@@ -76,14 +67,21 @@ float4 main( const PS_INPUT i ) : COLOR
 	const float pulled = lum > target ? target + ( lum - target ) * 0.2f : lum;
 	c *= pulled / max( lum, 0.001f );
 
-	// The cloud: two octaves drifting, darkening through it; over it, its contours as faint lines, drifting up
-	// through the patch in slow waves (a topographic scan of the scene).
-	const float2 p = i.vPixel * 0.01f;
-	const float cloud = ValueNoise( p + float2( t * 0.07f, t * 0.04f ) + seed ) * 0.65f
-		+ ValueNoise( p * 2.7f - float2( t * 0.11f, 0.0f ) ) * 0.35f;	// (still: t stands still, the client's)
-	c *= 1.0f - glitch * 0.22f * cloud;
-	const float band = abs( frac( cloud * 4.0f + i.vPixel.y * 0.012f - t * 0.3f ) - 0.5f ) * 2.0f;
-	c += ( c + 0.03f ) * glitch * 0.6f * smoothstep( 0.82f, 1.0f, band );
+	// The swell: three long waves crossing at angles, a little bent, in screen heights so it holds at any resolution
+	// (wavelengths 0.57, 0.39 and 0.27 of the screen's height, drifting about 3% of it a second). One sea under every
+	// backing, darkening gently through its troughs; over it, its contours as thin lines, rolling with the waves.
+	// (Still: t stands still, the client's.)
+	const float2 q = float2( i.vScreen.x * g_Texel.y / g_Texel.x, i.vScreen.y );
+	const float2 w = q + 0.05f * float2( sin( q.y * 5.0f + t * 0.21f ), sin( q.x * 4.0f - t * 0.17f ) );
+	const float h = sin( dot( w, float2( 0.92f, 0.38f ) ) * 11.0f - t * 0.35f ) * 0.5f
+		+ sin( dot( w, float2( -0.45f, 0.89f ) ) * 16.0f - t * 0.27f ) * 0.3f
+		+ sin( dot( w, float2( 0.26f, -0.97f ) ) * 23.0f + t * 0.19f ) * 0.2f;
+	const float cloud = h * 0.5f + 0.5f;
+	c *= 1.0f - glitch * 0.18f * cloud;
+	const float crest = h * 3.0f - t * 0.06f;
+	const float fw = max( fwidth( crest ), 0.0001f );
+	const float contour = 1.0f - smoothstep( fw * 0.8f, fw * 2.0f, abs( frac( crest ) - 0.5f ) );
+	c += ( c + 0.03f ) * glitch * 0.45f * contour;
 
 	// Scanlines, and the torn rows' colour split.
 	c *= 1.0f - glitch * 0.08f * step( frac( i.vPixel.y / 3.0f ), 0.34f );
