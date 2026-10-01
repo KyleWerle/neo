@@ -11,6 +11,10 @@
 // The cyberbrain's drawing helpers: lines and fills batched through the ghost's strokes (one draw call a flush),
 // text in NT's own faces from the client scheme, NT's grey plates.
 
+ConVar cl_neo_hud_stroke_floor("cl_neo_hud_stroke_floor", "1", FCVAR_ARCHIVE,
+	"The cyberbrain HUD's lines: 1 = no hairlines (light strokes drawn medium, 1.4 px at 1080p), 0 = as drawn (0.8 px).",
+	true, 0, true, 1);
+
 namespace NeoCyberbrain
 {
 const Color WARN(255, 181, 71, 255), CRIT(255, 90, 74, 255), TEAM_OURS(130, 220, 120, 255);
@@ -89,6 +93,9 @@ void Line(const Frame &f, const Vector2D &a, const Vector2D &b, NeoGhostWeight w
 {
 	Measure(a, b, alpha);
 	NeoGhostBegin(c, Alpha(f, alpha));
+	// The stroke floor (Kyle, 2026-10-01: minimal, but not too thin): no hairlines in the HUD, light draws as medium.
+	if (weight == NEO_GHOST_LIGHT && cl_neo_hud_stroke_floor.GetBool())
+		weight = NEO_GHOST_MEDIUM;
 	NeoGhostStroke(f.pen, a, b, weight);
 }
 

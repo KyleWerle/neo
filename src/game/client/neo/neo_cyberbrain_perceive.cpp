@@ -81,9 +81,11 @@ float Perceive(const Senses &s, Group group, float now)
 		p.Add(LAYER_AMBIENT, s.bMoving ? 0.6f : 0.0f);
 		break;
 	case GROUP_OPTICS:
-		p.Add(LAYER_CRITICAL, Pulse(now, s.cloakChanged, 1.0f));
+		// Cloaking pulls it in, never into the focus zone (Kyle, 2026-10-01: "the cloak was a bit too in my face");
+		// staying cloaked is notable, not urgent.
+		p.Add(LAYER_URGENT, Pulse(now, s.cloakChanged, 1.0f));
 		p.Add(LAYER_URGENT, Pulse(now, s.visionChanged, 1.0f));
-		p.Add(LAYER_URGENT, s.bCloaked ? 0.5f : 0.0f);
+		p.Add(LAYER_NOTABLE, s.bCloaked ? 0.5f : 0.0f);
 		p.Add(LAYER_NOTABLE, Pulse(now, s.lightChanged, 0.8f));
 		p.Add(LAYER_NOTABLE, s.bVision ? 0.6f : 0.0f);
 		p.Add(LAYER_NOTABLE, s.bExposed ? 0.8f : 0.0f);
