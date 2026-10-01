@@ -19,7 +19,7 @@ namespace NeoCyberbrain
 static const float s_motionOf[] = { 0.0f, 0.35f, 1.0f };	// the backings' motion by cl_neo_hud_motion: still, calm, full
 constexpr int SLOTS = GROUP__COUNT + 1, SPOTS = 3;
 constexpr float BACK_MIN = 0.1f, BACK_MAX = 0.75f;	// the backing's opacity in the dark, and in daylight (Kyle: more on bright scenes)
-constexpr float FEATHER = 40.0f, FEATHER_LINK = 22.0f;	// the soft edge's width (the link's small: its own size nearly)
+constexpr float FEATHER = 40.0f;	// the soft edge's width
 constexpr int BACKING_POINTS = 28;
 
 static struct
@@ -66,7 +66,7 @@ void PaintBackings(const Frame &f)
 		{
 			continue;
 		}
-		if (slot == GROUP_WEAPON && !f.pSenses->ammo.bShown)
+		if ((slot == GROUP_WEAPON && !f.pSenses->ammo.bShown) || slot == GROUP_LINK)
 		{
 			continue;
 		}
@@ -74,13 +74,13 @@ void PaintBackings(const Frame &f)
 		GroupExtent(f, slot, centre, half);
 		const float att = slot == BRIGHT_RING ? f.listen : f.pPlaces[slot].att;
 		const float alpha = NeoHudBackingOpacity(f.bright[slot], BACK_MIN, BACK_MAX) * (0.75f + 0.25f * att) * f.alpha;
-		const float feather = (slot == GROUP_LINK ? FEATHER_LINK : FEATHER) * f.s;
+		const float feather = FEATHER * f.s;
 		// On the GPU the noise rises with the group's perception layer: a critical group's patch tears and churns.
 		NeoHudBackingLook look;
 		const int layer = slot == BRIGHT_RING ? LAYER_AMBIENT : f.pPlaces[slot].layer;
 		// (Kyle liked it maxed: what 2 was is 1 now, the layers still apart.)
 		look.glitch = 0.6f + 0.4f * layer / static_cast<float>(LAYER__COUNT - 1);
-		look.blur = slot == GROUP_LINK ? 0.6f : 1.0f;
+		look.blur = 1.0f;
 		look.seed = 1.7f * slot;
 		look.motion = s_motionOf[clamp(cl_neo_hud_motion.GetInt(), 0, 2)];
 		NeoHudPaintBacking(centre, half, Vector2D(feather, feather), alpha, BACKING_POINTS, look);

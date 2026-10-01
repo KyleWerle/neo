@@ -108,10 +108,7 @@ float Perceive(const Senses &s, Group group, float now)
 		p.Add(LAYER_NOTABLE, Pulse(now, s.ammoChanged, 0.8f));
 		break;
 	default:
-		// The link: critical when a teammate dies (Kyle); the last one standing, notable; otherwise it idles.
-		p.Add(LAYER_CRITICAL, Pulse(now, s.mateDiedTime, 1.0f));
-		p.Add(LAYER_NOTABLE, s.squadTotal > 0 && s.squadAlive == 0 ? 0.8f : 0.0f);
-		p.Add(LAYER_AMBIENT, 0.2f);
+		// The link draws nothing (the party view carries a mate's death in the squad list): no attention.
 		break;
 	}
 	return p.Priority();

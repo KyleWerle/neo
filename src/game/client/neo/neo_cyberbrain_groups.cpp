@@ -9,9 +9,8 @@
 // with the light you stand in, hollow and displaced while cloaked, vision mode lighting its brackets; the therm-optic
 // tank under it). Nothing loops: motion is for events. Weapon: the round ticks and the count (the one number), magazines as pips, the fire mode as a glyph, the
 // aim settle as two registration crosses coming into register, the range while aiming; a shot flicks its tick out, a reload sweeps them back. The count hangs
-// from the gun's own magazine on a short leader (neo_cyberbrain_gun.h), in the group only when it can't. Link: a node
-// graph (your team, your ping as the links' line, your load as your node's fill). Words and plates only come in with
-// attention.
+// from the gun's own magazine on a short leader (neo_cyberbrain_gun.h), in the group only when it can't. The link is
+// the squad list's party view now (neo_cyberbrain_squad.cpp). Words and plates only come in with attention.
 
 ConVar cl_neo_hud_gun_count("cl_neo_hud_gun_count", "0", FCVAR_ARCHIVE,
 	"The rounds' count (and its calls) hung from the gun's muzzle: stubbed off until each gun gets a hand-placed spot;"
@@ -22,8 +21,6 @@ namespace NeoCyberbrain
 constexpr int MAX_MAG_PIPS = 10, MAX_SLUG_PIPS = 6;
 constexpr int HALFTONE_CELLS = 5;
 constexpr float CLOAK_BAR = 5.0f;		// the therm-optic frame's bars, pixels at 1080p
-constexpr int LINK_MAX_MATES = 9;
-constexpr float LINK_YOU_Y = 14.0f, LINK_RADIUS = 30.0f, LINK_FAN = 70.0f;	// pixels at 1080p; degrees either side
 constexpr float ROUNDS_W = 150.0f, ROUNDS_Y = 12.5f;	// pixels at 1080p: the rounds' row, and its middle
 constexpr float SYNC_Y = 30.0f, SYNC_ARM = 6.0f, SYNC_SPREAD = 10.0f;	// pixels at 1080p: where, a cross's arm, the most out of register
 constexpr float HALFTONE_PITCH = 13.0f, HALFTONE_MIN = 1.5f;	// pixels at 1080p: a cell, and a square in the dark
@@ -406,77 +403,6 @@ void PaintWeapon(const Frame &f)
 		Text(f, ammo.name, na.x, na.y, 0, FONT_LABEL, f.color, look.labels * a);
 		const Vector2D pa = L.At(m * -84.0f, -22.0f);
 		Plate(f, L"WPN", pa.x, pa.y, -side, look.labels, L"\u6b8b\u5f3e");
-	}
-}
-
-// A line in dashes: dash and gap in pixels at 1080p (a gap of 0 draws it solid).
-static void DashedLine(const Frame &f, const Local &L, const Vector2D &from, const Vector2D &to, float dash, float gap, const Color &c,
-	float a)
-{
-	const Vector2D d = to - from;
-	const float len = d.Length();
-	if (len < 0.5f)
-		return;
-	if (gap <= 0.0f)
-	{
-		Line(f, L.At(from.x, from.y), L.At(to.x, to.y), NEO_GHOST_LIGHT, c, a);
-		return;
-	}
-	const Vector2D u = d / len;
-	for (float t = 0.0f; t < len; t += dash + gap)
-	{
-		const Vector2D p0 = from + u * t, p1 = from + u * Min(t + dash, len);
-		Line(f, L.At(p0.x, p0.y), L.At(p1.x, p1.y), NEO_GHOST_LIGHT, c, a);
-	}
-}
-
-// The link group as a node graph (Kyle's pick): you as a node linked to a node per teammate, fanned above you in a
-// fixed arc (never where they are). The links' line is your ping: solid while it's good, dashed as it strains, sparse
-// dots when it's bad, always the HUD's colour. A dead teammate is a hollow red node, its link broken off short. Your
-// own node is a chamfered cell filling with your neural load (a cell a system drawing on you, of six). It sits beside
-// the squad list, on the left in either hand (Kyle), so it's drawn right-handed always: the ping reads away from the edge.
-void PaintLink(const Frame &f)
-{
-	const Senses &s = *f.pSenses;
-	const Look look = LookOf(f, GROUP_LINK);
-	const Local L = { f.pPlaces[GROUP_LINK].pos, f.s * look.scale, 1 };
-	const float a = look.alpha;
-	const int side = L.m > 0 ? 1 : -1;
-	const Vector2D you(0.0f, LINK_YOU_Y);
-	const float dash = 3.0f, gap = s.ping < 90 ? 0.0f : s.ping < 150 ? 3.0f : 7.0f;
-	const int mates = Min(s.squadTotal, LINK_MAX_MATES);
-	for (int i = 0; i < mates; ++i)
-	{
-		const float t = mates > 1 ? static_cast<float>(i) / (mates - 1) : 0.5f;
-		const float q = DEG2RAD(-LINK_FAN + 2.0f * LINK_FAN * t);
-		const Vector2D node = you + Vector2D(sinf(q) * LINK_RADIUS, -cosf(q) * LINK_RADIUS);
-		const bool bAlive = i < s.squadAlive;
-		const Vector2D dir = (node - you) / LINK_RADIUS;
-		const Vector2D from = you + dir * 9.0f, to = node - dir * 5.0f;
-		if (bAlive)
-		{
-			DashedLine(f, L, from, to, dash, gap, f.color, 0.75f * a);
-			Rect(f, L.At(node.x - 3.5f, node.y - 3.5f), L.At(node.x + 3.5f, node.y + 3.5f), f.color, 0.9f * a);
-		}
-		else
-		{
-			DashedLine(f, L, from, from + (to - from) * 0.35f, dash, 3.0f, CRIT, 0.5f * a);
-			RectOutline(f, L.At(node.x - 3.5f, node.y - 3.5f), L.At(node.x + 3.5f, node.y + 3.5f), NEO_GHOST_LIGHT, CRIT, 0.85f * a);
-		}
-	}
-	// You: a cell filling with your neural load.
-	CellStyle style;
-	style.chamfer = side;
-	style.fill = f.color;
-	Cells(f, L.At(-7.0f, you.y - 7.0f), L.At(7.0f, you.y + 7.0f), clamp(s.load / 6.0f, 0.0f, 1.0f), style, a);
-	if (look.labels > 0.02f)
-	{
-		wchar_t ping[16];
-		V_snwprintf(ping, ARRAYSIZE(ping), L"%d MS", s.ping);
-		const Vector2D pa = L.At(side * 16.0f, you.y);
-		Text(f, ping, pa.x, pa.y, side, FONT_VALUE, f.color, look.labels * a);
-		const Vector2D ta = L.At(0.0f, you.y + 22.0f);
-		Plate(f, L"LINK", ta.x, ta.y, 0, look.labels, L"\u901a\u4fe1");
 	}
 }
 } // namespace NeoCyberbrain

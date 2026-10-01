@@ -18,6 +18,8 @@ class IGameEvent;
 namespace NeoCyberbrain
 {
 // The receptor groups. Motion (speed, stamina, jumps) is its own proprioceptive group, kept beside the body.
+// GROUP_LINK keeps its slot (homes, layout) but draws nothing: the link is the squad list's party view
+// (neo_cyberbrain_squad.cpp, Kyle 2026-09-30), so it has no backing, chassis, layer marks or attention.
 enum Group { GROUP_BODY, GROUP_OPTICS, GROUP_WEAPON, GROUP_LINK, GROUP_MOTION, GROUP__COUNT };
 
 // NT's own shipped faces, from ClientScheme.res: NOCR for values, Zrnic for labels, Alpha Flight for plates; the
@@ -256,7 +258,6 @@ void PaintBody(const Frame &f);
 void PaintRing(const Frame &f);
 void PaintOptics(const Frame &f);
 void PaintWeapon(const Frame &f);
-void PaintLink(const Frame &f);
 void PaintMotion(const Frame &f);
 // The ghost's uplink (neo_cyberbrain_uplink.cpp): its sensing, and its readout in the weapon group's place.
 void SenseUplink(C_NEO_Player *pPlayer, Senses &senses);

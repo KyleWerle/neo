@@ -18,7 +18,7 @@ void PaintChassis(const Frame &frame)
 {
 	for (int slot = 0; slot <= BRIGHT_RING; ++slot)
 	{
-		if ((slot == GROUP_WEAPON && !frame.pSenses->ammo.bShown) || (slot == BRIGHT_RING && frame.style == NEO_HUD_STYLE_BODY))
+		if ((slot == GROUP_WEAPON && !frame.pSenses->ammo.bShown) || slot == GROUP_LINK || (slot == BRIGHT_RING && frame.style == NEO_HUD_STYLE_BODY))
 		{
 			continue;
 		}

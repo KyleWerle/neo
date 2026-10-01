@@ -158,7 +158,7 @@ void CNEOHud_Cyberbrain::HomesOf(NC::Home homes[NC::GROUP__COUNT], NeoHudStyle s
 	}
 	homes[NC::GROUP_OPTICS] = { v(m_opticsFarX, m_opticsFarY), v(m_opticsNearX, m_opticsNearY), 0.7f };
 	homes[NC::GROUP_WEAPON] = { v(m_weaponFarX, m_weaponFarY), v(m_weaponNearX, m_weaponNearY), 0.8f };
-	homes[NC::GROUP_LINK] = { v(m_linkFarX, m_linkFarY), v(m_linkNearX, m_linkNearY), 0.5f, true };
+	homes[NC::GROUP_LINK] = { v(m_linkFarX, m_linkFarY), v(m_linkNearX, m_linkNearY), 0.5f, true };	// draws nothing; its weight stands for the party view
 }
 
 void CNEOHud_Cyberbrain::DrawNeoHudElement()
@@ -258,6 +258,8 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	std::sort(order, order + NC::GROUP__COUNT, [&](NC::Group a, NC::Group b) { return m_places[a].att < m_places[b].att; });
 	for (const NC::Group g : order)
 	{
+		if (g == NC::GROUP_LINK)
+			continue;	// the party view, in the team element
 		const NC::Frame gf = NC::ForGroup(f, g);
 		NC::MeasureBegin();
 		switch (g)
@@ -265,8 +267,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		case NC::GROUP_BODY:	NC::PaintBody(gf); break;
 		case NC::GROUP_OPTICS:	NC::PaintOptics(gf); break;
 		case NC::GROUP_WEAPON:	NC::PaintWeapon(gf); break;
-		case NC::GROUP_MOTION:	NC::PaintMotion(gf); break;
-		default:			NC::PaintLink(gf); break;
+		default:			NC::PaintMotion(gf); break;
 		}
 		NC::MeasureEnd(m_places[g], now);
 		NC::PaintLayer(gf, g);
