@@ -64,8 +64,9 @@ struct NeoAdsRestPose
 void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	const Vector settledPos[], const Quaternion settledQ[], int refBone, const CNEOWeaponInfo &data, float adsBlend);
 
-// True when crosshairs should be hidden: this weapon is using its ADS pose and the crosshair option is off.
-// Weapons without an ADS pose keep the standard crosshair. Aiming while cloaked keeps it, since the cloaked
-// viewmodel's sights are hard to see.
+// True when the crosshair should be hidden: only while aiming down the sights of a weapon that has an ADS
+// pose, unless the crosshair option is on. At the hip, and on weapons without an ADS pose, the player's own
+// crosshair settings apply untouched. Aiming while cloaked keeps it too, since the cloaked viewmodel's sights
+// are hard to see.
 bool NeoAdsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked);
 #endif
