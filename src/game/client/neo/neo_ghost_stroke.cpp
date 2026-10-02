@@ -4,6 +4,7 @@
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/MaterialSystemUtil.h"
+#include <xmmintrin.h>
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
 
@@ -17,6 +18,9 @@ ConVar cl_neo_hud_batch("cl_neo_hud_batch", "1", FCVAR_ARCHIVE,
 	"Draws the HUD linework (the crosshair layer, the sight ghost, the quick info) as one batch per pass instead of a"
 	" draw call a line, much cheaper on old computers. 0 = a draw call each (the old way), if anything looks wrong.",
 	true, 0, true, 1);
+ConVar cl_neo_hud_batch_fast("cl_neo_hud_batch_fast", "1", 0,
+	"Writes the HUD batch's vertices whole, with streaming stores (0 = through the mesh builder, field by field: the old"
+	" way, for comparing).", true, 0, true, 1);
 
 static constexpr float OUTLINE_WIDTH = 1.0f;	// pixels either side of the stroke, at 1080p (at least one)
 
@@ -153,21 +157,66 @@ void NeoGhostFillRect(float x0, float y0, float x1, float y1)
 }
 
 // One draw call for the lot, in screen pixels (the HUD's 2D pass takes them as they are, as the dot trail's ribbon).
+// The vertices go straight into the mesh, each written whole (normal and padding too) with streaming stores: the
+// dynamic buffer is write-combined memory, where the builder's field-at-a-time writes, skipping the normal and the
+// padding, cost about 25 ns a vertex (0.13 ms a frame for the cyberbrain's 1400 quads; OPTIMIZATION.md).
 static void DrawBatched(const QueuedQuad *pQuads, int count, IMesh *pMesh)
 {
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin(pMesh, MATERIAL_QUADS, count);
-	for (int i = 0; i < count; ++i)
+	CNeoHudProfileScope slice(NEO_HUD_PROFILE_BATCH_BUILD);
+	// The layout UnlitGeneric's vertex colour gives: position, normal, colour, one 2D texcoord, padded to 48 bytes.
+	// Anything else (another material, compression) goes through the builder.
+	char *pBase = static_cast<char *>(meshBuilder.BaseVertexData());
+	const bool bFast = cl_neo_hud_batch_fast.GetBool() && meshBuilder.VertexSize() == 48
+		&& CompressionType(pMesh->GetVertexFormat()) == VERTEX_COMPRESSION_NONE
+		&& reinterpret_cast<const char *>(meshBuilder.Normal()) - pBase == 12
+		&& reinterpret_cast<const char *>(meshBuilder.TexCoord(0)) - pBase == 28
+		&& (reinterpret_cast<uintptr_t>(pBase) & 15) == 0;
+	static int s_said = -1;	// once a session, and on a change: whether the fast path is taken (a silent fallback would mislead a bench)
+	if (s_said != static_cast<int>(bFast))
 	{
-		const QueuedQuad &q = pQuads[i];
-		for (int k = 0; k < 4; ++k)
+		s_said = static_cast<int>(bFast);
+		Msg("[hud] batch vertices: %s (vertex %d bytes)\n", bFast ? "written whole, streamed" : "through the builder", meshBuilder.VertexSize());
+	}
+	if (bFast)
+	{
+		__m128 *pDst = reinterpret_cast<__m128 *>(pBase);
+		for (int i = 0; i < count; ++i)
 		{
-			meshBuilder.Color4ub(q.color.r(), q.color.g(), q.color.b(), q.alphas[k]);
-			meshBuilder.TexCoord2f(0, 0.5f, 0.5f);
-			meshBuilder.Position3f(q.corners[k].x, q.corners[k].y, 0.0f);
-			meshBuilder.AdvanceVertex();
+			const QueuedQuad &q = pQuads[i];
+			const unsigned int rgb = q.color.b() | (q.color.g() << 8) | (q.color.r() << 16);
+			for (int k = 0; k < 4; ++k)
+			{
+				union { float f[12]; unsigned int u[12]; __m128 m[3]; } v;
+				v.f[0] = q.corners[k].x; v.f[1] = q.corners[k].y; v.f[2] = 0.0f;	// position
+				v.f[3] = 0.0f; v.f[4] = 0.0f; v.f[5] = 1.0f;						// normal
+				v.u[6] = rgb | (static_cast<unsigned int>(q.alphas[k]) << 24);		// colour, as Color4ub packs it
+				v.f[7] = 0.5f; v.f[8] = 0.5f;										// texcoord
+				v.u[9] = v.u[10] = v.u[11] = 0;										// padding
+				_mm_stream_ps(reinterpret_cast<float *>(pDst++), v.m[0]);
+				_mm_stream_ps(reinterpret_cast<float *>(pDst++), v.m[1]);
+				_mm_stream_ps(reinterpret_cast<float *>(pDst++), v.m[2]);
+			}
+		}
+		_mm_sfence();
+		meshBuilder.FastAdvanceNVertices(count * 4);
+	}
+	else
+	{
+		for (int i = 0; i < count; ++i)
+		{
+			const QueuedQuad &q = pQuads[i];
+			for (int k = 0; k < 4; ++k)
+			{
+				meshBuilder.Position3f(q.corners[k].x, q.corners[k].y, 0.0f);
+				meshBuilder.Color4ub(q.color.r(), q.color.g(), q.color.b(), q.alphas[k]);
+				meshBuilder.TexCoord2f(0, 0.5f, 0.5f);
+				meshBuilder.AdvanceVertex();
+			}
 		}
 	}
+	slice.Switch(NEO_HUD_PROFILE_BATCH_DRAW);
 	meshBuilder.End();
 	pMesh->Draw();
 	NeoHudCount(NEO_HUD_COUNT_MESHES);
@@ -206,6 +255,7 @@ void NeoGhostFlush()
 	{
 		return;
 	}
+	CNeoHudProfileScope slice(NEO_HUD_PROFILE_BATCH_FLUSH);
 	if (s_bPanelLocal || !cl_neo_hud_batch.GetBool())
 	{
 		DrawEach(s_outlines, s_iOutlines);

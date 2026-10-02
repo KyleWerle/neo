@@ -228,10 +228,16 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	if (!bDefer)
 		NeoGhostFlush();	// what's queued goes under the text
 	int wide, tall;
-	vgui::surface()->GetTextSize(handle, pText, wide, tall);
-	const int tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(y) - tall / 2;
-	Measure(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), alpha);
-	ProbeText(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), pText, alpha);
+	int tx, ty;
+	{
+		CNeoHudProfileScope slice(NEO_HUD_PROFILE_TEXT_SIZE);
+		vgui::surface()->GetTextSize(handle, pText, wide, tall);
+		slice.Switch(NEO_HUD_PROFILE_TEXT_PROBE);
+		tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0);
+		ty = RoundFloatToInt(y) - tall / 2;
+		Measure(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), alpha);
+		ProbeText(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), pText, alpha);
+	}
 	// A shadow on a dark scene; a dark edge all round on a bright one.
 	const Color fill(c.r(), c.g(), c.b(), Alpha(f, alpha));
 	const NeoHudTextEdge edge = f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW;
@@ -260,6 +266,7 @@ float TextWidth(const wchar_t *pText, Font font)
 	const vgui::HFont handle = GetFont(font);
 	if (handle == vgui::INVALID_FONT || !pText || !pText[0])
 		return 0.0f;
+	CNeoHudProfileScope slice(NEO_HUD_PROFILE_TEXT_SIZE);
 	int wide, tall;
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	return static_cast<float>(wide);
@@ -281,7 +288,10 @@ static bool PlateBox(const Frame &f, Font font, const wchar_t *pText, float x, f
 		return false;
 	}
 	int wide, tall;
-	vgui::surface()->GetTextSize(handle, pText, wide, tall);
+	{
+		CNeoHudProfileScope slice(NEO_HUD_PROFILE_TEXT_SIZE);
+		vgui::surface()->GetTextSize(handle, pText, wide, tall);
+	}
 	const float pad = 5.0f * f.s, h = tall + 2.0f * f.s;
 	w = wide + pad * 2.0f;
 	x0 = (align < 0) ? x - w : (align == 0) ? x - w * 0.5f : x;

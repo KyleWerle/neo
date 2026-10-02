@@ -92,6 +92,7 @@ CON_COMMAND(cl_neo_hud_text_baked_check, "Prints each HUD face beside its baked 
 void NeoHudPrintText(vgui::HFont font, const wchar_t *pText, int count, int x, int y, const Color &c, NeoHudTextEdge edge,
 	int edgeAlpha)
 {
+	CNeoHudProfileScope printScope(NEO_HUD_PROFILE_TEXT_PRINT);
 	if (edge != NEO_HUD_TEXT_PLAIN && edgeAlpha > 0)
 	{
 		int up = 0;
@@ -103,6 +104,7 @@ void NeoHudPrintText(vgui::HFont font, const wchar_t *pText, int count, int x, i
 			vgui::surface()->DrawSetTextPos(x, y - up);
 			vgui::surface()->DrawPrintText(pText, count);
 			NeoHudCount(NEO_HUD_COUNT_TEXT);
+			NeoHudCount(NEO_HUD_COUNT_GLYPHS, count);
 			return;
 		}
 	}
@@ -119,9 +121,11 @@ void NeoHudPrintText(vgui::HFont font, const wchar_t *pText, int count, int x, i
 			vgui::surface()->DrawPrintText(pText, count);
 		}
 		NeoHudCount(NEO_HUD_COUNT_TEXT, copies);
+		NeoHudCount(NEO_HUD_COUNT_GLYPHS, copies * count);
 	}
 	vgui::surface()->DrawSetTextColor(c);
 	vgui::surface()->DrawSetTextPos(x, y);
 	vgui::surface()->DrawPrintText(pText, count);
 	NeoHudCount(NEO_HUD_COUNT_TEXT);
+	NeoHudCount(NEO_HUD_COUNT_GLYPHS, count);
 }

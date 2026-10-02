@@ -36,6 +36,15 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_FRAME_CROSSES,
 	NEO_HUD_PROFILE_FRAME_RULER,
 	NEO_HUD_PROFILE_FRAME_CODES,
+	// All the HUD's text, wherever it's drawn (OPTIMIZATION.md, "where the 9 us goes"): measuring a string
+	// (GetTextSize), printing it (NeoHudPrintText), and the cyberbrain's bookkeeping per string (its measure, the probe).
+	// Nested inside the parts above, so they don't add to them either.
+	NEO_HUD_PROFILE_TEXT_SIZE,
+	NEO_HUD_PROFILE_TEXT_PRINT,
+	NEO_HUD_PROFILE_TEXT_PROBE,
+	NEO_HUD_PROFILE_BATCH_FLUSH,	// NeoGhostFlush with quads waiting: the stroke batch's mesh built and drawn
+	NEO_HUD_PROFILE_BATCH_BUILD,	// inside b.flush: writing the quads' vertices
+	NEO_HUD_PROFILE_BATCH_DRAW,		// inside b.flush: the mesh's End and Draw (the rest of b.flush: getting the mesh, Begin)
 	NEO_HUD_PROFILE__COUNT,
 };
 
@@ -47,6 +56,7 @@ enum NeoHudCounter
 	NEO_HUD_COUNT_RAYS,				// brightness rays into the world
 	NEO_HUD_COUNT_EXTENTS,			// the cyberbrain's GroupExtent calls
 	NEO_HUD_COUNT_FLUSHES,			// NeoGhostFlush calls, empty ones included
+	NEO_HUD_COUNT_GLYPHS,			// characters through DrawPrintText (each print's length, edge copies included)
 	NEO_HUD_COUNT__COUNT,
 };
 

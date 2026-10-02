@@ -50,12 +50,12 @@ const char *NeoHudProfileSectionName(NeoHudProfileSection section)
 	static const char *const s_hudNames[NEO_HUD_PROFILE__COUNT] = { "crosshair", "vitals", "team", "gun", "v.sense", "v.bright",
 		"v.backing", "v.ring", "v.groups", "v.frame", "v.words", "g.body", "g.optics", "g.weapon", "g.motion", "g.layer",
 		"g.flush", "f.frame", "f.couple", "f.mark", "f.crosses",
-		"f.ruler", "f.codes" };
+		"f.ruler", "f.codes", "t.size", "t.print", "t.probe", "b.flush", "b.build", "b.draw" };
 	return (section >= 0 && section < NEO_HUD_PROFILE__COUNT) ? s_hudNames[section] : "";
 }
 
 const char *NeoHudProfileCounterName(NeoHudCounter counter)
 {
-	static const char *const s_hudNames[NEO_HUD_COUNT__COUNT] = { "texts", "meshes", "quads", "rays", "extents", "flushes" };
+	static const char *const s_hudNames[NEO_HUD_COUNT__COUNT] = { "texts", "meshes", "quads", "rays", "extents", "flushes", "glyphs" };
 	return (counter >= 0 && counter < NEO_HUD_COUNT__COUNT) ? s_hudNames[counter] : "";
 }
