@@ -1,7 +1,7 @@
 #pragma once
 
 // Optics for weapons whose script has an "AdsOptic" block: glass on the gun that it is seen through (red
-// dots, holo sights, the Jittes' green dot, the MX's eyepiece). Never a zoom: aiming zooms as stock does, with
+// dots, holo sights, scope eyepieces). Never a zoom: aiming zooms as stock does, with
 // the camera's field of view, so nothing is rendered for the glass. The world is on screen before the gun is
 // drawn, and wherever the glass lets it through, it shows; our part is only where the gun would cover it:
 //   under the cloak or thermals the whole gun, glass included, is drawn with one override material, so the

@@ -83,14 +83,13 @@ WeaponData
 		"lens"		"models/weapons/lenseCompleteMap"
 		"window"	"1"
 		"scope"		"1"
-		// A magnifying scope: seen through only on the sights; at the hip the gun (the scope's inside) draws whole.
+		// A scope's eyepiece: seen through only on the sights.
 		"eyepiece"	"1"
 		"reticle"	"vgui/hud/optics/mx_reticle"
-		// The lens surface on Box01 (from v_*_mx.mdl).
+		// The lens surface on its bone in the model.
 		"lens_bone"	"Box01"
 		"lens_map"	"0.846 0.1934 12.63  -1.6943 0 0  0 0 -1.6943"
-		// The eyepiece's exact outline in its UVs (its 24-sided mesh): the circle overhung its flat sides and cut
-		// jagged slivers out of the housing behind it.
+		// The eyepiece's outline in its UVs.
 		"window_glass"	"0.500 0.000  0.629 0.017  0.750 0.067  0.853 0.147  0.933 0.250  0.983 0.371  1.000 0.500  0.983 0.629  0.933 0.750  0.853 0.853  0.750 0.933  0.629 0.983  0.500 1.000  0.371 0.983  0.250 0.933  0.147 0.853  0.067 0.750  0.017 0.629  0.000 0.500  0.017 0.371  0.067 0.250  0.147 0.147  0.250 0.067  0.371 0.017"
 	}
 

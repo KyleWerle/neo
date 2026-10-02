@@ -77,14 +77,13 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// Clear holo sight glass: only while cloaked or in thermals, it shows exactly the world behind it (no
-		// zoom) so the cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/supa7_reticle"
 		// Both panes carry the full glass art, which showed twice at the hip: hide it and draw it once.
 		"lens"		"models/weapons/eos_glass"
 		"one_pane"	"1"
-		// The glass on Base (from v_*_shotgun.mdl) and its second pane.
+		// The lens surface on its bone, and its second pane.
 		"lens_bone"	"Base"
 		"lens_map"	"-1.468 -4.191 8.404  3.004 0 0  0 0 -3.112"
 		"lens_map2"	"-1.468 -3.846 8.404  3.004 0 0  0 0 -3.112"

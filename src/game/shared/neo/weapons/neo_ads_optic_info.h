@@ -42,22 +42,21 @@ public:
 	// drawn over (cloak, thermals), the glass is left out of it, so the world already on screen shows through,
 	// with the glass's own texture on top.
 	bool	m_bAdsOpticWindow = false;
-	// "scope": glass with a housing behind it (the Jittes' sight, the MX's eyepiece): on the sights, the gun
+	// "scope": glass with a housing behind it (a scope's eyepiece): on the sights, the gun
 	// behind the glass is hidden inside its outline in every state, not only while drawn over, so the view
 	// through the glass is clear.
 	bool	m_bAdsOpticScope = false;
-	// "eyepiece": a magnifying scope's eyepiece (the MX): seen through only on the sights. Off them the gun
+	// "eyepiece": a scope's eyepiece: seen through only on the sights. Off them the gun
 	// draws whole in every state, the scope's inside included, as a real scope shows nothing off its axis
 	// (without it, under the cloak or thermals, the hip saw the world through the whole tube).
 	bool	m_bAdsOpticEyepiece = false;
 	// "window_skip": how deep behind the glass, in viewmodel units, the gun is hidden inside its outline while
 	// drawn over: sight parts there, see-through in their own material, would be solid. The gun further
 	// back (its front, seen through the sight at the hip) shows. Without it, all of the gun behind the glass
-	// is hidden there. Measure with art/optics/find-glass-plates.py; tune live with
-	// cl_neo_ads_window_skip.
+	// is hidden there. Tune live with cl_neo_ads_window_skip.
 	float	m_flAdsOpticWindowSkip = -1.0f;
-	// "window_glass" "u v u v ...": the whole glass's outline in UV, its mesh's vertices (from
-	// art/optics/extract-lens-map.py --dump; their convex hull is used). While the gun is drawn over, the
+	// "window_glass" "u v u v ...": the whole glass's outline in UV, its mesh's vertices (their
+	// convex hull is used). While the gun is drawn over, the
 	// clear view and the reticle cover exactly this, so none of the glass is left see-through to what is
 	// behind it. Kept as its bounding box's centre and the hull's corners around that centre,
 	// counter-clockwise. Without it, the lens: "lens_circle" and "lens_shape" (the centre is the lens's then).
@@ -68,7 +67,7 @@ public:
 	// "one_pane": for glass with two panes that both carry its art ("lens_map2"), the glass material ("lens")
 	// is hidden and its reticle drawn once, on the pane nearer the eye, so the art doesn't show twice.
 	bool	m_bAdsOpticOnePane = false;
-	// "reticle_in_lens": sight glass whose art has a dark frame (ZR68 red dot) draws its reticle only in the
+	// "reticle_in_lens": sight glass whose art has a dark frame (a red dot) draws its reticle only in the
 	// clear part ("lens_circle"), softened at the edge, rather than over the whole glass.
 	bool	m_bAdsOpticReticleInLens = false;
 	// The glass's art, drawn by us wherever the gun's own glass doesn't show it (hidden, or drawn over).

@@ -227,7 +227,7 @@ static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 // material (plates, the housing's inside, the tube between two panes) would be solid there too. A scope on the
 // sights needs the same for its housing. Depth only, so it goes down before each draw of the gun (a two-pass
 // model is drawn twice a frame) at no harm.
-// "window_skip": the gun further behind the glass than that (the MX-S's front sight, seen through its glass) is
+// "window_skip": the gun further behind the glass than that (a front sight seen through the glass) is
 // drawn first, clipped to beyond it, and the rest after the outline, clipped to this side, so each part draws once.
 //-----------------------------------------------------------------------------
 ConVar cl_neo_ads_window_skip("cl_neo_ads_window_skip", "", FCVAR_NONE,

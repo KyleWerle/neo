@@ -44,8 +44,8 @@ bool NeoAdsLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, con
 		return false;
 	}
 	matrix3x4_t lensToWorld;
-	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, and lens bones that are not
-	// (the MX-S's sight_glass) would come back as the viewmodel's origin.
+	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, so a lens bone that is not one
+	// would come back as the viewmodel's origin.
 	MatrixCopy(pViewModel->GetBone(bone), lensToWorld);
 	const auto toWorld = [&](const Vector &origin, const Vector &u, const Vector &v, NeoLensPane &out) {
 		VectorTransform(origin, lensToWorld, out.origin);

@@ -72,11 +72,10 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// Clear holo sight glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
-		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/srm_reticle"
-		// The glass on body (from v_*_srm(_s).mdl) and its second pane.
+		// The lens surface on its bone, and its second pane.
 		"lens_bone"	"body"
 		"lens_map"	"1.149 -1.191 12.36  -2.292 0 0  0.001166 0 1.745"
 		"lens_map2"	"-1.149 -0.32 12.36  2.292 0 0.000887  -0.001165 0 1.744"
