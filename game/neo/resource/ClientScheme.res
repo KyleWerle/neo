@@ -4496,6 +4496,651 @@ Scheme
 				"dropshadow"	"1"
 			}
 		}
+		// The spawn roll call: each channel types its code once in the expanded type (xscale, NT's BOOT face).
+		NHudCyberRollCall
+		{
+			"1"
+			{
+				"name"		"xscale"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"xscale"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"xscale"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"xscale"
+				"tall"		"22"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"xscale"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"xscale"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"xscale"
+				"tall"		"44"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberRollCall with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberRollCall_Outline
+		{
+			"1"
+			{
+				"name"		"xscale"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"xscale"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"xscale"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"xscale"
+				"tall"		"22"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"xscale"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"xscale"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"xscale"
+				"tall"		"44"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberRollCall with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberRollCall_Shadow
+		{
+			"1"
+			{
+				"name"		"xscale"
+				"tall"		"11"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"xscale"
+				"tall"		"14"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"xscale"
+				"tall"		"18"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"xscale"
+				"tall"		"22"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"xscale"
+				"tall"		"24"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"xscale"
+				"tall"		"29"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"xscale"
+				"tall"		"44"
+				"weight"	"0"
+				"range"		"0x0000 0x017F"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// pushbak's plain voice: the plain word beside a code (INTEGRITY by INT.CH0), briefs, hints. Liberation Sans Bold 2.x (OFL), shipped in resource/ with its licence; it has Cyrillic, so every language uses it.
+		NHudCyberCaption
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"7"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"9"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"11"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"16"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"19"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"28"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberCaption with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberCaption_Outline
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"7"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"9"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"11"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"16"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"19"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"28"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberCaption with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberCaption_Shadow
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"7"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"9"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"11"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"16"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"19"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"28"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
+		// The translated line under a layered plate (BIOMECH, OPTICS, MOTION, WPN; LOCALIZATION.md), drawn only when the language isn't English. Liberation Sans Bold covers Cyrillic; a pack overrides it with its partner face.
+		NHudCyberPlateLine
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"6"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"8"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"10"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"13"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"17"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"26"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+			}
+		}
+		// NHudCyberPlateLine with a dark edge baked round every glyph, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberPlateLine_Outline
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"6"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"8"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"10"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"13"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"17"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"26"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"outline"	"1"
+			}
+		}
+		// NHudCyberPlateLine with a dark shadow baked 1 px down and right, one print (cl_neo_hud_text_baked, HUD-SYSTEM.md step 3).
+		NHudCyberPlateLine_Shadow
+		{
+			"1"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"6"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"480 599"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"2"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"8"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"600 767"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"3"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"10"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"768 1023"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"4"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"13"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1024 1199"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"5"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"14"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1200 1439"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"6"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"17"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"1440 2159"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+			"7"
+			{
+				"name"		"Liberation Sans"
+				"tall"		"26"
+				"weight"	"700"
+				"range"		"0x0000 0x04FF"
+				"yres"		"2160 6000"
+				"antialias"	"1"
+				"dropshadow"	"1"
+			}
+		}
 		// ---- end of the cyberbrain HUD's fonts ----
 		// The Competitive HUD's text (cl_neo_hud_style 4): Neuropol2, the stock HUD's face, lowercase.
 		NHudCompText
@@ -5934,6 +6579,41 @@ Scheme
 		"13"		"resource/killfeedicons.ttf"
 		"14"		"resource/montserrat-regular.ttf"
 		"15"		"resource/BitCheese.TTF"
+		"16"
+		{
+			"font"	"resource/LiberationSans-Bold.ttf"
+			"name"	"Liberation Sans"
+			"arabic"	{ "range" "0x0000 0x04FF" }
+			"brazilian"	{ "range" "0x0000 0x04FF" }
+			"bulgarian"	{ "range" "0x0000 0x04FF" }
+			"czech"	{ "range" "0x0000 0x04FF" }
+			"danish"	{ "range" "0x0000 0x04FF" }
+			"dutch"	{ "range" "0x0000 0x04FF" }
+			"english"	{ "range" "0x0000 0x04FF" }
+			"finnish"	{ "range" "0x0000 0x04FF" }
+			"french"	{ "range" "0x0000 0x04FF" }
+			"german"	{ "range" "0x0000 0x04FF" }
+			"greek"	{ "range" "0x0000 0x04FF" }
+			"hungarian"	{ "range" "0x0000 0x04FF" }
+			"indonesian"	{ "range" "0x0000 0x04FF" }
+			"italian"	{ "range" "0x0000 0x04FF" }
+			"japanese"	{ "range" "0x0000 0x04FF" }
+			"koreana"	{ "range" "0x0000 0x04FF" }
+			"latam"	{ "range" "0x0000 0x04FF" }
+			"norwegian"	{ "range" "0x0000 0x04FF" }
+			"polish"	{ "range" "0x0000 0x04FF" }
+			"portuguese"	{ "range" "0x0000 0x04FF" }
+			"romanian"	{ "range" "0x0000 0x04FF" }
+			"russian"	{ "range" "0x0000 0x04FF" }
+			"schinese"	{ "range" "0x0000 0x04FF" }
+			"spanish"	{ "range" "0x0000 0x04FF" }
+			"swedish"	{ "range" "0x0000 0x04FF" }
+			"tchinese"	{ "range" "0x0000 0x04FF" }
+			"thai"	{ "range" "0x0000 0x04FF" }
+			"turkish"	{ "range" "0x0000 0x04FF" }
+			"ukrainian"	{ "range" "0x0000 0x04FF" }
+			"vietnamese"	{ "range" "0x0000 0x04FF" }
+		}
 	}
 
 }

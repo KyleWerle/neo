@@ -29,7 +29,8 @@ enum Group { GROUP_BODY, GROUP_OPTICS, GROUP_WEAPON, GROUP_LINK, GROUP_MOTION, G
 // as glyphs; players' names in Zrnic too (NOCR is digits and capitals only: its lowercase slots hold NT's weapon
 // glyphs). The weapons' own bullet glyphs (NOCR's lowercase slots), sized for the weapon group's row.
 enum Font { FONT_VALUE, FONT_VALUE_LARGE, FONT_LABEL, FONT_PLATE, FONT_KANJI, FONT_INTEGRITY, FONT_ICONS, FONT_NAME, FONT_BULLETS,
-	FONT_PLATE_SHORT, FONT_MACHINE, FONT_MACHINE_SMALL, FONT_NUMBER, FONT__COUNT };
+	FONT_PLATE_SHORT, FONT_MACHINE, FONT_MACHINE_SMALL, FONT_NUMBER, FONT_ROLL_CALL, FONT_CAPTION,
+	FONT_PLATE_LINE, FONT__COUNT };
 // What the fonts resolved to (the cl_neo_hud_fonts command).
 void PrintFonts();
 
@@ -236,6 +237,13 @@ struct Look { float scale, alpha, numbers, labels; };
 float WordReveal(const Frame &f, Group group);
 float WordAlpha(const Frame &f, Group group);
 const wchar_t *Crystallise(const Frame &f, Group group, const wchar_t *pWord, wchar_t *pBuf, int size);
+// The spawn roll call (neo_cyberbrain_words.cpp): once a spawn each channel types its code in the expanded type with
+// its plain word beside it, in channel order, holds, and decays back to the etched code. For channel `channel` with a
+// code `len` glyphs long: the glyphs shown, their alpha, and the etched code's alpha (0 while the roll call has the place).
+struct RollCall { int glyphs; float alpha, etched; };
+RollCall RollCallOf(const Frame &f, int channel, int len);
+// cl_neo_hud_words_specimen 1: every word the HUD says, each drawn as it is in play, in a column at the screen's centre.
+void PaintWordsSpecimen(const Frame &f);
 Look LookOf(const Frame &frame, Group group);
 
 // Drawing helpers (neo_cyberbrain_paint.cpp). A Local draws round a point at a scale; its coordinates are pixels at
@@ -279,10 +287,15 @@ struct Stack
 // A HUD word by its token (LOCALIZATION.md, "The cyberbrain HUD in the plan"): the English until NeoLoc::Find exists, then
 // the player's language with the English as the fallback. New words go through this, never a bare literal.
 const wchar_t *Word(const char *pToken, const wchar_t *pEnglish);
-// NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given.
-void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr);
-// How tall a plate (with its kanji, if given) and a machine plate draw, pixels: what a row holding one needs.
-float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji = nullptr);
+// NT's plate: a light grey label with dark text, and its kanji beside it (away from the align side) if given. A plate
+// layered for the player's language (LOCALIZATION.md, "layer") has its translated line under it, flush with its edge.
+void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji = nullptr,
+	const wchar_t *pLine = nullptr);
+// How tall a plate (with its kanji and line, if given) and a machine plate draw, pixels: what a row holding one needs.
+float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji = nullptr, const wchar_t *pLine = nullptr);
+// The translated line under a layered plate (NeoLoc::FindLine): null in English or when the pack has no such token, so
+// the English HUD never changes. Pass the whole line to PlateTall and the crystallised one to Plate.
+const wchar_t *PlateLine(const char *pToken, const wchar_t *pEnglish);
 float MachinePlateTall(const Frame &f, bool bSmall = false);
 // What the machine says (RELOAD, OVERHEAT, the vision mode): dark pixel letters on a light plate with a yellow bar at
 // its leading edge, as NT's own JGR56 ACTIVE plate. Critical: the plate in the critical colour, no bar (OUT). Small:

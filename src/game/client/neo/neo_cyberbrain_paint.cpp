@@ -135,9 +135,11 @@ void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float fr
 static vgui::HFont GetFont(Font font)
 {
 	static const char *s_names[FONT__COUNT] = { "NHudCyberValue", "NHudCyberValueLarge", "NHudCyberLabel", "NHudCyberPlate", "NHudCyberKanji", "NHudCyberIntegrity", "NHudKillfeedIcons", "NHudCyberLabel",
-		"NHudCyberBullets", "NHudCyberPlateShort", "NHudCyberMachine", "NHudCyberMachineSmall", "NHudCyberNumber" };
+		"NHudCyberBullets", "NHudCyberPlateShort", "NHudCyberMachine", "NHudCyberMachineSmall", "NHudCyberNumber",
+		"NHudCyberRollCall", "NHudCyberCaption", "NHudCyberPlateLine" };
 	static const char *s_fallbacks[FONT__COUNT] = { "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", nullptr, "NHudOCRNoAdditive", nullptr, "NHudOCRSmallerNoAdditive", "NHudBullets",
-		"NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive" };
+		"NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRNoAdditive",
+		"NHudOCRNoAdditive", "NHudOCRSmallerNoAdditive", "NHudOCRSmallerNoAdditive" };
 	static vgui::HFont s_fonts[FONT__COUNT];
 	static bool s_bInit = false;
 	if (!s_bInit)
@@ -155,8 +157,8 @@ void PrintFonts()
 	// does tell: NOCR's capitals and digits are fixed pitch (all as wide), the fallbacks' aren't, and the others are
 	// proportional. Not the lowercase: NOCR's lowercase slots are wide weapon and bullet glyphs.
 	static const char *s_slots[FONT__COUNT] = { "value", "value large", "label", "plate", "kanji", "integrity", "icons", "name", "bullets",
-		"plate short", "machine", "machine small", "number" };
-	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, false, false, false, true, false, false, false, false };
+		"plate short", "machine", "machine small", "number", "roll call", "caption", "plate line" };
+	static const bool s_bNOCR[FONT__COUNT] = { true, true, false, false, false, false, false, false, true, false, false, false, false, false, false };
 	for (int i = 0; i < FONT__COUNT; ++i)
 	{
 		const vgui::HFont handle = GetFont(static_cast<Font>(i));
@@ -253,10 +255,16 @@ static Font PlateFont(const wchar_t *pText)
 	return pText && V_wcslen(pText) <= 4 ? FONT_PLATE_SHORT : FONT_PLATE;
 }
 
-float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji)
+// The translated line under a layered plate: its row, with a gap above it.
+static float LineTall(const Frame &f, const wchar_t *pLine)
+{
+	return pLine ? FontTall(FONT_PLATE_LINE) + 2.0f * f.s : 0.0f;
+}
+
+float PlateTall(const Frame &f, const wchar_t *pText, const wchar_t *pKanji, const wchar_t *pLine)
 {
 	const float plate = FontTall(PlateFont(pText)) + 2.0f * f.s;
-	return pKanji ? Max(plate, FontTall(FONT_KANJI)) : plate;
+	return (pKanji ? Max(plate, FontTall(FONT_KANJI)) : plate) + LineTall(f, pLine);
 }
 
 float MachinePlateTall(const Frame &f, bool bSmall)
@@ -264,21 +272,33 @@ float MachinePlateTall(const Frame &f, bool bSmall)
 	return FontTall(bSmall ? FONT_MACHINE_SMALL : FONT_MACHINE) + 2.0f * f.s;
 }
 
-void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji)
+void Plate(const Frame &f, const wchar_t *pText, float x, float y, int align, float alpha, const wchar_t *pKanji, const wchar_t *pLine)
 {
+	// With a line the row is the plate and the line under it: the plate takes the top of it.
+	const float lineTall = LineTall(f, pLine), boxY = y - lineTall * 0.5f;
 	float x0, w;
 	const Font font = PlateFont(pText);
-	if (!PlateBox(f, font, pText, x, y, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
+	if (!PlateBox(f, font, pText, x, boxY, align, alpha, Color(198, 203, 206, 255), Color(18, 22, 25, 255), x0, w))
 	{
 		return;
+	}
+	if (pLine && pLine[0])
+	{
+		// Flush with the plate's aligned edge, as a caption under it.
+		Text(f, pLine, x, boxY + (FontTall(font) + 2.0f * f.s) * 0.5f + lineTall * 0.5f, align, FONT_PLATE_LINE, f.color, 0.9f * alpha);
 	}
 	static ConVarRef cl_neo_hud_kanji("cl_neo_hud_kanji");
 	if (pKanji && align != 0 && cl_neo_hud_kanji.GetBool())
 	{
 		// Beside the plate, on its open side: a right-aligned plate has it to the left.
 		const float kx = (align < 0) ? x0 - 6.0f * f.s : x0 + w + 6.0f * f.s;
-		Text(f, pKanji, kx, y, (align < 0) ? -1 : 1, FONT_KANJI, f.color, 0.6f * alpha);
+		Text(f, pKanji, kx, boxY, (align < 0) ? -1 : 1, FONT_KANJI, f.color, 0.6f * alpha);
 	}
+}
+
+const wchar_t *PlateLine(const char *pToken, const wchar_t *pEnglish)
+{
+	return NeoLoc::FindLine(pToken, pEnglish);
 }
 
 // One cell's outline or fill: its top corner on the chamfer side cut by c.

@@ -288,6 +288,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		NC::PaintRing(ring);
 		part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
 	}
+	NC::PaintWordsSpecimen(f);
 	NeoGhostFlush();
 	NeoGhostOutline(-1.0f);	// back to the setting for everything else
 	NC::PaintProbe();

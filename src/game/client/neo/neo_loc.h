@@ -16,6 +16,10 @@ const wchar_t *Find(const char *pToken, const wchar_t *pEnglish = nullptr);
 bool IsPseudo();
 // The game's language (lower case, "english" if nothing says otherwise): the -language launch option, else Steam's.
 const char *Language();
+// The second line under a layered element (LOCALIZATION.md, "layer"): the pack's string for the token, or null when the
+// language is English or the pack lacks it (never the English: the English is already the element above it). With
+// neo_loc_pseudo 1, the pseudo form of `pEnglish`, so a layered line can be laid out in an English game.
+const wchar_t *FindLine(const char *pToken, const wchar_t *pEnglish);
 // The client scheme to load: resource/ClientScheme_<language>.res if the language is not English and that file exists in any
 // search path (a language pack's, which #base-includes ClientScheme.res and overrides only the faces it needs), else
 // resource/ClientScheme.res. Every load of the "ClientScheme" scheme uses it, so there is only ever one.

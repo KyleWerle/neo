@@ -131,9 +131,11 @@ void PaintOptics(const Frame &f)
 	{
 		static const wchar_t *const s_kanji = L"\u5149\u5b66";
 		Stack rail = { L.At(0.0f, -edge).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, L"OPTICS", s_kanji));
-		wchar_t word[16];
-		Plate(f, Crystallise(f, GROUP_OPTICS, L"OPTICS", word, ARRAYSIZE(word)), L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji);
+		const wchar_t *pLine = PlateLine("neo_hud_cb_plate_optics", L"OPTICS");
+		const float y = rail.Row(PlateTall(f, L"OPTICS", s_kanji, pLine));
+		wchar_t word[16], line[48];
+		Plate(f, Crystallise(f, GROUP_OPTICS, L"OPTICS", word, ARRAYSIZE(word)), L.At(m * -40.0f, 0.0f).x, y, -side, look.labels, s_kanji,
+			Crystallise(f, GROUP_OPTICS, pLine, line, ARRAYSIZE(line)));
 	}
 	Stack foot = { L.At(0.0f, edge).y + gap, gap, 1 };
 	const float footY = foot.Row(Max(MachinePlateTall(f), FontTall(FONT_LABEL)));

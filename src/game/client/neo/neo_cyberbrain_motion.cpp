@@ -188,9 +188,11 @@ void PaintMotion(const Frame &f)
 		static const wchar_t *const s_kanji = L"\u6a5f\u52d5";
 		const float gap = ROW_GAP * L.k;
 		Stack rail = { L.At(0.0f, strideY - StrideReach()).y - gap, gap, -1 };
-		const float y = rail.Row(PlateTall(f, L"MOTION", s_kanji));
-		wchar_t word[16];
-		Plate(f, Crystallise(f, GROUP_MOTION, L"MOTION", word, ARRAYSIZE(word)), L.At(left, 0.0f).x, y, 1, look.labels, s_kanji);
+		const wchar_t *pLine = PlateLine("neo_hud_cb_plate_motion", L"MOTION");
+		const float y = rail.Row(PlateTall(f, L"MOTION", s_kanji, pLine));
+		wchar_t word[16], line[48];
+		Plate(f, Crystallise(f, GROUP_MOTION, L"MOTION", word, ARRAYSIZE(word)), L.At(left, 0.0f).x, y, 1, look.labels, s_kanji,
+			Crystallise(f, GROUP_MOTION, pLine, line, ARRAYSIZE(line)));
 	}
 }
 } // namespace NeoCyberbrain

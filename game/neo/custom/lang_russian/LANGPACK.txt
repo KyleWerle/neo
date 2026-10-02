@@ -1,0 +1,12 @@
+// An NT;RE language pack (LOCALIZATION.md, "A language pack"). Drop the folder into neo/custom/ and launch with
+// -language russian (or set Steam's language); delete the folder and it's gone.
+"langpack"
+{
+	"language"	"russian"
+	"version"	"0"
+	"targets"	"NT;RE cyberbrain-hud"
+	"status"	"machine drafts: not for release until a native speaker signs off"
+	"translators"	""
+	"reviewers"	""
+	"fonts"		"Tiny5 NTRE (from Tiny5, OFL), Jura NTRE (from Jura, OFL): resource/fonts/russian, built by art/hud-fonts/cyrillic_fonts.py"
+}

@@ -161,7 +161,34 @@ void PaintFrame(const Frame &frame)
 		const wchar_t *s_codes[] = { L"INT.CH0", L"TOC.CH2", L"WPN.CH3", L"LNK.CH4", pMotion, L"AUD.CH5" };
 		const float codeY = rail + 13.0f * s;
 		const bool bOuterLeft = m > 0.0f;
-		Text(f, s_codes[slot], bOuterLeft ? left : right, codeY, bOuterLeft ? 1 : -1, FONT_VALUE, f.color, ETCHED);
+		const wchar_t *pCode = s_codes[slot];
+		const int len = static_cast<int>(wcslen(pCode));
+		const RollCall roll = RollCallOf(f, pCode[len - 1] - L'0', len);
+		if (roll.glyphs > 0 && roll.alpha > 0.0f)
+		{
+			// The roll call: the code in the expanded type, anchored at its full width so it types outward from a fixed
+			// edge whichever side it sits; the plain word beside it, inward, typed in step.
+			const wchar_t *s_words[] = { Word("neo_hud_cb_rc_int", L"INTEGRITY"),
+				sense.bHasCloak ? Word("neo_hud_cb_rc_toc", L"THERMOPTIC") : Word("neo_hud_cb_rc_vision", L"VISION"),
+				Word("neo_hud_cb_rc_wpn", L"WEAPON"), Word("neo_hud_cb_rc_lnk", L"LINK"),
+				sense.bHasJumps ? Word("neo_hud_cb_rc_jmp", L"JUMP") : sense.bHasSprint ? Word("neo_hud_cb_rc_aux", L"AUX POWER")
+					: Word("neo_hud_cb_rc_mov", L"MOVEMENT"),
+				Word("neo_hud_cb_rc_aud", L"HEARING") };
+			wchar_t code[16], word[32];
+			V_wcsncpy(code, pCode, sizeof(code));
+			code[Min(roll.glyphs, 15)] = 0;
+			const int wordLen = static_cast<int>(wcslen(s_words[slot]));
+			V_wcsncpy(word, s_words[slot], sizeof(word));
+			word[Min(31, (roll.glyphs * wordLen + len - 1) / len)] = 0;
+			const float codeW = TextWidth(pCode, FONT_ROLL_CALL), wordW = TextWidth(s_words[slot], FONT_CAPTION), gap = 8.0f * s;
+			const float x0 = bOuterLeft ? left : right - codeW, rollY = codeY + 3.0f * s;
+			Text(f, code, x0, rollY, 1, FONT_ROLL_CALL, f.color, roll.alpha);
+			Text(f, word, bOuterLeft ? x0 + codeW + gap : x0 - gap - wordW, rollY, 1, FONT_CAPTION, f.color, roll.alpha);
+		}
+		if (roll.etched > 0.0f)
+		{
+			Text(f, pCode, bOuterLeft ? left : right, codeY, bOuterLeft ? 1 : -1, FONT_VALUE, f.color, ETCHED * roll.etched);
+		}
 		if (slot == GROUP_BODY && sense.bArmour)
 		{
 			Text(f, L"ARM.CH0", bOuterLeft ? right : left, codeY, bOuterLeft ? -1 : 1, FONT_VALUE, f.color, ETCHED);

@@ -73,8 +73,26 @@ const char *Language()
 	return s_language;
 }
 
+// The engine loads resource/neo_<language>.txt for Steam's language and ignores -language, so the pack's tokens could
+// disagree with its scheme. Load the file for our language once (from any search path, a pack's included), before the
+// first lookup or scheme load; for Steam's own language this only loads the same file again.
+static void LoadLanguageFile()
+{
+	static bool s_done = false;
+	if (s_done || !g_pVGuiLocalize || !g_pFullFileSystem)
+		return;
+	s_done = true;
+	if (V_stricmp(Language(), "english") == 0)
+		return;
+	char file[128];
+	V_snprintf(file, sizeof(file), "resource/neo_%s.txt", Language());
+	if (g_pFullFileSystem->FileExists(file, "GAME"))
+		g_pVGuiLocalize->AddFile(file, "GAME", true);
+}
+
 const char *ClientSchemePath()
 {
+	LoadLanguageFile();
 	static char s_path[128] = "";
 	if (!s_path[0])
 	{
@@ -135,12 +153,29 @@ static const wchar_t *Pseudo(const wchar_t *pText)
 	return pOut;
 }
 
+const wchar_t *FindLine(const char *pToken, const wchar_t *pEnglish)
+{
+	if (neo_loc_pseudo.GetBool())
+		return pEnglish ? Pseudo(pEnglish) : nullptr;
+	LoadLanguageFile();
+	if (!pToken || !g_pVGuiLocalize || V_stricmp(Language(), "english") == 0)
+		return nullptr;
+	if (pToken[0] == '#')
+		++pToken;
+	// The engine's table holds neo_english.txt too: a line the pack lacks comes back as the English, which is the plate.
+	const wchar_t *pFound = g_pVGuiLocalize->Find(pToken);
+	const auto &english = English();
+	const auto it = english.find(pToken);
+	return pFound && (it == english.end() || it->second != pFound) ? pFound : nullptr;
+}
+
 const wchar_t *Find(const char *pToken, const wchar_t *pEnglish)
 {
 	if (pToken && pToken[0] == '#')
 		++pToken;
 	if (!pToken || !pToken[0])
 		return pEnglish ? pEnglish : L"";
+	LoadLanguageFile();
 	if (!neo_loc_pseudo.GetBool() && g_pVGuiLocalize)
 	{
 		if (const wchar_t *pFound = g_pVGuiLocalize->Find(pToken))
