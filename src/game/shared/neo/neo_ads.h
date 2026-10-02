@@ -29,6 +29,13 @@ float NeoAimTransitionTime(const CNEOWeaponInfo &data);
 // Shapes the linear transition fraction (0..1) into the motion curve used for the viewmodel.
 float NeoAimTransitionCurve(const CNEOWeaponInfo &data, float fraction);
 
+// The smoothstep ease, 0 to 1 over t in [0, 1] (clamped), flat at both ends.
+inline float NeoSmoothStep(float t)
+{
+	t = clamp(t, 0.0f, 1.0f);
+	return t * t * (3.0f - 2.0f * t);
+}
+
 // Scale for movement bob at the given ADS blend (0 = hip, 1 = fully on the sights).
 float NeoAdsBobScale(float adsBlend);
 
@@ -65,6 +72,24 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	const Vector settledPos[], const Quaternion settledQ[], int refBone, const CNEOWeaponInfo &data, float adsBlend);
 
 // True when crosshairs should be hidden: ADS is on and the crosshair option is off. Aiming
-// while cloaked keeps it, since the cloaked viewmodel's sights are hard to see.
-bool NeoAdsHideCrosshair(bool bAiming, bool bCloaked);
+// while cloaked keeps it, since the cloaked viewmodel's sights are hard to see, unless the weapon has an
+// optic: its glass stays see-through while cloaked.
+bool NeoAdsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked);
+
+class IMaterial;
+
+// How far onto the sights (the viewmodel's ADS blend) the gun counts as on them: a scope's housing behind the
+// glass stops drawing from here.
+constexpr float NEO_ADS_ON_SIGHTS = 0.5f;
+
+// Hides an optic's glass ("one_pane" in its "AdsOptic" block) for its lifetime, since the optic draws that glass's art itself
+// (neo_ads_optic.h). Wrap the viewmodel draw in one; the material is restored when it goes out of scope.
+class NeoAdsHiddenMaterials
+{
+public:
+	NeoAdsHiddenMaterials(const CNEOWeaponInfo *pData);
+	~NeoAdsHiddenMaterials();
+private:
+	IMaterial *m_pLens = nullptr;
+};
 #endif
