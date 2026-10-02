@@ -13,11 +13,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-//-----------------------------------------------------------------------------
-// The glass's art ("reticle"), drawn by us where the gun's own glass doesn't show it: glass hidden on the gun
-// (one pane), glass drawn over (cloak, thermals: the split below leaves it out of the gun),
-// and a scope's lens on the sights (the hole below leaves it out).
-//-----------------------------------------------------------------------------
+// The glass's art ("reticle"), drawn by us where the gun's own glass doesn't show it: hidden (one pane), left out
+// of the gun (cloak, thermals) or a scope's lens on the sights.
 
 // The lens outline around its centre, for a superellipse of this exponent: LENS_SEGMENTS points at radius
 // 1 (round at 2, squarer above). Worked out once per exponent.
@@ -41,9 +38,8 @@ static const Vector2D *LensOutline(float shape)
 	return s_outline;
 }
 
-// An area of the lens surface in UV to draw over, as an outline around a centre, scaled: the lens itself
-// ("lens_circle", "lens_shape") or the whole glass ("window_glass", else the lens), exactly: grown, it cut real
-// parts of the gun out past the glass.
+// An area of the lens surface in UV to draw over: the lens ("lens_circle", "lens_shape") or the whole glass
+// ("window_glass", else the lens). Exact, since a grown outline cut real parts of the gun out past the glass.
 struct LensArea
 {
 	float centreU, centreV, scaleU, scaleV;
@@ -183,8 +179,8 @@ void NeoAdsDrawGlassArt(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data,
 	{
 		return;
 	}
-	// Its own art over the whole glass, as it is on the gun, unless its frame is dark and the gun is drawn over
-	// (it then shows only in the clear part, past a soft edge around the lens circle).
+	// The art covers the whole glass, unless its frame is dark and the gun is drawn over: then only the clear
+	// part, softened at the edge.
 	const bool bInLens = data.m_bAdsOpticReticleInLens && state.bOverridden;
 	const LensArea area = LensAreaOf(data, !bInLens);
 	const float fadeStart = bInLens ? RETICLE_IN_LENS_FADE : 1.0f;
@@ -205,8 +201,7 @@ static IMaterial *GlassDepthMaterial()
 	return s_material;
 }
 
-// An area of the glass into depth only, a hair in front of the glass, so the gun behind it (the glass included)
-// fails the depth test there in every later draw.
+// An area of the glass into depth only, a hair in front of it, so the gun behind it fails the depth test there.
 static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 {
 	CMatRenderContextPtr pRenderContext(materials);
@@ -219,17 +214,14 @@ static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 	pRenderContext->OverrideColorWriteEnable(false, true);
 }
 
-//-----------------------------------------------------------------------------
-// Seeing through the gun's glass: its exact outline goes into depth a hair in front of it before the gun is
-// drawn, so neither the glass nor anything of the gun behind it draws inside the outline, and the world already
-// on screen shows through. Under the cloak or thermals the whole gun, glass included, is drawn with one override
-// material, so this is the only way to leave the glass out; under it, sight parts see-through in their own
-// material (plates, the housing's inside, the tube between two panes) would be solid there too. A scope on the
-// sights needs the same for its housing. Depth only, so it goes down before each draw of the gun (a two-pass
-// model is drawn twice a frame) at no harm.
-// "window_skip": the gun further behind the glass than that (a front sight seen through the glass) is
-// drawn first, clipped to beyond it, and the rest after the outline, clipped to this side, so each part draws once.
-//-----------------------------------------------------------------------------
+// The glass's exact outline goes into depth a hair in front of it before the gun is drawn, so neither the glass
+// nor the gun behind it draws inside the outline and the world already on screen shows through. The cloak and
+// thermals draw the whole gun with one override material, and a scope's housing shows behind its glass, so
+// this is the only way to leave them out. Depth only, so it goes down before each draw of the gun (a two-pass
+// model is drawn twice a frame).
+// "window_skip": the gun further behind the glass than that is drawn first, clipped to beyond it, and the rest
+// after the outline, clipped to this side, so each part draws once.
+
 // For tuning, not for players: cheat-only, hidden, and not saved to the config.
 ConVar cl_neo_ads_window_skip("cl_neo_ads_window_skip", "", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Tuning: how deep behind sight glass the gun is hidden while cloaked or in thermals (the weapon's"

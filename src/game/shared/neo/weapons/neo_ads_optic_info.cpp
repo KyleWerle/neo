@@ -47,7 +47,7 @@ void CNEOAdsOpticInfo::ParseWindowGlass(const char *pszPoints)
 	m_iAdsOpticWindowGlassPoints = 0;
 
 	// The points, sorted by u then v, for the hull (Andrew's monotone chain).
-	Vector2D points[2 * IRON_WINDOW_GLASS_MAX];
+	Vector2D points[2 * ADS_OPTIC_WINDOW_GLASS_MAX];
 	int count = 0;
 	for (char *pszEnd = nullptr; count < ARRAYSIZE(points); pszPoints = pszEnd)
 	{
@@ -100,7 +100,7 @@ void CNEOAdsOpticInfo::ParseWindowGlass(const char *pszPoints)
 		hull[size++] = points[i];
 	}
 	--size;	// the last point repeats the first
-	if (size < 3 || size > IRON_WINDOW_GLASS_MAX)
+	if (size < 3 || size > ADS_OPTIC_WINDOW_GLASS_MAX)
 	{
 		return;
 	}
