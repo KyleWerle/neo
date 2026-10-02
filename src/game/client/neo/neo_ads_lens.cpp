@@ -1,10 +1,6 @@
 #include "cbase.h"
 #include "neo_ads_lens.h"
-#include "neo_ads_optic.h"
-#include "c_neo_player.h"
-#include "neo_predicted_viewmodel.h"
 #include "weapon_neobasecombatweapon.h"
-#include "view_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -67,9 +63,4 @@ bool NeoAdsLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, con
 		}
 	}
 	return true;
-}
-
-float NeoAdsFovScale(const CViewSetup &view)
-{
-	return tanf(DEG2RAD(view.fov * 0.5f)) / tanf(DEG2RAD(view.fovViewmodel * 0.5f));
 }

@@ -5,7 +5,6 @@
 
 class C_BaseAnimating;
 class CNEOWeaponInfo;
-class CViewSetup;
 
 // One pane of the lens in world space: point(u, v) = origin + u * uAxis + v * vAxis, in lens UV.
 struct NeoLensPane
@@ -22,8 +21,3 @@ struct NeoLensPane
 // pane in pFarPane if there are two (else it is left alone). False if the lens bone isn't on the model.
 bool NeoAdsLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, const Vector &eye, NeoLensPane &pane,
 	NeoLensPane *pFarPane = nullptr);
-
-// How much larger things look in the main view than in the viewmodel's: the tangent of the main view's
-// half field of view over the viewmodel's. A point of the gun appears on screen where the world along its
-// eye-space ray, scaled sideways by this, does.
-float NeoAdsFovScale(const CViewSetup &view);

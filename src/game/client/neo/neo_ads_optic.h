@@ -7,15 +7,11 @@
 //   under the cloak or thermals the whole gun, glass included, is drawn with one override material, so the
 //     glass is left out of it and its art drawn back over it (neo_ads_optic_disc.cpp);
 //   a scope's housing behind the glass is left out of it on the sights ("scope").
-// It follows whoever is on screen: the local player, or the player spectated in first person.
 // Everything here is client-only; weapons without the block, or ADS off, are untouched.
 
 class CNEOWeaponInfo;
 class C_BaseAnimating;
 class C_NEO_Player;
-
-// The player whose view is on screen: the local player, or the one spectated in first person.
-C_NEO_Player *NeoAdsOpticViewPlayer();
 
 // True while this player sees in thermals (a support in vision mode): their gun is drawn with the opaque
 // thermal material then, which covers the glass just as the cloak does.

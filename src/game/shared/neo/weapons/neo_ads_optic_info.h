@@ -20,7 +20,7 @@ public:
 	bool	m_bHasAdsOptic = false;
 	char	m_szAdsOpticLens[MAX_WEAPON_STRING] = "";	// the glass's material
 	// The lens surface on its bone, for drawing the optic ourselves: point(u, v) = origin + u * uAxis +
-	// v * vAxis in "lens_bone" space ("lens_map", extracted from the model).
+	// v * vAxis in "lens_bone" space ("lens_map", measured from the model).
 	bool	m_bHasAdsOpticLensMap = false;
 	char	m_szAdsOpticLensBone[MAX_WEAPON_STRING] = "";
 	Vector	m_vecAdsOpticLensOrigin = Vector(0.0f, 0.0f, 0.0f);

@@ -84,8 +84,9 @@ class IMaterial;
 // glass stops drawing from here.
 constexpr float NEO_ADS_ON_SIGHTS = 0.5f;
 
-// Hides an optic's glass ("one_pane" in its "AdsOptic" block) for its lifetime, since the optic draws that glass's art itself
-// (neo_ads_optic.h). Wrap the viewmodel draw in one; the material is restored when it goes out of scope.
+// Hides an optic's glass ("one_pane" in its "AdsOptic" block) for its lifetime, since the optic draws that
+// glass's art itself (neo_ads_optic.h). Wrap the viewmodel draw in one; the material is restored when it goes
+// out of scope.
 class NeoAdsHiddenMaterials
 {
 public:

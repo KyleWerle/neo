@@ -75,9 +75,9 @@ WeaponData
 		"roll"		"0"
 	}
 
-	// Optic: the eyepiece, clear glass seen through at the aim's own zoom (no zoom of its own). At the hip the lens
-	// shows as it is; on the sights it and the housing behind it are left out, and the eyepiece art drawn over the
-	// clear view (the lens material is shared with the ZR68L, so it stays untouched).
+	// Scope eyepiece: at the hip the lens shows as it is; on the sights it and the housing behind it are left
+	// out and the eyepiece art is drawn over the clear view. The lens material is shared with the ZR68L, so it
+	// is left untouched.
 	"AdsOptic"
 	{
 		"lens"		"models/weapons/lenseCompleteMap"

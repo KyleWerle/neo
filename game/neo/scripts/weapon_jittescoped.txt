@@ -74,9 +74,8 @@ WeaponData
 		"up"		"2.53"
 	}
 
-	// Optic: the Jitte's green dot sight, clear glass seen through at the aim's own zoom (no zoom of its own). Its
-	// art, shared by both Jittes, is drawn by us with the dot collimated (at infinity, where the gun points); on
-	// the sights the housing behind the glass is left out, so the view through it is clear.
+	// Sight glass, seen through on the sights: the housing behind the glass is left out there, so the view
+	// through it is clear.
 	"AdsOptic"
 	{
 		"lens"		"models/weapons/jitte_mat3"
