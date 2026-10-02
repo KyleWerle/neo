@@ -7,6 +7,7 @@
 #include "filesystem.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
+#include "neo_bench_exit_probe.h"
 #include <time.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -76,6 +77,12 @@ static constexpr float FIRE_TAP = 0.06f;		// seconds the trigger is held, then l
 static constexpr float FIRE_REFILL = 0.25f;	// seconds between ammo top-ups (the server only fills a nearly empty clip)
 static constexpr float BENCH_STATE_TIMEOUT = 4.0f;	// seconds to reach a scenario's state before skipping it
 static constexpr float BENCH_TOGGLE_RETRY = 0.35f;	// seconds between presses of a toggle that didn't take
+static constexpr int BENCH_MAX_SCENARIOS = BENCH_MAX_RUNS / 2;
+
+// Run only some scenarios: the ones whose label holds one of these words (any case), so one run takes seconds.
+static ConVar neo_ironsight_bench_only("neo_ironsight_bench_only", "", FCVAR_NONE,
+	"Ironsight benchmark: run only the scenarios whose label contains one of these comma-separated words, in the order"
+	" given, e.g. \"M41S\" or \"ZR68C,M41S\". Empty: all. neo_ironsight_bench <set> <words> overrides it for one run.");
 
 struct BenchResult
 {
@@ -86,6 +93,25 @@ struct BenchResult
 	double sectionMs[NEO_PROFILE__COUNT] = {};	// mean CPU time per frame, by feature
 	double sectionCalls[NEO_PROFILE__COUNT] = {};	// mean times it ran per frame
 };
+
+// Armed for each run: if the game exits mid-run, neo_bench_exit_probe.cpp writes the exiting thread's stack to
+// ironsight_bench/exit_stack.txt (bench.py prints that it's there).
+static void ExitProbeArm(const char *pszRun)
+{
+	static char s_path[MAX_PATH] = "";
+	if (!s_path[0])
+	{
+		// Only paths that exist resolve: the folder, then the file in it.
+		g_pFullFileSystem->CreateDirHierarchy("ironsight_bench", "MOD");
+		char dir[MAX_PATH] = "";
+		if (!g_pFullFileSystem->RelativePathToFullPath("ironsight_bench", "MOD", dir, sizeof(dir)) || !dir[0])
+		{
+			return;
+		}
+		V_ComposeFileName(dir, "exit_stack.txt", s_path, sizeof(s_path));
+	}
+	NeoBenchExitProbeArm(s_path, pszRun);
+}
 
 static const char *ClassName(int neoClass)
 {
@@ -102,7 +128,7 @@ class CNeoIronsightBench : public CAutoGameSystemPerFrame
 public:
 	CNeoIronsightBench() : CAutoGameSystemPerFrame("CNeoIronsightBench") {}
 
-	bool Start(const char *pszSet, float measureSeconds, float settleSeconds);
+	bool Start(const char *pszSet, float measureSeconds, float settleSeconds, const char *pszOnly = nullptr);
 	void Stop(const char *pszWhy);
 	void Update(float frametime) override;
 	bool Running() const { return m_phase != IDLE; }
@@ -120,10 +146,12 @@ private:
 	void BeginRestore();
 	void FinishRestore();
 	void Fire(const BenchScenario &scenario);
-	const BenchScenario &Scenario() const { return m_pSet->scenarios[m_run / 2]; }
+	const BenchScenario &Scenario() const { return m_pSet->scenarios[m_picked[m_run / 2]]; }
 
 	Phase m_phase = IDLE;
 	const BenchSet *m_pSet = &s_sets[0];
+	int m_picked[BENCH_MAX_SCENARIOS] = {};	// the set's scenarios this run covers, by index
+	int m_pickedCount = 0;
 	int m_runs = 0;
 	int m_run = 0;
 	int m_reports = 0;
@@ -163,7 +191,40 @@ void CNeoIronsightBench::Command(const char *pszFormat, ...)
 	engine->ClientCmd_Unrestricted(command);
 }
 
-bool CNeoIronsightBench::Start(const char *pszSet, float measureSeconds, float settleSeconds)
+// The set's scenarios whose label holds one of the comma-separated words (any case), in the order the words are
+// given ("M41S,ZR68C" runs the M41S first: a repro can choose what comes before what). Empty: the whole set, in order.
+static int PickScenarios(const BenchSet &set, const char *pszOnly, int picked[BENCH_MAX_SCENARIOS])
+{
+	int count = 0;
+	if (!pszOnly || !pszOnly[0])
+	{
+		for (int i = 0; i < set.count; ++i)
+		{
+			picked[count++] = i;
+		}
+		return count;
+	}
+	CUtlStringList words;
+	V_SplitString(pszOnly, ",", words);
+	for (const char *pszWord : words)
+	{
+		for (int i = 0; i < set.count && pszWord[0]; ++i)
+		{
+			bool bTaken = false;
+			for (int j = 0; j < count; ++j)
+			{
+				bTaken |= picked[j] == i;
+			}
+			if (!bTaken && V_stristr(set.scenarios[i].label, pszWord))
+			{
+				picked[count++] = i;
+			}
+		}
+	}
+	return count;
+}
+
+bool CNeoIronsightBench::Start(const char *pszSet, float measureSeconds, float settleSeconds, const char *pszOnly)
 {
 	const BenchSet *pSet = nullptr;
 	for (const BenchSet &set : s_sets)
@@ -184,8 +245,19 @@ bool CNeoIronsightBench::Start(const char *pszSet, float measureSeconds, float s
 		Msg("neo_ironsight_bench: needs you alive in a game you host, and no benchmark running.\n");
 		return false;
 	}
+	if (!pszOnly)
+	{
+		pszOnly = neo_ironsight_bench_only.GetString();
+	}
+	const int picked = PickScenarios(*pSet, pszOnly, m_picked);
+	if (picked == 0)
+	{
+		Msg("neo_ironsight_bench: no %s scenario matches \"%s\".\n", pSet->name, pszOnly);
+		return false;
+	}
 	m_pSet = pSet;
-	m_runs = pSet->count * 2;
+	m_pickedCount = picked;
+	m_runs = picked * 2;
 	m_measureSeconds = clamp(measureSeconds, 0.5f, 30.0f);
 	m_settleSeconds = clamp(settleSeconds, 0.5f, 10.0f);
 
@@ -219,8 +291,8 @@ bool CNeoIronsightBench::Start(const char *pszSet, float measureSeconds, float s
 	{
 		m_results[i] = BenchResult();
 	}
-	Msg("neo_ironsight_bench: %s, %d runs of %.1f s (after %.1f s to settle). Hands off.\n", m_pSet->name, m_runs,
-		m_measureSeconds, m_settleSeconds);
+	Msg("neo_ironsight_bench: %s%s%s, %d runs of %.1f s (after %.1f s to settle). Hands off.\n", m_pSet->name,
+		pszOnly[0] ? " only " : "", pszOnly, m_runs, m_measureSeconds, m_settleSeconds);
 	m_run = 0;
 	BeginRun();
 	return true;
@@ -231,6 +303,10 @@ void CNeoIronsightBench::BeginRun()
 	const BenchScenario &scenario = Scenario();
 	const bool bIronsights = (m_run % 2) == 1;
 	Msg("neo_ironsight_bench: run %d/%d, %s, gunplay %s\n", m_run + 1, m_runs, scenario.label, bIronsights ? "on" : "off");
+	char run[160];
+	V_snprintf(run, sizeof(run), "%s run %d/%d, %s, gunplay %s", m_pSet->name, m_run + 1, m_runs, scenario.label,
+		bIronsights ? "on" : "off");
+	ExitProbeArm(run);
 	Command("-attack; -aim; cl_neo_gunplay %d; cl_neo_ironsights 1; neo_ironsight_bench_class %s; neo_ironsight_bench_equip %s",
 		bIronsights ? 1 : 0, scenario.playerClass, scenario.weapon);
 	if (scenario.aim)
@@ -468,6 +544,7 @@ void CNeoIronsightBench::BeginRestore()
 
 void CNeoIronsightBench::FinishRestore()
 {
+	NeoBenchExitProbeDisarm();
 	Command("neo_ironsight_bench_class %s", m_savedClass);
 	for (int i = 0; i < MAX_WEAPONS; ++i)
 	{
@@ -522,9 +599,9 @@ void CNeoIronsightBench::Report()
 		g_pFullFileSystem->FPrintf(file, "\n");
 	}
 
-	for (int i = 0; i < m_pSet->count; ++i)
+	for (int i = 0; i < m_pickedCount; ++i)
 	{
-		const BenchScenario &scenario = m_pSet->scenarios[i];
+		const BenchScenario &scenario = m_pSet->scenarios[m_picked[i]];
 		const BenchResult &off = m_results[i * 2], &on = m_results[i * 2 + 1];
 		if (!off.measured || !on.measured)
 		{
@@ -565,16 +642,23 @@ bool NeoIronsightBenchStart(const char *pszSet, float measureSeconds, float sett
 int NeoIronsightBenchReports() { return s_bench.Reports(); }
 
 CON_COMMAND(neo_ironsight_bench, "Hands-off benchmark of the ironsight features (see neo_ironsight_bench.cpp). Usage:"
-	" neo_ironsight_bench [optics|fire = optics] [measure seconds = 3] [settle seconds = 1.5]")
+	" neo_ironsight_bench [optics|fire = optics] [only these, e.g. M41S or ZR68C,M41S] [measure seconds = 3]"
+	" [settle seconds = 1.5]")
 {
+	const auto isNumber = [](const char *psz) { return V_isdigit(psz[0]) || psz[0] == '.'; };
 	int arg = 1;
 	const char *pszSet = "optics";
-	if (args.ArgC() > 1 && !V_isdigit(args[1][0]) && args[1][0] != '.')
+	const char *pszOnly = nullptr;	// null: neo_ironsight_bench_only
+	if (args.ArgC() > arg && !isNumber(args[arg]))
 	{
-		pszSet = args[1];
-		arg = 2;
+		pszSet = args[arg++];
 	}
-	s_bench.Start(pszSet, args.ArgC() > arg ? V_atof(args[arg]) : 3.0f, args.ArgC() > arg + 1 ? V_atof(args[arg + 1]) : 1.5f);
+	if (args.ArgC() > arg && !isNumber(args[arg]))
+	{
+		pszOnly = args[arg++];
+	}
+	s_bench.Start(pszSet, args.ArgC() > arg ? V_atof(args[arg]) : 3.0f, args.ArgC() > arg + 1 ? V_atof(args[arg + 1]) : 1.5f,
+		pszOnly);
 }
 
 CON_COMMAND(neo_ironsight_bench_stop, "Stops a running ironsight benchmark and puts everything back.")

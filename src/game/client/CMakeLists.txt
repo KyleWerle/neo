@@ -1804,6 +1804,19 @@ set_source_files_properties(
     PROPERTIES UNITY_GROUP neo_ui_client
 )
 
+# Built alone, no unity group and no precompiled header: it includes windows.h, whose macros break other files.
+target_sources_grouped(
+    TARGET client
+    NAME "Source Files\\NEO"
+    FILES
+    neo/neo_bench_exit_probe.cpp
+    neo/neo_bench_exit_probe.h
+)
+set_source_files_properties(
+    neo/neo_bench_exit_probe.cpp
+    PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+)
+
 target_sources_grouped(
     TARGET client
     NAME "Source Files\\NEO\\UI"
