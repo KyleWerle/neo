@@ -201,6 +201,7 @@ static void DrawEach(const QueuedQuad *pQuads, int count)
 
 void NeoGhostFlush()
 {
+	NeoHudCount(NEO_HUD_COUNT_FLUSHES);
 	if (s_iQuads == 0 && s_iOutlines == 0)
 	{
 		return;

@@ -39,6 +39,14 @@ static const HudBenchScenario s_hudBenchScenarios[] = {
 static constexpr int HUD_BENCH_SCENARIOS = ARRAYSIZE(s_hudBenchScenarios);
 static constexpr int HUD_BENCH_PASSES = 2;
 
+// The quick bench (bench.py --quick): only some scenarios, one pass, so a run takes seconds.
+static ConVar neo_hud_bench_only("neo_hud_bench_only", "", FCVAR_NONE,
+	"HUD benchmark: run only the scenarios whose label contains one of these comma-separated words, e.g. \"compact\"."
+	" Empty: all.");
+static ConVar neo_hud_bench_passes("neo_hud_bench_passes", "2", FCVAR_NONE,
+	"HUD benchmark: 2 runs everything twice (the second in reverse, the gap shows drift); 1 once, for quick checks.",
+	true, 1, true, 2);
+
 struct HudBenchResult
 {
 	bool measured = false;
@@ -73,6 +81,10 @@ private:
 
 	Phase m_phase = IDLE;
 	int m_run = 0;
+	int m_runs = 0;
+	int m_passes = HUD_BENCH_PASSES;
+	int m_picked[HUD_BENCH_SCENARIOS];	// the scenarios this bench runs, in order
+	int m_pickedCount = 0;
 	int m_reports = 0;	// finished runs, reported
 	float m_measureSeconds = 3.0f;
 	float m_settleSeconds = 2.0f;
@@ -105,8 +117,8 @@ void CNeoHudBench::Command(const char *pszFormat, ...)
 // The first pass in order, the second in reverse.
 int CNeoHudBench::ScenarioOf(int run) const
 {
-	const int i = run % HUD_BENCH_SCENARIOS;
-	return (run / HUD_BENCH_SCENARIOS) % 2 ? HUD_BENCH_SCENARIOS - 1 - i : i;
+	const int i = run % m_pickedCount;
+	return m_picked[(run / m_pickedCount) % 2 ? m_pickedCount - 1 - i : i];
 }
 
 void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
@@ -117,8 +129,26 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 		Msg("neo_hud_bench: needs you alive in a game, and no benchmark running.\n");
 		return;
 	}
+	m_pickedCount = 0;
+	CUtlStringList words;
+	V_SplitString(neo_hud_bench_only.GetString(), ",", words);
+	for (int s = 0; s < HUD_BENCH_SCENARIOS; ++s)
+	{
+		bool bPick = words.Count() == 0;
+		for (int w = 0; w < words.Count() && !bPick; ++w)
+			bPick = words[w][0] && V_stristr(s_hudBenchScenarios[s].label, words[w]);
+		if (bPick)
+			m_picked[m_pickedCount++] = s;
+	}
+	if (m_pickedCount == 0)
+	{
+		Msg("neo_hud_bench: no scenario matches \"%s\".\n", neo_hud_bench_only.GetString());
+		return;
+	}
+	m_passes = neo_hud_bench_passes.GetInt();
+	m_runs = m_passes * m_pickedCount;
 	m_measureSeconds = clamp(measureSeconds, 0.5f, 30.0f);
-	m_settleSeconds = clamp(settleSeconds, 0.5f, 10.0f);
+	m_settleSeconds = clamp(settleSeconds, 0.25f, 10.0f);
 	const auto save = [](const char *pszName, char *pszOut, int size) {
 		const ConVarRef var(pszName);
 		V_strncpy(pszOut, var.IsValid() ? var.GetString() : "", size);
@@ -143,7 +173,7 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 			m_results[p][s] = HudBenchResult();
 		}
 	}
-	Msg("neo_hud_bench: %d runs of %.1f s (after %.1f s to settle). Hands off.\n", HUD_BENCH_PASSES * HUD_BENCH_SCENARIOS, m_measureSeconds,
+	Msg("neo_hud_bench: %d runs of %.1f s (after %.1f s to settle). Hands off.\n", m_runs, m_measureSeconds,
 		m_settleSeconds);
 	m_run = 0;
 	BeginRun();
@@ -151,7 +181,7 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 
 void CNeoHudBench::BeginRun()
 {
-	Msg("neo_hud_bench: run %d/%d, %s\n", m_run + 1, HUD_BENCH_PASSES * HUD_BENCH_SCENARIOS, s_hudBenchScenarios[ScenarioOf(m_run)].label);
+	Msg("neo_hud_bench: run %d/%d, %s\n", m_run + 1, m_runs, s_hudBenchScenarios[ScenarioOf(m_run)].label);
 	// Back to the player's own settings, then the scenario's on top.
 	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; cl_neo_hud_text_baked 1; %s", m_savedStyle,
 		m_savedBacking, s_hudBenchScenarios[ScenarioOf(m_run)].commands);
@@ -220,7 +250,7 @@ void CNeoHudBench::Update(float frametime)
 
 void CNeoHudBench::FinishRun()
 {
-	HudBenchResult &result = m_results[m_run / HUD_BENCH_SCENARIOS][ScenarioOf(m_run)];
+	HudBenchResult &result = m_results[m_run / m_pickedCount][ScenarioOf(m_run)];
 	const int frames = m_frameMs.Count();
 	if (frames > 0)
 	{
@@ -249,7 +279,7 @@ void CNeoHudBench::FinishRun()
 			result.counts[i] = m_counts[i] / frames;
 		}
 	}
-	if (++m_run >= HUD_BENCH_PASSES * HUD_BENCH_SCENARIOS)
+	if (++m_run >= m_runs)
 	{
 		Report();
 		Restore();
@@ -291,7 +321,7 @@ void CNeoHudBench::Report()
 	double gap[HUD_BENCH_SCENARIOS] = {};
 	for (int s = 0; s < HUD_BENCH_SCENARIOS; ++s)
 	{
-		const HudBenchResult &a = m_results[0][s], &b = m_results[1][s];
+		const HudBenchResult &a = m_results[0][s], &b = m_results[m_passes - 1][s];	// one pass: itself, gap 0
 		if (!a.measured || !b.measured)
 		{
 			continue;

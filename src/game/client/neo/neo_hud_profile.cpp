@@ -48,12 +48,13 @@ int NeoHudProfileTakeCount(NeoHudCounter counter)
 const char *NeoHudProfileSectionName(NeoHudProfileSection section)
 {
 	static const char *const s_hudNames[NEO_HUD_PROFILE__COUNT] = { "crosshair", "vitals", "team", "gun", "v.sense", "v.bright",
-		"v.backing", "v.ring", "v.groups", "v.frame", "v.words" };
+		"v.backing", "v.ring", "v.groups", "v.frame", "v.words", "g.body", "g.optics", "g.weapon", "g.motion", "g.layer",
+		"g.flush", "f.frame", "f.couple" };
 	return (section >= 0 && section < NEO_HUD_PROFILE__COUNT) ? s_hudNames[section] : "";
 }
 
 const char *NeoHudProfileCounterName(NeoHudCounter counter)
 {
-	static const char *const s_hudNames[NEO_HUD_COUNT__COUNT] = { "texts", "meshes", "quads", "rays" };
+	static const char *const s_hudNames[NEO_HUD_COUNT__COUNT] = { "texts", "meshes", "quads", "rays", "extents", "flushes" };
 	return (counter >= 0 && counter < NEO_HUD_COUNT__COUNT) ? s_hudNames[counter] : "";
 }

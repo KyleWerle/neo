@@ -3,6 +3,7 @@
 #include "neo_ironsights.h"
 #include "neo_hud_spring.h"
 #include "neo_gunplay_crosshair.h"
+#include "neo_hud_profile.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -334,6 +335,7 @@ namespace NeoCyberbrain
 // (Kyle, 2026-10-01: the compact ring's and the body's bottom registration clipped the screen's bottom).
 void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 {
+	NeoHudCount(NEO_HUD_COUNT_EXTENTS);
 	GroupBox(f, slot, centre, half);
 	if (slot == GROUP_LINK || half.y <= 0.0f)
 		return;

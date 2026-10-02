@@ -27,13 +27,22 @@ ConVar neo_hud_bench_auto_view("neo_hud_bench_auto_view", "", FCVAR_ARCHIVE,
 
 constexpr double AUTO_GIVE_UP = 180.0;	// seconds to get into the game
 constexpr double AUTO_RETRY = 3.0;		// seconds between tries to join
-constexpr double AUTO_SETTLE = 2.0;		// seconds alive (and at the view) before each part starts
+constexpr double AUTO_SETTLE = 1.0;		// seconds alive (and at the view) before each part starts
 constexpr int AUTO_ATTEMPTS = 3;
 constexpr int AUTO_MAX_PARTS = 8;
 constexpr double AUTO_PART_BUDGET = 240.0;	// seconds one part may run before it's stopped (each takes 70 to 120)
 
 enum BenchPart { PART_HUD, PART_OPTICS, PART_FIRE, PART__COUNT };
 static const char *const s_partNames[PART__COUNT] = { "hud", "optics", "fire" };
+
+// bench.py --quick sets these for shorter runs; 0 keeps each bench's own default.
+static ConVar neo_bench_measure("neo_bench_measure", "0", FCVAR_NONE, "Automatic bench: seconds measured per run (0: each bench's default).");
+static ConVar neo_bench_settle("neo_bench_settle", "0", FCVAR_NONE, "Automatic bench: seconds to settle before each run (0: each bench's default).");
+
+static float Seconds(const ConVar &var, float fallback)
+{
+	return var.GetFloat() > 0.0f ? var.GetFloat() : fallback;
+}
 
 static bool PartRunning(BenchPart part)
 {
@@ -55,12 +64,12 @@ static bool PartStart(BenchPart part)
 	switch (part)
 	{
 	case PART_HUD:
-		NeoHudBenchStart(3.0f, 2.0f);
+		NeoHudBenchStart(Seconds(neo_bench_measure, 3.0f), Seconds(neo_bench_settle, 2.0f));
 		return NeoHudBenchRunning();
 	case PART_OPTICS:
-		return NeoIronsightBenchStart("optics", 3.0f, 1.5f);
+		return NeoIronsightBenchStart("optics", Seconds(neo_bench_measure, 3.0f), Seconds(neo_bench_settle, 1.5f));
 	case PART_FIRE:
-		return NeoIronsightBenchStart("fire", 3.0f, 1.5f);
+		return NeoIronsightBenchStart("fire", Seconds(neo_bench_measure, 3.0f), Seconds(neo_bench_settle, 1.5f));
 	default:
 		return false;
 	}

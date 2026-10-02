@@ -247,8 +247,12 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	part.Switch(NEO_HUD_PROFILE_VITALS_BACKING);
 	NC::PaintBackings(f);
 	part.Switch(NEO_HUD_PROFILE_VITALS_FRAME);
-	NC::PaintFrame(f);
-	NC::PaintCouplings(f);
+	{
+		CNeoHudProfileScope slice(NEO_HUD_PROFILE_FRAME_FRAME);
+		NC::PaintFrame(f);
+		slice.Switch(NEO_HUD_PROFILE_FRAME_COUPLE);
+		NC::PaintCouplings(f);
+	}
 	// The compact ring sits under the groups; the ring on the body goes over it (the body stands in front of where
 	// you're facing on it), outlined so it reads across the capsule.
 	const bool bRingOnBody = style == NEO_HUD_STYLE_BODY;
@@ -265,6 +269,8 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 	{
 		if (g == NC::GROUP_LINK)
 			continue;	// the party view, in the team element
+		CNeoHudProfileScope slice(g == NC::GROUP_BODY ? NEO_HUD_PROFILE_GROUP_BODY : g == NC::GROUP_OPTICS ? NEO_HUD_PROFILE_GROUP_OPTICS
+			: g == NC::GROUP_WEAPON ? NEO_HUD_PROFILE_GROUP_WEAPON : NEO_HUD_PROFILE_GROUP_MOTION);
 		const NC::Frame gf = NC::ForGroup(f, g);
 		NC::ProbeOwner(static_cast<NC::ProbeOwnerId>(g));
 		NC::MeasureBegin();
@@ -276,6 +282,7 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		default:			NC::PaintMotion(gf); break;
 		}
 		NC::MeasureEnd(m_places[g], now);
+		slice.Switch(NEO_HUD_PROFILE_GROUP_LAYER);
 		NC::PaintLayer(gf, g);
 	}
 	if (bRingOnBody)
@@ -289,7 +296,10 @@ void CNEOHud_Cyberbrain::DrawNeoHudElement()
 		part.Switch(NEO_HUD_PROFILE_VITALS_GROUPS);
 	}
 	NC::PaintWordsSpecimen(f);
-	NeoGhostFlush();
+	{
+		CNeoHudProfileScope slice(NEO_HUD_PROFILE_GROUP_FLUSH);
+		NeoGhostFlush();
+	}
 	NeoGhostOutline(-1.0f);	// back to the setting for everything else
 	NC::PaintProbe();
 }

@@ -21,6 +21,16 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_VITALS_GROUPS,
 	NEO_HUD_PROFILE_VITALS_FRAME,		// the frame, the grid's corners and the couplings (split from backing 2026-10-01)
 	NEO_HUD_PROFILE_VITALS_WORDS,		// the language budget (once a frame, inside the groups' draw; timed on its own)
+	// Slices of v.groups and v.frame (OPTIMIZATION.md step 1): each group's paint with its measure, its layer, the
+	// groups' last flush; the frame against the couplings. Nested, so they don't add to their parent either.
+	NEO_HUD_PROFILE_GROUP_BODY,
+	NEO_HUD_PROFILE_GROUP_OPTICS,
+	NEO_HUD_PROFILE_GROUP_WEAPON,
+	NEO_HUD_PROFILE_GROUP_MOTION,
+	NEO_HUD_PROFILE_GROUP_LAYER,
+	NEO_HUD_PROFILE_GROUP_FLUSH,
+	NEO_HUD_PROFILE_FRAME_FRAME,
+	NEO_HUD_PROFILE_FRAME_COUPLE,
 	NEO_HUD_PROFILE__COUNT,
 };
 
@@ -30,6 +40,8 @@ enum NeoHudCounter
 	NEO_HUD_COUNT_MESHES,			// batched mesh draws (one per non-empty flush, two with outlines)
 	NEO_HUD_COUNT_QUADS,			// quads through the stroke batch, outlines included
 	NEO_HUD_COUNT_RAYS,				// brightness rays into the world
+	NEO_HUD_COUNT_EXTENTS,			// the cyberbrain's GroupExtent calls
+	NEO_HUD_COUNT_FLUSHES,			// NeoGhostFlush calls, empty ones included
 	NEO_HUD_COUNT__COUNT,
 };
 
