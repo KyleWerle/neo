@@ -45,6 +45,7 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_BATCH_FLUSH,	// NeoGhostFlush with quads waiting: the stroke batch's mesh built and drawn
 	NEO_HUD_PROFILE_BATCH_BUILD,	// inside b.flush: writing the quads' vertices
 	NEO_HUD_PROFILE_BATCH_DRAW,		// inside b.flush: the mesh's End and Draw (the rest of b.flush: getting the mesh, Begin)
+	NEO_HUD_PROFILE_EXTENT,			// the cyberbrain's GroupExtent, wherever it's called (nested)
 	NEO_HUD_PROFILE__COUNT,
 };
 
@@ -72,8 +73,11 @@ public:
 private:
 	NeoHudProfileSection m_section;
 	double m_start;
+	int m_queued;	// NeoHudQueuedQuads() when this section's time started
 };
 
+// Quads queued into the stroke batch so far (each section adds what was queued while it ran: cl_neo_hud_quads).
+extern int g_neoHudQueuedQuads;
 void NeoHudCount(NeoHudCounter counter, int amount = 1);
 // The section's time since the last call, in milliseconds, and resets it.
 double NeoHudProfileTakeMs(NeoHudProfileSection section);

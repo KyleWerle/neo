@@ -336,6 +336,7 @@ namespace NeoCyberbrain
 void GroupExtent(const Frame &f, int slot, Vector2D &centre, Vector2D &half)
 {
 	NeoHudCount(NEO_HUD_COUNT_EXTENTS);
+	CNeoHudProfileScope slice(NEO_HUD_PROFILE_EXTENT);
 	GroupBox(f, slot, centre, half);
 	if (slot == GROUP_LINK || half.y <= 0.0f)
 		return;

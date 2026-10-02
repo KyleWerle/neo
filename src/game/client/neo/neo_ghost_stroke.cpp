@@ -98,11 +98,13 @@ void NeoGhostStroke(const NeoGhostPen &pen, const Vector2D &a, const Vector2D &b
 	// Square caps: each end runs on by half the width, so strokes meeting at a corner join solid.
 	const Vector2D start = from - along * (width * 0.5f), end = to + along * (width * 0.5f);
 	SetQuad(s_quads[s_iQuads++], start, end, along, width, s_color, s_iAlpha);
+	++g_neoHudQueuedQuads;
 	const float outline = (s_flOutline >= 0.0f) ? s_flOutline : cl_neo_gunplay_outline.GetFloat();
 	if (outline > 0.0f)
 	{
 		// Behind it, dark and a little wider all round.
 		const float rim = Max(1.0f, OUTLINE_WIDTH * pen.scale);
+		++g_neoHudQueuedQuads;
 		SetQuad(s_outlines[s_iOutlines++], start - along * rim, end + along * rim, along, width + 2.0f * rim, Color(0, 0, 0, 255),
 			RoundFloatToInt(s_iAlpha * outline));
 	}
@@ -119,6 +121,7 @@ void NeoGhostFill(const Vector2D corners[4])
 		NeoGhostFlush();
 	}
 	QueuedQuad &q = s_quads[s_iQuads++];
+	++g_neoHudQueuedQuads;
 	for (int i = 0; i < 4; ++i)
 	{
 		q.corners[i] = corners[i];
@@ -139,6 +142,7 @@ void NeoGhostFillShaded(const Vector2D corners[4], const float shade[4])
 		NeoGhostFlush();
 	}
 	QueuedQuad &q = s_quads[s_iQuads++];
+	++g_neoHudQueuedQuads;
 	int most = 0;
 	for (int i = 0; i < 4; ++i)
 	{
