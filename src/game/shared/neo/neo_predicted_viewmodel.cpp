@@ -707,7 +707,8 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 				}
 
 			}
-			finalGunPush = vForward * ((1 - m_flGunPush) * VIEWMODEL_MOVE_DISTANCE);
+			// Not on the sights: the gun stays where the sight line needs it.
+			finalGunPush = vForward * ((1 - m_flGunPush) * VIEWMODEL_MOVE_DISTANCE) * (1.0f - m_flAdsBlend);
 		}
 
 		newPos += (vForward * vOffset.x) - finalGunPush;

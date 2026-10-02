@@ -3,8 +3,8 @@
 // Aim down sights (ADS): an optional viewmodel presentation of the aim state.
 // Gameplay aim (spread, camera FOV, speed) is unchanged; this only decides where the
 // viewmodel sits and how it moves while aiming. Weapons opt in with "enabled" "1" in the
-// "AimOffset" block of their weapon script; without it, or with cl_neo_ads 0, the traditional
-// NT "ZoomOffset" pose is used.
+// "AimOffset" block of their weapon script; without it, with cl_neo_ads 0, or with sv_neo_ads 0 (the server's
+// say), the traditional NT "ZoomOffset" pose is used.
 
 #include "mathlib/vector.h"
 
@@ -17,7 +17,8 @@ struct NeoAimPose
 	float fov;
 };
 
-// True when this client should show the weapon's ADS pose: cl_neo_ads is on and the weapon has opted in.
+// True when this client should show the weapon's ADS pose: the server allows it (sv_neo_ads), cl_neo_ads is
+// on and the weapon has opted in.
 // Always false on the server.
 bool NeoAdsActive(const CNEOWeaponInfo &data);
 

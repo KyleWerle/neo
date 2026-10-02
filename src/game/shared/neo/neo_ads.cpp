@@ -15,6 +15,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// The server's say: with 0, nobody aims down the sights and every weapon keeps the traditional NT aim.
+ConVar sv_neo_ads("sv_neo_ads", "1", FCVAR_REPLICATED,
+	"Allow aiming down the sights (ADS) on the weapons set up for it. 0 = everyone uses the traditional NT aim.", true, 0.0f, true, 1.0f);
+
 #ifdef CLIENT_DLL
 ConVar cl_neo_ads("cl_neo_ads", "0", FCVAR_ARCHIVE,
 	"Aim down the weapon's sights instead of the traditional NT aim pose, on the weapons set up for it.", true, 0, true, 1);
@@ -147,11 +151,18 @@ CON_COMMAND_F(cl_neo_ads_save, "Append the tuned pose for the active weapon to a
 // Client-side only: no usercmd button bit needed.
 CON_COMMAND(cl_neo_ads_toggle, "Switch between aiming down the sights and the traditional NT aim.")
 {
-	cl_neo_ads.SetValue(!cl_neo_ads.GetBool());
+	char text[32];
+	if (!sv_neo_ads.GetBool())
+	{
+		V_strncpy(text, "ADS is off on this server", sizeof(text));
+	}
+	else
+	{
+		cl_neo_ads.SetValue(!cl_neo_ads.GetBool());
+		V_strncpy(text, cl_neo_ads.GetBool() ? "ADS" : "Standard aim", sizeof(text));
+	}
 	if (internalCenterPrint)
 	{
-		char text[16];
-		V_strncpy(text, cl_neo_ads.GetBool() ? "ADS" : "Standard aim", sizeof(text));
 		internalCenterPrint->Print(text);
 	}
 }
@@ -160,7 +171,7 @@ CON_COMMAND(cl_neo_ads_toggle, "Switch between aiming down the sights and the tr
 bool NeoAdsActive(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
-	return cl_neo_ads.GetBool() && (data.m_bHasAds || cl_neo_ads_tune.GetBool());
+	return sv_neo_ads.GetBool() && cl_neo_ads.GetBool() && (data.m_bHasAds || cl_neo_ads_tune.GetBool());
 #else
 	return false;
 #endif
@@ -169,7 +180,7 @@ bool NeoAdsActive(const CNEOWeaponInfo &data)
 NeoAimPose NeoGetAimPose(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
-	if (cl_neo_ads.GetBool() && cl_neo_ads_tune.GetBool())
+	if (NeoAdsActive(data) && cl_neo_ads_tune.GetBool())
 	{
 		if (V_strcmp(data.szClassName, s_szTunedWeapon) != 0)
 		{
