@@ -43,3 +43,5 @@ protoc binary
 ccache binary
 
 *_english.txt binary
+# Language files are UTF-16 LE: any language, any pack (LOCALIZATION.md). Line-ending conversion would corrupt them.
+game/neo/**/resource/neo_*.txt binary
