@@ -40,6 +40,7 @@ public:
 	Vector	m_vecVMAimPosOffset;
 	QAngle	m_angVMAimAngOffset;
 
+	// The ADS pose ("AimOffset" block). m_bHasAds: the block says "enabled" "1", so the weapon takes part in ADS.
 	bool	m_bHasAds;
 	float	m_flVMAdsFov;
 	Vector	m_vecVMAdsPosOffset;

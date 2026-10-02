@@ -17,7 +17,7 @@
 
 #ifdef CLIENT_DLL
 ConVar cl_neo_ads("cl_neo_ads", "0", FCVAR_ARCHIVE,
-	"Aim down the weapon's sights instead of the traditional NT aim pose, for weapons that define one.", true, 0, true, 1);
+	"Aim down the weapon's sights instead of the traditional NT aim pose, on the weapons set up for it.", true, 0, true, 1);
 ConVar cl_neo_ads_crosshair("cl_neo_ads_crosshair", "0", FCVAR_ARCHIVE,
 	"Keep the crosshair visible while aiming down the sights, for players with a crosshair of their own.", true, 0, true, 1);
 
@@ -42,10 +42,10 @@ ConVar cl_neo_ads_recoil_max_dist("cl_neo_ads_recoil_max_dist", "1", FCVAR_CHEAT
 ConVar cl_neo_ads_recoil_max_angle("cl_neo_ads_recoil_max_angle", "2", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Leash on the sights: furthest the gun may rotate from its idle angle on each axis, in degrees.", true, 0, false, 0);
 
-// Live tuning: with cl_neo_ads_tune 1 the pose below replaces the weapon script's AimOffset,
-// so offsets can be dialled in while looking down the sights. The pose loads from each weapon as you
-// switch to it; cl_neo_ads_save appends the tuned pose to ads_tuning.txt in the game dir,
-// ready to merge into the weapon scripts.
+// Live tuning (with sv_cheats): with cl_neo_ads_tune 1 the pose below replaces the weapon script's AimOffset
+// on any weapon, whether or not it has opted in, so a new pose can be dialled in while looking down the sights.
+// The pose loads from each weapon as you switch to it; cl_neo_ads_save appends the tuned pose to ads_tuning.txt
+// in the game dir, ready to merge into the weapon scripts.
 ConVar cl_neo_ads_tune("cl_neo_ads_tune", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Use the cl_neo_ads_* pose instead of the weapon script.", true, 0, true, 1);
 ConVar cl_neo_ads_forward("cl_neo_ads_forward", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS forward offset.");
 ConVar cl_neo_ads_right("cl_neo_ads_right", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS right offset.");
