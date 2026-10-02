@@ -279,8 +279,8 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 
 	// Gun (refBone) transforms in viewmodel space (x forward, y left, z up): live, and the fire
 	// animation's settled last frame. Only the kick relative to the settled frame is damped; the
-	// settled pose itself is left as animated. The Jitte's fire animation sits ~24 units off its idle
-	// and the engine already compensates for that later, so correcting toward idle would double it.
+	// settled pose itself is left as animated. Some fire animations settle well off the idle pose and the
+	// engine already compensates for that later, so correcting toward idle would double it.
 	matrix3x4_t live, settled, settledInv, kick;
 	BoneToModel(hdr, refBone, pos, q, live);
 	BoneToModel(hdr, refBone, settledPos, settledQ, settled);
