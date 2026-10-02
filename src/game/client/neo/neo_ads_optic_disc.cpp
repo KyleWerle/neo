@@ -230,7 +230,8 @@ static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 // "window_skip": the gun further behind the glass than that (a front sight seen through the glass) is
 // drawn first, clipped to beyond it, and the rest after the outline, clipped to this side, so each part draws once.
 //-----------------------------------------------------------------------------
-ConVar cl_neo_ads_window_skip("cl_neo_ads_window_skip", "", FCVAR_NONE,
+// For tuning, not for players: cheat-only, hidden, and not saved to the config.
+ConVar cl_neo_ads_window_skip("cl_neo_ads_window_skip", "", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Tuning: how deep behind sight glass the gun is hidden while cloaked or in thermals (the weapon's"
 	" \"window_skip\"), in viewmodel units; negative = all of it; empty = the weapon's own.");
 
