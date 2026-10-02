@@ -17,7 +17,8 @@ struct NeoAimPose
 	float fov;
 };
 
-// True when this client should show the weapon's ADS pose. Always false on the server.
+// True when this client should show the weapon's ADS pose: cl_neo_ads is on and the weapon has opted in.
+// Always false on the server.
 bool NeoAdsActive(const CNEOWeaponInfo &data);
 
 // The viewmodel pose to use at full aim: ADS (possibly live-tuned) or traditional zoom.

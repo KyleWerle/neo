@@ -71,7 +71,7 @@ public:
 	float m_flGunPush = 0.f;
 	float m_flGunPushLastChangeTime = 0.f;
 
-	// 0 at the hip, 1 fully on the sights (eased); stays 0 while ADS is off.
+	// 0 at the hip, 1 fully on the sights (eased); stays 0 while ADS is off or the weapon has not opted in.
 	float GetAdsBlend() const { return m_flAdsBlend; }
 
 private:
