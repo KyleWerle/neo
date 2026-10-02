@@ -74,14 +74,11 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/zr68_reticle"
-		// The lens surface on its bone in the model.
 		"lens_bone"	"zr68c"
 		"lens_map"	"-2.382 -1.857 12.78  0 2.472 0  0 0 -2.472"
 		"lens_circle"	"0.51 0.51 0.33 0.31"
-		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0 0.103  0 0.897  1 0.103  1 0.897"
 		// Its art is dark round the edge: drawn only in the clear circle, softened.
 		"reticle_in_lens"	"1"

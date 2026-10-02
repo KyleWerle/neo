@@ -74,13 +74,10 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/mxs_reticle"
-		// The lens surface on its bone in the model.
 		"lens_bone"	"sight_glass"
 		"lens_map"	"1.551 0 1.727  -3.1 0 0  -0.0075 0 -3.454"
-		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0 0.438  0 0.831  0.085 0.330  0.228 0.247  0.409 0.202  0.596 0.201  0.827 0.271  0.952 0.359  1 0.459  1 0.831"
 		// Hide the gun this deep behind the glass while drawn over: the sight's own parts sit there. The front of the gun beyond shows through.
 		"window_skip"	"1.3"

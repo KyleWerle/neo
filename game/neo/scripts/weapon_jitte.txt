@@ -82,7 +82,6 @@ WeaponData
 		"reticle"	"vgui/hud/optics/jitte_reticle"
 		"lens_bone"	"Torus01"
 		"lens_map"	"-1.798 1.773 1.506  3.611 0 0  0 0 -3.611"
-		// The clear part of the glass in its UVs.
 		"lens_circle"	"0.494 0.455 0.40"
 	}
 

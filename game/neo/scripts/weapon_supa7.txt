@@ -77,17 +77,14 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/supa7_reticle"
-		// Both panes carry the full glass art, which showed twice at the hip: hide it and draw it once.
+		// Both panes carry the glass art: hide it and draw it once.
 		"lens"		"models/weapons/eos_glass"
 		"one_pane"	"1"
-		// The lens surface on its bone, and its second pane.
 		"lens_bone"	"Base"
 		"lens_map"	"-1.468 -4.191 8.404  3.004 0 0  0 0 -3.112"
 		"lens_map2"	"-1.468 -3.846 8.404  3.004 0 0  0 0 -3.112"
-		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"-0.010 0  -0.010 1  1 0  1 1"
 	}
 

@@ -80,17 +80,14 @@ WeaponData
 
 	"AdsOptic"
 	{
-		// See-through glass under the cloak and thermals, with its own art drawn on top as the reticle.
 		"window"	"1"
 		"reticle"	"vgui/hud/optics/m41_reticle"
-		// The glass has two panes that both carry the chevron: hide it and draw the chevron once.
+		// Both panes carry the glass art: hide it and draw it once.
 		"lens"		"models/weapons/mosok41_mat3"
 		"one_pane"	"1"
-		// The lens surface on its bone, and its second pane.
 		"lens_bone"	"Mosok41"
 		"lens_map"	"0.756 -15.976 10.134  -3.266 0 0  0 0 -3.266"
 		"lens_map2"	"0.756 -16.245 10.139  -3.266 0 0  0 0 -3.266"
-		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
 		"window_glass"	"0.078 0.229  0.078 0.972  0.249 0.030  0.775 0.030  0.947 0.229  0.947 0.972"
 	}
 

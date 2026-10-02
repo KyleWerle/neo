@@ -86,7 +86,6 @@ WeaponData
 		// A scope's eyepiece: seen through only on the sights.
 		"eyepiece"	"1"
 		"reticle"	"vgui/hud/optics/mx_reticle"
-		// The lens surface on its bone in the model.
 		"lens_bone"	"Box01"
 		"lens_map"	"0.846 0.1934 12.63  -1.6943 0 0  0 0 -1.6943"
 		// The eyepiece's outline in its UVs.
