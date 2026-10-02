@@ -665,7 +665,8 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 				const bool rightHand = cl_righthand.GetBool();
 				if ((rightHand && percent < 0) || (!rightHand && percent > 0))
 				{
-					percent = abs(percent);
+					// Not on the sights, where the gun rolls around the sight line instead (below).
+					percent = abs(percent) * (1.0f - m_flAdsBlend);
 					constexpr float FINAL_Y_EXTRA_OFFSET = 3;
 					constexpr float FINAL_Z_EXTRA_OFFSET = 1;
 					vOffset.y += FINAL_Y_EXTRA_OFFSET * percent;
@@ -712,6 +713,15 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 		newPos += (vForward * vOffset.x) - finalGunPush;
 #else
 		newPos += vForward * vOffset.x;
+#endif
+#ifdef CLIENT_DLL
+		if (cl_neo_lean_viewmodel_only.GetBool() && m_flAdsBlend > 0.0f)
+		{
+			// On the sights, the lean rolls the gun around the sight line (the eye's forward axis) rather
+			// than around its own origin, so the sights stay on the centre of the screen and the gun cants.
+			const float roll = cl_righthand.GetBool() ? pOwner->EyeAngles().z : -pOwner->EyeAngles().z;
+			AngleVectors(QAngle(eyeAngles.x, eyeAngles.y, eyeAngles.z + roll * m_flAdsBlend), nullptr, &vRight, &vUp);
+		}
 #endif
 		newPos += vRight * vOffset.y;
 		newPos += vUp * vOffset.z;
