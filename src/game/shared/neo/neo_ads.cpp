@@ -337,7 +337,7 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 
 bool NeoAdsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked)
 {
-	return NeoAdsActive(data) && !cl_neo_ads_crosshair.GetBool() && !(bAiming && bCloaked && !data.m_bHasAdsOptic);
+	return NeoAdsActive(data) && bAiming && !cl_neo_ads_crosshair.GetBool() && !(bCloaked && !data.m_bHasAdsOptic);
 }
 
 NeoAdsHiddenMaterials::NeoAdsHiddenMaterials(const CNEOWeaponInfo *pData)
