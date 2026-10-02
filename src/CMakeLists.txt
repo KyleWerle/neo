@@ -189,7 +189,12 @@ if(OS_WINDOWS)
     set(LIBPUBLIC "${CMAKE_SOURCE_DIR}/lib/public/${PLATSUBDIR}")
     set(LIBCOMMON "${CMAKE_SOURCE_DIR}/lib/common/${PLATSUBDIR}")
 
-    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "EditAndContinue")
+    # Edit-and-continue (/ZI) costs optimisation, so only the debug build gets it
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "EditAndContinue")
+    else()
+        set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "ProgramDatabase")
+    endif()
 
     # Disable exceptions
     string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -290,6 +295,9 @@ if(OS_WINDOWS)
             /NODEFAULTLIB:libcpmtd
             /NODEFAULTLIB:libcpmtd0
             /NODEFAULTLIB:libcpmtd1
+            /INCREMENTAL:NO
+            /OPT:REF
+            /OPT:ICF
         )
     endif()
 endif()
