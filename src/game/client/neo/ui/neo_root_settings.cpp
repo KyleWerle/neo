@@ -424,6 +424,7 @@ void NeoSettingsRestore(NeoSettings *ns, const NeoSettings::Keys::Flags flagsKey
 		pGeneral->bViewmodelRighthand = cvr->cl_righthand.GetBool();
 		pGeneral->bLeanViewmodelOnly = cvr->cl_neo_lean_viewmodel_only.GetBool();
 		pGeneral->bAds = cvr->cl_neo_ads.GetBool();
+		pGeneral->bAdsCrosshair = cvr->cl_neo_ads_crosshair.GetBool();
 		pGeneral->iLeanAutomatic = cvr->cl_neo_lean_automatic.GetInt();
 		pGeneral->iEquipUtilityPriority = cvr->cl_neo_equip_utility_priority.GetInt();
 		pGeneral->bWeaponFastSwitch = cvr->hud_fastswitch.GetBool();
@@ -793,6 +794,7 @@ void NeoSettingsSave(const NeoSettings *ns)
 		cvr->cl_righthand.SetValue(pGeneral->bViewmodelRighthand);
 		cvr->cl_neo_lean_viewmodel_only.SetValue(pGeneral->bLeanViewmodelOnly);
 		cvr->cl_neo_ads.SetValue(pGeneral->bAds);
+		cvr->cl_neo_ads_crosshair.SetValue(pGeneral->bAdsCrosshair);
 		cvr->cl_neo_lean_automatic.SetValue(pGeneral->iLeanAutomatic);
 		cvr->cl_neo_equip_utility_priority.SetValue(pGeneral->iEquipUtilityPriority);
 		cvr->hud_fastswitch.SetValue(pGeneral->bWeaponFastSwitch);
@@ -1109,6 +1111,8 @@ void NeoSettings_General(NeoSettings *ns)
 	NeoUI::RingBoxBool(L"Right hand viewmodel", &pGeneral->bViewmodelRighthand);
 	// Aim down the weapon's own sights instead of the traditional NT aim (cl_neo_ads).
 	NeoUI::RingBoxBool(L"Enable ADS", &pGeneral->bAds);
+	// Keep your own crosshair while aiming down the sights (cl_neo_ads_crosshair).
+	NeoUI::RingBoxBool(L"Keep crosshair in ADS", &pGeneral->bAdsCrosshair);
 	NeoUI::RingBoxBool(L"Lean viewmodel only", &pGeneral->bLeanViewmodelOnly);
 	NeoUI::RingBox(L"Automatic leaning", AUTOMATIC_LEAN_LABELS, ARRAYSIZE(AUTOMATIC_LEAN_LABELS), &pGeneral->iLeanAutomatic);
 	NeoUI::RingBox(L"Utility slot equip priority", EQUIP_UTILITY_PRIORITY_LABELS, NeoSettings::EquipUtilityPriorityType::EQUIP_UTILITY_PRIORITY__TOTAL, &pGeneral->iEquipUtilityPriority);
