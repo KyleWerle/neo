@@ -70,8 +70,8 @@ WeaponData
 		"fov"		"40"
 		"forward"		"-8"
 		"right"		"-3.425"
-		"up"		"7.6"
-		"pitch"		"-0.5"
+		"up"		"8.44"
+		"pitch"		"0.6"
 		"yaw"		"0"
 		"roll"		"0"
 	}
