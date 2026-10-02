@@ -3,6 +3,7 @@
 #include "neo_crosshair_family.h"
 #include "neo_gunplay_shots.h"
 #include "neo_ironsights.h"
+#include "neo_ironsight_profile.h"
 #include "weapon_neobasecombatweapon.h"
 #include "view.h"
 
@@ -191,6 +192,7 @@ static void AddMark(const Vector &position, NeoCrosshairFamily family, bool bSlu
 
 void NeoGunplayMarkShot(C_NEOBaseCombatWeapon *pWeapon, const Vector &direction)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SHOTS, "NeoGunplayMarkShot");
 	using namespace NeoGunplayMarks;
 	const NeoCrosshairFamily family = NeoCrosshairFamilyOf(pWeapon);
 	if (family == NEO_CROSSHAIR_SHOTGUN)
@@ -202,6 +204,7 @@ void NeoGunplayMarkShot(C_NEOBaseCombatWeapon *pWeapon, const Vector &direction)
 
 void NeoGunplayMarkPellets(C_NEOBaseCombatWeapon *pWeapon, const Vector *pDirections, int count)
 {
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SHOTS, "NeoGunplayMarkPellets");
 	using namespace NeoGunplayMarks;
 	for (int i = 0; i < count; ++i)
 	{

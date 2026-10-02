@@ -13,6 +13,7 @@ enum NeoIronsightProfileSection
 							// blend, the recoil spring and the spread pivot
 	NEO_PROFILE_SIGHTS,		// sight points, dots, the dot's afterimage and the sight ghost
 	NEO_PROFILE_HUD,		// the crosshair layer and the quick info band (HUD linework)
+	NEO_PROFILE_SHOTS,		// seeing a shot (the clip watch) and tracing its impact marks
 	NEO_PROFILE__COUNT,
 };
 

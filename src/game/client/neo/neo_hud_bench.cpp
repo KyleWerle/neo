@@ -151,6 +151,7 @@ void CNeoHudBench::Start(float measureSeconds, float settleSeconds)
 
 void CNeoHudBench::BeginRun()
 {
+	Msg("neo_hud_bench: run %d/%d, %s\n", m_run + 1, HUD_BENCH_PASSES * HUD_BENCH_SCENARIOS, s_hudBenchScenarios[ScenarioOf(m_run)].label);
 	// Back to the player's own settings, then the scenario's on top.
 	Command("cl_drawhud 1; cl_neo_hud_style %s; cl_neo_hud_backing %s; cl_neo_hud_text_baked 1; %s", m_savedStyle,
 		m_savedBacking, s_hudBenchScenarios[ScenarioOf(m_run)].commands);

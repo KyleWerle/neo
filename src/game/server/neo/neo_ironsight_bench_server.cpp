@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_player.h"
 #include "weapon_parse.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -36,6 +37,26 @@ CON_COMMAND_F(neo_ironsight_bench_equip, "Ironsight benchmark helper: puts the n
 	if (pWeapon)
 	{
 		pPlayer->Weapon_Switch(pWeapon);
+	}
+}
+
+CON_COMMAND_F(neo_ironsight_bench_refill, "Ironsight benchmark helper: fills the active weapon's clip once it is"
+	" nearly empty, and its reserve. The fire set calls it while shooting. Usage: neo_ironsight_bench_refill", FCVAR_CHEAT)
+{
+	CNEO_Player *pPlayer = ToNEOPlayer(UTIL_GetCommandClient());
+	CBaseCombatWeapon *pWeapon = pPlayer && pPlayer->IsAlive() ? pPlayer->GetActiveWeapon() : nullptr;
+	if (!pWeapon || !pWeapon->UsesClipsForAmmo1())
+	{
+		return;
+	}
+	// Gunplay sees a shot as the clip going down (neo_gunplay_shots.cpp): fill it rarely, so few shots are missed.
+	if (pWeapon->Clip1() <= pWeapon->GetMaxClip1() / 3)
+	{
+		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
+	}
+	if (pWeapon->GetPrimaryAmmoType() >= 0)
+	{
+		pPlayer->SetAmmoCount(GetAmmoDef()->MaxCarry(pWeapon->GetPrimaryAmmoType()), pWeapon->GetPrimaryAmmoType());
 	}
 }
 

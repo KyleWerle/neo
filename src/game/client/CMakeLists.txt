@@ -1665,6 +1665,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/ui/neo_hud_quickinfo.cpp
     neo/ui/neo_hud_quickinfo.h
     neo/neo_ironsight_bench.cpp
+    neo/neo_ironsight_bench.h
     neo/neo_ironsight_collimator.cpp
     neo/neo_ironsight_collimator.h
     neo/neo_ironsight_dot_trail.cpp
@@ -1736,7 +1737,7 @@ set(UNITY_SOURCE_NEO_UI
     neo/neo_hud_boot.h
     neo/neo_hud_bench.cpp
     neo/neo_hud_bench.h
-    neo/neo_hud_bench_auto.cpp
+    neo/neo_bench_auto.cpp
     neo/neo_hud_draw.cpp
     neo/neo_hud_draw.h
     neo/neo_hud_light.cpp

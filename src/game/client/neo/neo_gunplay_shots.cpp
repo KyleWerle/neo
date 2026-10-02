@@ -1,6 +1,7 @@
 #include "cbase.h"
 #include "neo_gunplay_shots.h"
 #include "neo_ironsight_optic.h"
+#include "neo_ironsight_profile.h"
 #include "c_neo_player.h"
 #include "weapon_neobasecombatweapon.h"
 
@@ -24,6 +25,7 @@ const NeoGunplayShots &NeoGunplayWatchShots()
 	{
 		return s_watch.shots;
 	}
+	NEO_IRONSIGHT_PROFILE(NEO_PROFILE_SHOTS, "NeoGunplayWatchShots");
 	s_watch.frame = gpGlobals->framecount;
 	NeoGunplayShots &shots = s_watch.shots;
 	const float now = gpGlobals->realtime;
