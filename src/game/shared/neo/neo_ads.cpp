@@ -25,9 +25,7 @@ ConVar cl_neo_ads("cl_neo_ads", "0", FCVAR_ARCHIVE,
 ConVar cl_neo_ads_crosshair("cl_neo_ads_crosshair", "0", FCVAR_ARCHIVE,
 	"Keep the crosshair visible while aiming down the sights, for players with a crosshair of their own.", true, 0, true, 1);
 
-// Everything below is for tuning and testing, not for players: cheat-only, hidden, and not saved to the config.
-// Players have the Enable ADS and Keep crosshair in ADS settings (cl_neo_ads, cl_neo_ads_crosshair) and the
-// Toggle ADS key binding (cl_neo_ads_toggle).
+// Everything below is for tuning and testing, not for players: cheat-only, hidden, not saved to the config.
 ConVar cl_neo_ads_time("cl_neo_ads_time", "0.2", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Seconds for the viewmodel to move between hip and ADS.", true, 0.01f, true, 1.0f);
 
@@ -46,10 +44,8 @@ ConVar cl_neo_ads_recoil_max_dist("cl_neo_ads_recoil_max_dist", "1", FCVAR_CHEAT
 ConVar cl_neo_ads_recoil_max_angle("cl_neo_ads_recoil_max_angle", "2", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Leash on the sights: furthest the gun may rotate from its idle angle on each axis, in degrees.", true, 0, false, 0);
 
-// Live tuning (with sv_cheats): with cl_neo_ads_tune 1 the pose below replaces the weapon script's AimOffset
-// on any weapon, whether or not it has opted in, so a new pose can be dialled in while looking down the sights.
-// The pose loads from each weapon as you switch to it; cl_neo_ads_save appends the tuned pose to ads_tuning.txt
-// in the game dir, ready to merge into the weapon scripts.
+// Live tuning: with cl_neo_ads_tune 1 the pose below replaces the weapon's AimOffset, on any weapon. It loads
+// from each weapon as you switch to it; cl_neo_ads_save appends it to ads_tuning.txt, ready for the scripts.
 ConVar cl_neo_ads_tune("cl_neo_ads_tune", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Use the cl_neo_ads_* pose instead of the weapon script.", true, 0, true, 1);
 ConVar cl_neo_ads_forward("cl_neo_ads_forward", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS forward offset.");
 ConVar cl_neo_ads_right("cl_neo_ads_right", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS right offset.");
@@ -147,8 +143,7 @@ CON_COMMAND_F(cl_neo_ads_save, "Append the tuned pose for the active weapon to a
 	Msg("Saved: %s", line);
 }
 
-// Toggles ADS on the fly. Bindable in Settings > Keys ("Aim down sights (toggle)", kb_act.lst); unbound by default.
-// Client-side only: no usercmd button bit needed.
+// Bindable in Settings > Keys (kb_act.lst), unbound by default. Client-side only, so no usercmd button bit.
 CON_COMMAND(cl_neo_ads_toggle, "Switch between aiming down the sights and the traditional NT aim.")
 {
 	char text[32];
