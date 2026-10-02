@@ -2,6 +2,7 @@
 #include "neo_cyberbrain_internal.h"
 #include "neo_hud_model_team.h"
 #include "neo_enums.h"
+#include "neo_hud_profile.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
 
@@ -105,16 +106,19 @@ bool FrameCross(const Frame &frame, int slot, const Vector2D &toward, Vector2D &
 
 void PaintFrame(const Frame &frame)
 {
+	CNeoHudProfileScope slice(NEO_HUD_PROFILE_FRAME_MARK);
 	PaintTeamMark(frame);
 	static ConVarRef cl_neo_hud_grid("cl_neo_hud_grid");
 	const int team = (cl_neo_hud_grid.IsValid() && cl_neo_hud_grid.GetInt() == 1) ? GetLocalPlayerTeam() : 0;
 	const int divisions = RulerDivisions(team);
+	TextDeferBegin();	// the codes print after every slot's strokes: one flush, not one a code
 	for (int slot = 0; slot <= BRIGHT_RING; ++slot)
 	{
 		if ((slot == GROUP_WEAPON && !frame.pSenses->ammo.bShown) || slot == GROUP_LINK || (slot == BRIGHT_RING && frame.style == NEO_HUD_STYLE_BODY))
 		{
 			continue;
 		}
+		slice.Switch(NEO_HUD_PROFILE_FRAME_CROSSES);
 		const Frame f = ForGroup(frame, slot);
 		ProbeOwner(static_cast<ProbeOwnerId>(slot));	// a group owns its frame (R1); the ring is PROBE_RING
 		Vector2D centre, half;
@@ -146,6 +150,7 @@ void PaintFrame(const Frame &frame)
 		}
 
 		// The etched ruler: a fine tick every tenth, longer at the quarters, a centre mark.
+		slice.Switch(NEO_HUD_PROFILE_FRAME_RULER);
 		Line(f, Vector2D(left, rail), Vector2D(right, rail), NEO_GHOST_LIGHT, f.color, RULE_ALPHA);
 		for (int k = 0; k <= divisions; ++k)
 		{
@@ -156,6 +161,7 @@ void PaintFrame(const Frame &frame)
 		}
 
 		// Channel codes under the ruler: the group's at its outer end (away from the gun), the class's channel at the other.
+		slice.Switch(NEO_HUD_PROFILE_FRAME_CODES);
 		const Senses &sense = *f.pSenses;
 		const wchar_t *pMotion = sense.bHasJumps ? L"JMP.CH1" : sense.bHasSprint ? L"AUX.CH1" : L"MOV.CH1";
 		const wchar_t *s_codes[] = { L"INT.CH0", L"TOC.CH2", L"WPN.CH3", L"LNK.CH4", pMotion, L"AUD.CH5" };
@@ -194,6 +200,7 @@ void PaintFrame(const Frame &frame)
 			Text(f, L"ARM.CH0", bOuterLeft ? right : left, codeY, bOuterLeft ? -1 : 1, FONT_VALUE, f.color, ETCHED);
 		}
 	}
+	TextDeferEnd();
 }
 
 constexpr float SNAP_FOR = 0.18f;		// seconds the brackets take to snap in on a rise

@@ -49,7 +49,8 @@ const char *NeoHudProfileSectionName(NeoHudProfileSection section)
 {
 	static const char *const s_hudNames[NEO_HUD_PROFILE__COUNT] = { "crosshair", "vitals", "team", "gun", "v.sense", "v.bright",
 		"v.backing", "v.ring", "v.groups", "v.frame", "v.words", "g.body", "g.optics", "g.weapon", "g.motion", "g.layer",
-		"g.flush", "f.frame", "f.couple" };
+		"g.flush", "f.frame", "f.couple", "f.mark", "f.crosses",
+		"f.ruler", "f.codes" };
 	return (section >= 0 && section < NEO_HUD_PROFILE__COUNT) ? s_hudNames[section] : "";
 }
 

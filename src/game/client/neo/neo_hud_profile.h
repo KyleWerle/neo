@@ -31,6 +31,11 @@ enum NeoHudProfileSection
 	NEO_HUD_PROFILE_GROUP_FLUSH,
 	NEO_HUD_PROFILE_FRAME_FRAME,
 	NEO_HUD_PROFILE_FRAME_COUPLE,
+	// Slices of f.frame: the faction mark, the crosses (or the grid's corners), the rulers, the channel codes.
+	NEO_HUD_PROFILE_FRAME_MARK,
+	NEO_HUD_PROFILE_FRAME_CROSSES,
+	NEO_HUD_PROFILE_FRAME_RULER,
+	NEO_HUD_PROFILE_FRAME_CODES,
 	NEO_HUD_PROFILE__COUNT,
 };
 

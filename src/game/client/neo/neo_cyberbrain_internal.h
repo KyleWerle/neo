@@ -264,6 +264,11 @@ void RectOutline(const Frame &f, const Vector2D &a, const Vector2D &b, NeoGhostW
 void Arc(const Frame &f, const Vector2D &centre, const Vector2D &radii, float from, float to, NeoGhostWeight weight, const Color &c, float alpha);
 // Text with its vertical middle at y: align -1 ending at x, 0 centred, 1 starting at x. Returns its width in pixels.
 float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Font font, const Color &c, float alpha);
+// Between these, Text measures and places at once but prints at TextDeferEnd, after one flush of the strokes queued
+// meanwhile, rather than flushing before each string (OPTIMIZATION.md step 3). Only for text that nothing drawn later
+// in the span should cover.
+void TextDeferBegin();
+void TextDeferEnd();
 // How wide text would draw, pixels.
 float TextWidth(const wchar_t *pText, Font font);
 // A face's cell height, pixels (0 if it didn't load): rows are placed by it plus a gap (R3), not by constants.

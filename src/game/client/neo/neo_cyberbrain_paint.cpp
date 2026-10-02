@@ -181,6 +181,40 @@ CON_COMMAND(cl_neo_hud_fonts, "Prints which font each of the cyberbrain HUD's te
 	PrintFonts();
 }
 
+static struct
+{
+	bool bOn = false;
+	int count = 0;
+	struct
+	{
+		wchar_t text[32];
+		int count, x, y, edgeAlpha;
+		vgui::HFont font;
+		Color c;
+		NeoHudTextEdge edge;
+	} items[24];
+} s_deferred;
+
+void TextDeferBegin()
+{
+	s_deferred.bOn = true;
+	s_deferred.count = 0;
+}
+
+void TextDeferEnd()
+{
+	s_deferred.bOn = false;
+	if (s_deferred.count == 0)
+		return;
+	NeoGhostFlush();	// what's queued goes under the text
+	for (int i = 0; i < s_deferred.count; ++i)
+	{
+		const auto &t = s_deferred.items[i];
+		NeoHudPrintText(t.font, t.text, t.count, t.x, t.y, t.c, t.edge, t.edgeAlpha);
+	}
+	s_deferred.count = 0;
+}
+
 float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Font font, const Color &c, float alpha)
 {
 	const vgui::HFont handle = GetFont(font);
@@ -189,15 +223,35 @@ float Text(const Frame &f, const wchar_t *pText, float x, float y, int align, Fo
 	{
 		return 0.0f;
 	}
-	NeoGhostFlush();	// what's queued goes under the text
+	const bool bDefer = s_deferred.bOn && s_deferred.count < static_cast<int>(ARRAYSIZE(s_deferred.items))
+		&& count < static_cast<int>(ARRAYSIZE(s_deferred.items[0].text));
+	if (!bDefer)
+		NeoGhostFlush();	// what's queued goes under the text
 	int wide, tall;
 	vgui::surface()->GetTextSize(handle, pText, wide, tall);
 	const int tx = RoundFloatToInt(x) - ((align < 0) ? wide : (align == 0) ? wide / 2 : 0), ty = RoundFloatToInt(y) - tall / 2;
 	Measure(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), alpha);
 	ProbeText(Vector2D(static_cast<float>(tx), static_cast<float>(ty)), Vector2D(static_cast<float>(tx + wide), static_cast<float>(ty + tall)), pText, alpha);
 	// A shadow on a dark scene; a dark edge all round on a bright one.
-	NeoHudPrintText(handle, pText, count, tx, ty, Color(c.r(), c.g(), c.b(), Alpha(f, alpha)),
-		f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW, Alpha(f, alpha * (0.6f + 0.35f * f.contrast)));
+	const Color fill(c.r(), c.g(), c.b(), Alpha(f, alpha));
+	const NeoHudTextEdge edge = f.contrast > 0.3f ? NEO_HUD_TEXT_EDGED : NEO_HUD_TEXT_SHADOW;
+	const int edgeAlpha = Alpha(f, alpha * (0.6f + 0.35f * f.contrast));
+	if (bDefer)
+	{
+		auto &t = s_deferred.items[s_deferred.count++];
+		V_wcsncpy(t.text, pText, sizeof(t.text));
+		t.count = count;
+		t.x = tx;
+		t.y = ty;
+		t.font = handle;
+		t.c = fill;
+		t.edge = edge;
+		t.edgeAlpha = edgeAlpha;
+	}
+	else
+	{
+		NeoHudPrintText(handle, pText, count, tx, ty, fill, edge, edgeAlpha);
+	}
 	return static_cast<float>(wide);
 }
 
