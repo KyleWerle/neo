@@ -9,6 +9,7 @@
 #include "filesystem.h"
 #include "studio.h"
 #include "bone_setup.h"
+#include "vguicenterprint.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -136,6 +137,19 @@ CON_COMMAND(cl_neo_ads_save, "Append the tuned pose for the active weapon to ads
 	g_pFullFileSystem->Write(line, V_strlen(line), file);
 	g_pFullFileSystem->Close(file);
 	Msg("Saved: %s", line);
+}
+
+// Toggles ADS on the fly. Bindable in Settings > Keys ("Aim down sights (toggle)", kb_act.lst); unbound by default.
+// Client-side only: no usercmd button bit needed.
+CON_COMMAND(cl_neo_ads_toggle, "Switch between aiming down the sights and the traditional NT aim.")
+{
+	cl_neo_ads.SetValue(!cl_neo_ads.GetBool());
+	if (internalCenterPrint)
+	{
+		char text[16];
+		V_strncpy(text, cl_neo_ads.GetBool() ? "ADS" : "Standard aim", sizeof(text));
+		internalCenterPrint->Print(text);
+	}
 }
 #endif // CLIENT_DLL
 
