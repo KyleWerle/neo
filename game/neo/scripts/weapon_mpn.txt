@@ -63,6 +63,7 @@ WeaponData
 	
 	"AimOffset"
 	{
+		"enabled"	"1"
 		"fov"		"45"
 		"forward"	"10.0"
 		"right"		"1.3"

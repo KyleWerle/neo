@@ -2,8 +2,8 @@
 
 // Aim down sights (ADS): an optional viewmodel presentation of the aim state.
 // Gameplay aim (spread, camera FOV, speed) is unchanged; this only decides where the
-// viewmodel sits and how it moves while aiming. Weapons opt in with an "AimOffset" block
-// in their weapon script; without one, or with cl_neo_ads 0, the traditional
+// viewmodel sits and how it moves while aiming. Weapons opt in with "enabled" "1" in the
+// "AimOffset" block of their weapon script; without it, or with cl_neo_ads 0, the traditional
 // NT "ZoomOffset" pose is used.
 
 #include "mathlib/vector.h"
