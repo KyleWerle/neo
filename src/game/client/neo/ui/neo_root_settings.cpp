@@ -1109,9 +1109,7 @@ void NeoSettings_General(NeoSettings *ns)
 	NeoUI::Divider(L"GAMEPLAY");
 	NeoUI::RingBoxBool(L"Reload empty", &pGeneral->bReloadEmpty);
 	NeoUI::RingBoxBool(L"Right hand viewmodel", &pGeneral->bViewmodelRighthand);
-	// Aim down the weapon's own sights instead of the traditional NT aim (cl_neo_ads).
 	NeoUI::RingBoxBool(L"Enable ADS", &pGeneral->bAds);
-	// Keep your own crosshair while aiming down the sights (cl_neo_ads_crosshair).
 	NeoUI::RingBoxBool(L"Keep crosshair in ADS", &pGeneral->bAdsCrosshair);
 	NeoUI::RingBoxBool(L"Lean viewmodel only", &pGeneral->bLeanViewmodelOnly);
 	NeoUI::RingBox(L"Automatic leaning", AUTOMATIC_LEAN_LABELS, ARRAYSIZE(AUTOMATIC_LEAN_LABELS), &pGeneral->iLeanAutomatic);
