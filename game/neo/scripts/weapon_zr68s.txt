@@ -70,10 +70,29 @@ WeaponData
 	
 	"AimOffset"
 	{
+		"enabled"	"1"
 		"fov"		"45"
 		"forward"	"-3.5"
 		"right"		"1.04"
 		"up"		"3.45"
+	}
+
+	"AdsOptic"
+	{
+		// Clear red dot glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
+		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/zr68_reticle"
+		// The glass on zr68c (from v_*_zr68c/s.mdl), and the clear part of it in its UVs.
+		"lens_bone"	"zr68c"
+		"lens_map"	"-2.382 -1.857 12.78  0 2.472 0  0 0 -2.472"
+		"lens_circle"	"0.51 0.51 0.33 0.31"
+		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
+		"window_glass"	"0 0.103  0 0.897  1 0.103  1 0.897"
+		// Its art is dark round the edge: drawn only in the clear circle, softened.
+		"reticle_in_lens"	"1"
+		"lens_shape"	"4"
+		"lens"		"models/weapons/zr68_reddot"
 	}
 	
 	ModelBounds

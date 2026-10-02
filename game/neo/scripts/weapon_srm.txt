@@ -63,10 +63,26 @@ WeaponData
 	
 	"AimOffset"
 	{
+		"enabled"	"1"
 		"fov"		"50"
 		"forward"	"0"
 		"right"		"1.275"
 		"up"		"0.5"
+	}
+
+	"AdsOptic"
+	{
+		// Clear holo sight glass: only while cloaked, it shows exactly the world behind it (no zoom) so the
+		// cloak doesn't smear the view, with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/srm_reticle"
+		// The glass on body (from v_*_srm(_s).mdl) and its second pane.
+		"lens_bone"	"body"
+		"lens_map"	"1.149 -1.191 12.36  -2.292 0 0  0.001166 0 1.745"
+		"lens_map2"	"-1.149 -0.32 12.36  2.292 0 0.000887  -0.001165 0 1.744"
+		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
+		"window_glass"	"0.008 0.005  0.008 0.987  0.010 0.003  0.010 0.988  0.993 0.003  0.994 0.005  0.994 0.987  0.993 0.988"
+		"lens"		"models/weapons/x_holopoint2"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

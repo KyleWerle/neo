@@ -70,12 +70,29 @@ WeaponData
 	{
 		"enabled"	"1"
 		"fov"		"25"
-		"forward"	"8"
+		"forward"		"8"
 		"right"		"1.305"
 		"up"		"5.5"
 		"pitch"		"0"
 		"yaw"		"0"
 		"roll"		"0"
+	}
+
+	"AdsOptic"
+	{
+		// Clear red dot glass: only while cloaked or in thermals, it shows exactly the world behind it (no
+		// zoom), with the glass's own texture on top as the reticle.
+		"window"	"1"
+		"reticle"	"vgui/hud/optics/m41_reticle"
+		// The glass has two panes that both carry the chevron: hide it and draw the chevron once.
+		"lens"		"models/weapons/mosok41_mat3"
+		"one_pane"	"1"
+		// The glass on Mosok41 (from v_*_mosok41.mdl) and its second pane.
+		"lens_bone"	"Mosok41"
+		"lens_map"	"0.756 -15.976 10.134  -3.266 0 0  0 0 -3.266"
+		"lens_map2"	"0.756 -16.245 10.139  -3.266 0 0  0 0 -3.266"
+		// The whole glass's outline in its UVs (its mesh's vertices), covered while the gun is drawn over.
+		"window_glass"	"0.078 0.229  0.078 0.972  0.249 0.030  0.775 0.030  0.947 0.229  0.947 0.972"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)

@@ -65,10 +65,29 @@ WeaponData
 	
 	"AimOffset"
 	{
+		"enabled"	"1"
 		"fov"		"32"
 		"forward"	"0.0"
 		"right"		"1.31"
 		"up"		"2.53"
+	}
+
+	// Optic: the Jitte's green dot sight, clear glass seen through at the aim's own zoom (no zoom of its own). Its
+	// art, shared by both Jittes, is drawn by us with the dot collimated (at infinity, where the gun points); on
+	// the sights the housing behind the glass is left out, so the view through it is clear.
+	"AdsOptic"
+	{
+		"lens"		"models/weapons/jitte_mat3"
+		"window"	"1"
+		"scope"		"1"
+		"reticle"	"vgui/hud/optics/jitte_reticle"
+		// The green dot in the art (u v radius), three texels across in the gap at the crosshair's centre.
+		// The lens surface on Torus01 (from v_*_jitte(s).mdl), and the lens circle within its UVs.
+		"lens_bone"	"Torus01"
+		"lens_map"	"-1.798 1.773 1.506  3.611 0 0  0 0 -3.611"
+		// Out to the art's edge, where the stock black ring was cut out (build-jitte-reticle.py): further, the gun
+		// behind the glass was left out past the art and the world showed round the lens at the hip while cloaked.
+		"lens_circle"	"0.494 0.455 0.40"
 	}
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
