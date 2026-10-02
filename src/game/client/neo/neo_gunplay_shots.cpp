@@ -17,11 +17,16 @@ static struct
 	int lastClip = -1;
 	int lastParity = -1;
 	int playerIndex = -1;
+	// Handles to what shots holds: an entity deleted since this frame's update (the gun replaced) clears its
+	// handle, and the next caller updates again rather than get a pointer to freed memory.
+	CHandle<C_NEO_Player> hPlayer;
+	CHandle<C_NEOBaseCombatWeapon> hWeapon;
 } s_watch;
 
 const NeoGunplayShots &NeoGunplayWatchShots()
 {
-	if (s_watch.frame == gpGlobals->framecount)
+	if (s_watch.frame == gpGlobals->framecount && s_watch.hPlayer.Get() == s_watch.shots.pPlayer
+		&& s_watch.hWeapon.Get() == s_watch.shots.pWeapon)
 	{
 		return s_watch.shots;
 	}
@@ -57,6 +62,8 @@ const NeoGunplayShots &NeoGunplayWatchShots()
 	}
 	shots.pPlayer = pPlayer;
 	shots.pWeapon = pWeapon;
+	s_watch.hPlayer = pPlayer;
+	s_watch.hWeapon = pWeapon;
 	shots.bSpectating = bSpectating;
 	s_watch.lastClip = clip;
 	s_watch.lastParity = parity;

@@ -26,9 +26,15 @@ CON_COMMAND_F(neo_ironsight_bench_equip, "Ironsight benchmark helper: puts the n
 	CBaseCombatWeapon *pWeapon = pPlayer->Weapon_OwnsThisType(args[1]);
 	if (!pWeapon)
 	{
+		// Dropped as a pickup drops it (holstered, out of the hand first), then cleared away, so it doesn't lie in the
+		// bench's view. Until 2026-10-01 it was detached and deleted in hand, which no game does.
 		if (CBaseCombatWeapon *pInSlot = pPlayer->Weapon_GetSlot(GetFileWeaponInfoFromHandle(handle)->iSlot))
 		{
-			pPlayer->Weapon_Detach(pInSlot);
+			pPlayer->Weapon_Drop(pInSlot);
+			if (pInSlot->GetOwner() == pPlayer)
+			{
+				pPlayer->Weapon_Detach(pInSlot);	// one that can't be dropped stays held
+			}
 			UTIL_Remove(pInSlot);
 		}
 		pPlayer->GiveNamedItem(args[1]);

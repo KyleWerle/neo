@@ -3,7 +3,8 @@
 // The view player's shots, for the gunplay's presentation (the recoil knock, the crosshair layer, the dot trail,
 // the sight ghost): whoever's eyes the view is through, the local player or one watched in first person. The
 // local player's by their clip dropping; a watched player's clip goes to them alone, so theirs by their muzzle
-// flash counter, which every client receives. Updated once a frame, on first use.
+// flash counter, which every client receives. Updated once a frame, on first use, and again if the player or
+// weapon it holds was deleted since (the pointers are good until the next call).
 
 class C_NEO_Player;
 class C_NEOBaseCombatWeapon;
