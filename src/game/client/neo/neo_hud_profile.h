@@ -74,7 +74,13 @@ private:
 	NeoHudProfileSection m_section;
 	double m_start;
 	int m_queued;	// NeoHudQueuedQuads() when this section's time started
+	bool m_on;		// g_neoHudProfileOn when the scope opened; a scope open across a switch-off still closes cleanly
 };
+
+// Whether the sections time and count at all. Off in play (a timer read costs more than most slices): on only while
+// the HUD bench runs (it sets this each frame) or cl_neo_hud_quads is counting.
+extern bool g_neoHudProfileOn;
+extern bool g_neoHudQuadsCounting;
 
 // Quads queued into the stroke batch so far (each section adds what was queued while it ran: cl_neo_hud_quads).
 extern int g_neoHudQueuedQuads;

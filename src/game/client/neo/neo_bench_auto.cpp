@@ -235,9 +235,9 @@ void CNeoBenchAuto::Update(float frametime)
 	}
 }
 
-CON_COMMAND(neo_bench_auto, "Runs benches with nobody at the keyboard: joins, spawns, runs each part in order. Usage:"
+CON_COMMAND_F(neo_bench_auto, "Runs benches with nobody at the keyboard: joins, spawns, runs each part in order. Usage:"
 	" neo_bench_auto <hud|optics|fire>... [quit], or as one token: hud,optics,quit (the engine's command line only"
-	" passes the first argument after +neo_bench_auto). quit: close the game when it's done. See neo_bench_auto.cpp.")
+	" passes the first argument after +neo_bench_auto). quit: close the game when it's done. See neo_bench_auto.cpp.", FCVAR_CHEAT)
 {
 	BenchPart parts[AUTO_MAX_PARTS];
 	int count = 0;
@@ -279,7 +279,7 @@ CON_COMMAND(neo_bench_auto, "Runs benches with nobody at the keyboard: joins, sp
 	s_benchAuto.Arm(parts, count, bQuit);
 }
 
-CON_COMMAND(neo_hud_bench_auto, "Same as neo_bench_auto hud [quit]. Usage: neo_hud_bench_auto [quit]")
+CON_COMMAND_F(neo_hud_bench_auto, "Same as neo_bench_auto hud [quit]. Usage: neo_hud_bench_auto [quit]", FCVAR_CHEAT)
 {
 	const BenchPart part = PART_HUD;
 	s_benchAuto.Arm(&part, 1, args.ArgC() > 1 && !V_stricmp(args[1], "quit"));

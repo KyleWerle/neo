@@ -20,6 +20,9 @@ enum NeoIronsightProfileSection
 #define NEO_IRONSIGHT_VPROF_GROUP "Ironsights"
 
 #ifdef CLIENT_DLL
+// Off in play; the ironsight bench turns it on for the length of a run.
+extern bool g_neoIronsightProfileOn;
+
 class CNeoIronsightProfileScope
 {
 public:
@@ -28,6 +31,7 @@ public:
 private:
 	NeoIronsightProfileSection m_section;
 	double m_start;
+	bool m_on;
 };
 
 // The section's time since the last call, in milliseconds, and resets it.

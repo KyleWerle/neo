@@ -203,6 +203,7 @@ void CNeoHudBench::DropSamples()
 
 void CNeoHudBench::Update(float frametime)
 {
+	g_neoHudProfileOn = m_phase != IDLE || g_neoHudQuadsCounting;
 	if (m_phase == IDLE)
 	{
 		DropSamples();	// so the counts never pile up between runs
@@ -414,8 +415,8 @@ int NeoHudBenchReports()
 	return s_hudBench.Reports();
 }
 
-CON_COMMAND(neo_hud_bench, "Hands-off benchmark of the HUD styles (see neo_hud_bench.cpp). Usage:"
-	" neo_hud_bench [measure seconds = 3] [settle seconds = 2]")
+CON_COMMAND_F(neo_hud_bench, "Hands-off benchmark of the HUD styles (see neo_hud_bench.cpp). Usage:"
+	" neo_hud_bench [measure seconds = 3] [settle seconds = 2]", FCVAR_CHEAT)
 {
 	s_hudBench.Start(args.ArgC() > 1 ? V_atof(args[1]) : 3.0f, args.ArgC() > 2 ? V_atof(args[2]) : 2.0f);
 }

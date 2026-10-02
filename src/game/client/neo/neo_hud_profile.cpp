@@ -9,20 +9,29 @@ static double s_hudAccumulated[NEO_HUD_PROFILE__COUNT];	// seconds
 static int s_hudCounts[NEO_HUD_COUNT__COUNT];
 static double s_hudQuads[NEO_HUD_PROFILE__COUNT];	// queued while each section ran, since cl_neo_hud_quads last reset
 int g_neoHudQueuedQuads = 0;
+bool g_neoHudProfileOn = false;
+bool g_neoHudQuadsCounting = false;
 
 CNeoHudProfileScope::CNeoHudProfileScope(NeoHudProfileSection section)
-	: m_section(section), m_start(Plat_FloatTime()), m_queued(g_neoHudQueuedQuads)
+	: m_section(section), m_start(g_neoHudProfileOn ? Plat_FloatTime() : 0.0), m_queued(g_neoHudQueuedQuads), m_on(g_neoHudProfileOn)
 {
 }
 
 CNeoHudProfileScope::~CNeoHudProfileScope()
 {
+	if (!m_on)
+		return;
 	s_hudAccumulated[m_section] += Plat_FloatTime() - m_start;
 	s_hudQuads[m_section] += g_neoHudQueuedQuads - m_queued;
 }
 
 void CNeoHudProfileScope::Switch(NeoHudProfileSection next)
 {
+	if (!m_on)
+	{
+		m_section = next;
+		return;
+	}
 	const double now = Plat_FloatTime();
 	s_hudAccumulated[m_section] += now - m_start;
 	s_hudQuads[m_section] += g_neoHudQueuedQuads - m_queued;
@@ -33,6 +42,8 @@ void CNeoHudProfileScope::Switch(NeoHudProfileSection next)
 
 void NeoHudCount(NeoHudCounter counter, int amount)
 {
+	if (!g_neoHudProfileOn)
+		return;
 	s_hudCounts[counter] += amount;
 }
 
@@ -81,6 +92,7 @@ CON_COMMAND(cl_neo_hud_quads, "Quads queued into the HUD's stroke batch per fram
 	}
 	for (double &q : s_hudQuads)
 		q = 0.0;
+	g_neoHudQuadsCounting = true;
 	s_startFrame = gpGlobals->framecount;
 	s_startQueued = g_neoHudQueuedQuads;
 }

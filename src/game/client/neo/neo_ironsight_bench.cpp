@@ -381,6 +381,7 @@ void CNeoIronsightBench::PressToggles(C_NEO_Player *pPlayer, const BenchScenario
 
 void CNeoIronsightBench::Update(float frametime)
 {
+	g_neoIronsightProfileOn = m_phase != IDLE;
 	// A toggle pressed last frame is let go now, so the game sees a whole press.
 	if (m_pszRelease)
 	{
@@ -641,9 +642,9 @@ bool NeoIronsightBenchStart(const char *pszSet, float measureSeconds, float sett
 }
 int NeoIronsightBenchReports() { return s_bench.Reports(); }
 
-CON_COMMAND(neo_ironsight_bench, "Hands-off benchmark of the ironsight features (see neo_ironsight_bench.cpp). Usage:"
+CON_COMMAND_F(neo_ironsight_bench, "Hands-off benchmark of the ironsight features (see neo_ironsight_bench.cpp). Usage:"
 	" neo_ironsight_bench [optics|fire = optics] [only these, e.g. M41S or ZR68C,M41S] [measure seconds = 3]"
-	" [settle seconds = 1.5]")
+	" [settle seconds = 1.5]", FCVAR_CHEAT)
 {
 	const auto isNumber = [](const char *psz) { return V_isdigit(psz[0]) || psz[0] == '.'; };
 	int arg = 1;

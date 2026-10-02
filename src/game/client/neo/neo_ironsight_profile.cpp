@@ -7,16 +7,19 @@
 
 static double s_accumulated[NEO_PROFILE__COUNT];	// seconds
 static int s_calls[NEO_PROFILE__COUNT];
+bool g_neoIronsightProfileOn = false;
 
 CNeoIronsightProfileScope::CNeoIronsightProfileScope(NeoIronsightProfileSection section)
-	: m_section(section), m_start(Plat_FloatTime())
+	: m_section(section), m_start(g_neoIronsightProfileOn ? Plat_FloatTime() : 0.0), m_on(g_neoIronsightProfileOn)
 {
-	++s_calls[section];
+	if (m_on)
+		++s_calls[section];
 }
 
 CNeoIronsightProfileScope::~CNeoIronsightProfileScope()
 {
-	s_accumulated[m_section] += Plat_FloatTime() - m_start;
+	if (m_on)
+		s_accumulated[m_section] += Plat_FloatTime() - m_start;
 }
 
 double NeoIronsightProfileTakeMs(NeoIronsightProfileSection section)
