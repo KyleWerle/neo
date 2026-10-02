@@ -558,8 +558,8 @@ void CHudCrosshair::Paint( void )
 		eNeoXHairWep = static_cast<ENeoCrosshairWep>(
 				UseCrosshairIndexFor(&m_crosshairInfo, iNeoXHairWep, &bHideCrosshair));
 
-		// With ADS on, the sights do the aiming; crosshairs return only when aiming cloaked.
-		if (NeoAdsHideCrosshair(pNeoPlayer->m_bInAim, pNeoPlayer->IsCloaked()))
+		// On a weapon using its ADS pose, the sights do the aiming; crosshairs return only when aiming cloaked.
+		if (NeoAdsHideCrosshair(pWeapon->GetNEOWpnData(), pNeoPlayer->m_bInAim, pNeoPlayer->IsCloaked()))
 		{
 			bHideCrosshair = true;
 		}
