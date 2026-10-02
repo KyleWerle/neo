@@ -18,38 +18,40 @@
 #ifdef CLIENT_DLL
 ConVar cl_neo_ads("cl_neo_ads", "0", FCVAR_ARCHIVE,
 	"Aim down the weapon's sights instead of the traditional NT aim pose, for weapons that define one.", true, 0, true, 1);
-ConVar cl_neo_ads_time("cl_neo_ads_time", "0.2", FCVAR_ARCHIVE,
+// Everything below is for tuning and testing, not for players: cheat-only, hidden, and not saved to the config.
+// Players have the Enable ADS setting (cl_neo_ads) and the Toggle ADS key binding (cl_neo_ads_toggle).
+ConVar cl_neo_ads_time("cl_neo_ads_time", "0.2", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Seconds for the viewmodel to move between hip and ADS.", true, 0.01f, true, 1.0f);
 
-ConVar cl_neo_ads_bob("cl_neo_ads_bob", "0.1", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_bob("cl_neo_ads_bob", "0.1", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Movement bob scale while on the sights (1 = same as hip).", true, 0, true, 1);
-ConVar cl_neo_ads_idle("cl_neo_ads_idle", "0.02", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_idle("cl_neo_ads_idle", "0.02", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Idle animation sway scale while on the sights (1 = same as hip).", true, 0, true, 1);
-ConVar cl_neo_ads_recoil_vertical("cl_neo_ads_recoil_vertical", "0.05", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_recoil_vertical("cl_neo_ads_recoil_vertical", "0.05", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Fire animation vertical kick scale on the sights: rise and pitch (1 = same as hip).", true, 0, true, 1);
-ConVar cl_neo_ads_recoil_side("cl_neo_ads_recoil_side", "1", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_recoil_side("cl_neo_ads_recoil_side", "1", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Fire animation sideways kick scale on the sights: drift, yaw and roll (1 = same as hip).", true, 0, true, 1);
-ConVar cl_neo_ads_recoil_back("cl_neo_ads_recoil_back", "0.4", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_recoil_back("cl_neo_ads_recoil_back", "0.4", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Fire animation pushback scale on the sights (1 = same as hip).", true, 0, true, 1);
-ConVar cl_neo_ads_recoil_max_dist("cl_neo_ads_recoil_max_dist", "1", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_recoil_max_dist("cl_neo_ads_recoil_max_dist", "1", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Leash on the sights: furthest the gun may move from its idle position, in units.", true, 0, false, 0);
-ConVar cl_neo_ads_recoil_max_angle("cl_neo_ads_recoil_max_angle", "2", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_recoil_max_angle("cl_neo_ads_recoil_max_angle", "2", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Leash on the sights: furthest the gun may rotate from its idle angle on each axis, in degrees.", true, 0, false, 0);
-ConVar cl_neo_ads_crosshair("cl_neo_ads_crosshair", "0", FCVAR_ARCHIVE,
+ConVar cl_neo_ads_crosshair("cl_neo_ads_crosshair", "0", FCVAR_CHEAT | FCVAR_HIDDEN,
 	"Keep the crosshair visible while on the sights (it is hidden otherwise).", true, 0, true, 1);
 
 // Live tuning: with cl_neo_ads_tune 1 the pose below replaces the weapon script's AimOffset,
 // so offsets can be dialled in while looking down the sights. The pose loads from each weapon as you
 // switch to it; cl_neo_ads_save appends the tuned pose to ads_tuning.txt in the game dir,
 // ready to merge into the weapon scripts.
-ConVar cl_neo_ads_tune("cl_neo_ads_tune", "0", FCVAR_NONE, "Use the cl_neo_ads_* pose instead of the weapon script.", true, 0, true, 1);
-ConVar cl_neo_ads_forward("cl_neo_ads_forward", "0", FCVAR_NONE, "Tuning: ADS forward offset.");
-ConVar cl_neo_ads_right("cl_neo_ads_right", "0", FCVAR_NONE, "Tuning: ADS right offset.");
-ConVar cl_neo_ads_up("cl_neo_ads_up", "0", FCVAR_NONE, "Tuning: ADS up offset.");
-ConVar cl_neo_ads_pitch("cl_neo_ads_pitch", "0", FCVAR_NONE, "Tuning: ADS pitch offset.");
-ConVar cl_neo_ads_yaw("cl_neo_ads_yaw", "0", FCVAR_NONE, "Tuning: ADS yaw offset.");
-ConVar cl_neo_ads_roll("cl_neo_ads_roll", "0", FCVAR_NONE, "Tuning: ADS roll offset.");
-ConVar cl_neo_ads_fov("cl_neo_ads_fov", "45", FCVAR_NONE, "Tuning: ADS viewmodel FOV.");
+ConVar cl_neo_ads_tune("cl_neo_ads_tune", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Use the cl_neo_ads_* pose instead of the weapon script.", true, 0, true, 1);
+ConVar cl_neo_ads_forward("cl_neo_ads_forward", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS forward offset.");
+ConVar cl_neo_ads_right("cl_neo_ads_right", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS right offset.");
+ConVar cl_neo_ads_up("cl_neo_ads_up", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS up offset.");
+ConVar cl_neo_ads_pitch("cl_neo_ads_pitch", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS pitch offset.");
+ConVar cl_neo_ads_yaw("cl_neo_ads_yaw", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS yaw offset.");
+ConVar cl_neo_ads_roll("cl_neo_ads_roll", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS roll offset.");
+ConVar cl_neo_ads_fov("cl_neo_ads_fov", "45", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS viewmodel FOV.");
 
 // Which weapon the tuning cvars were loaded from. Compared by class name, since callers
 // may pass a copy of the weapon info.
@@ -75,7 +77,7 @@ static void LoadTuningFrom(const CNEOWeaponInfo &data)
 	V_strncpy(s_szTunedWeapon, data.szClassName, sizeof(s_szTunedWeapon));
 }
 
-CON_COMMAND(cl_neo_ads_tune_load, "Reload the active weapon's script pose into the cl_neo_ads_* tuning cvars.")
+CON_COMMAND_F(cl_neo_ads_tune_load, "Reload the active weapon's script pose into the cl_neo_ads_* tuning cvars.", FCVAR_CHEAT | FCVAR_HIDDEN)
 {
 	if (CNEOBaseCombatWeapon *pWeapon = LocalActiveWeapon())
 	{
@@ -84,7 +86,7 @@ CON_COMMAND(cl_neo_ads_tune_load, "Reload the active weapon's script pose into t
 	}
 }
 
-CON_COMMAND(cl_neo_ads_nudge, "Nudge an ADS tuning value and switch tuning on. Usage: cl_neo_ads_nudge <forward|right|up|pitch|yaw|roll|fov> <delta>")
+CON_COMMAND_F(cl_neo_ads_nudge, "Nudge an ADS tuning value and switch tuning on. Usage: cl_neo_ads_nudge <forward|right|up|pitch|yaw|roll|fov> <delta>", FCVAR_CHEAT | FCVAR_HIDDEN)
 {
 	if (args.ArgC() != 3)
 	{
@@ -114,7 +116,7 @@ CON_COMMAND(cl_neo_ads_nudge, "Nudge an ADS tuning value and switch tuning on. U
 		cl_neo_ads_fov.GetFloat());
 }
 
-CON_COMMAND(cl_neo_ads_save, "Append the tuned pose for the active weapon to ads_tuning.txt.")
+CON_COMMAND_F(cl_neo_ads_save, "Append the tuned pose for the active weapon to ads_tuning.txt.", FCVAR_CHEAT | FCVAR_HIDDEN)
 {
 	CNEOBaseCombatWeapon *pWeapon = LocalActiveWeapon();
 	if (!pWeapon)
