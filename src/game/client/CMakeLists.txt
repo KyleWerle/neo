@@ -1577,6 +1577,11 @@ set(UNITY_SOURCE_NEO_SRC_CLIENT
     neo/neo_fixup_glshaders.cpp
     neo/c_neo_bloom_controller.cpp
     neo/c_neo_killer_damage_infos.cpp
+    neo/neo_spectator_hits.cpp
+    neo/neo_spread_pivot.cpp
+    neo/neo_view_shots.cpp
+    neo/neo_viewmodel_anim_blend.cpp
+    neo/neo_viewmodel_recoil.cpp
 )
 
 set_source_files_properties(
@@ -1595,6 +1600,11 @@ target_sources_grouped(
     neo/c_neo_te_tocflash.h
     neo/neo_fixup_glshaders.h
     neo/c_neo_killer_damage_infos.h
+    neo/neo_spectator_hits.h
+    neo/neo_spread_pivot.h
+    neo/neo_view_shots.h
+    neo/neo_viewmodel_anim_blend.h
+    neo/neo_viewmodel_recoil.h
     ${UNITY_SOURCE_NEO_SRC_CLIENT}
 )
 

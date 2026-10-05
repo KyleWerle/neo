@@ -7,6 +7,7 @@
 #include "predicted_viewmodel.h"
 
 #ifdef CLIENT_DLL
+#include "neo/neo_viewmodel_anim_blend.h"
 //#include "clienteffectprecachesystem.h"
 //#include <engine/IClientLeafSystem.h>
 #endif
@@ -39,6 +40,7 @@ public:
 #ifdef CLIENT_DLL
 	virtual void PostDataUpdate(DataUpdateType_t updateType) override;
 	virtual void ClientThink() override;
+	virtual void StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask) override;
 
 	virtual int DrawModel(int flags);
 	virtual void ProcessMuzzleFlashEvent() final override;
@@ -70,6 +72,9 @@ public:
 	float m_flGunPushLastChangeTime = 0.f;
 
 private:
+#ifdef CLIENT_DLL
+	NeoViewmodelAnimBlend m_animBlend;
+#endif
 	float m_flStartAimingChange;
 	bool m_bViewAim;
 	Vector m_vOffset;

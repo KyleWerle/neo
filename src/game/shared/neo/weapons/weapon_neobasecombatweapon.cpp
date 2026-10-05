@@ -20,6 +20,7 @@ extern ConVar weaponstay;
 #include "model_types.h"
 #include "c_neo_player.h"
 #include "in_main.h"
+#include "neo/neo_spread_pivot.h"
 #else
 #include "items.h"
 #include "neo_gamerules.h"
@@ -1079,6 +1080,12 @@ void CNEOBaseCombatWeapon::PrimaryAttack(void)
 	info.m_flPenetration = GetPenetration();
 
 	pPlayer->FireBullets(info);
+#ifdef CLIENT_DLL
+	if (const CUserCmd *pCmd = pPlayer->GetCurrentUserCommand())
+	{
+		NeoSpreadPivotShot(this, *pCmd, info.m_vecDirShooting, info.m_vecSpread, info.m_iShots);
+	}
+#endif // CLIENT_DLL
 
 	if (!m_iClip1 && m_iPrimaryAmmoCount <= 0)
 	{

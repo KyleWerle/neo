@@ -64,6 +64,7 @@ struct NeoSettings
 		bool bViewmodelRighthand;
 		bool bLeanViewmodelOnly;
 		int iLeanAutomatic;
+		int iGunMotion;
 		int iEquipUtilityPriority;
 		bool bWeaponFastSwitch;
 		bool bShowPlayerSprays;
@@ -260,6 +261,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_righthand);
 		CONVARREF_DEF(cl_neo_lean_viewmodel_only);
 		CONVARREF_DEF(cl_neo_lean_automatic);
+		CONVARREF_DEF(cl_neo_gun_motion);
 		CONVARREF_DEF(cl_neo_squad_hud_original);
 		CONVARREF_DEF(cl_neo_hud_health_mode);
 		CONVARREF_DEF(cl_neo_hud_worldpos_verbose);
