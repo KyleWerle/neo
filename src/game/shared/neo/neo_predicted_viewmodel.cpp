@@ -10,6 +10,8 @@
 #ifdef CLIENT_DLL
 #include "c_neo_player.h"
 #include "weapon_neobasecombatweapon.h"
+#include "neo/neo_spread_pivot.h"
+#include "neo/neo_viewmodel_recoil.h"
 
 #include "engine/ivdebugoverlay.h"
 #include "iinput.h"
@@ -224,6 +226,13 @@ void CNEOPredictedViewModel::PostDataUpdate(DataUpdateType_t updateType)
 }
 
 void CNEOPredictedViewModel::StandardBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask)
+{
+	DampedBlendingRules(hdr, pos, q, currentTime, boneMask);
+	// Crossfaded after the ADS damping, so a blend starts from the pose as it was drawn.
+	m_animBlend.Apply(hdr, GetSequence(), pos, q, boneMask);
+}
+
+void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask)
 {
 	BaseClass::StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
 
@@ -730,6 +739,9 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 		QAngle angles = pOwner->EyeAngles();
 		newAng.z += cl_righthand.GetBool() ? angles.z : -angles.z;
 	}
+	// Gun motion: turned toward where its shots went and knocked by each one.
+	NeoSpreadPivotApply(weapon, pOwner, ShouldFlipViewModel(), newAng);
+	NeoViewmodelRecoilApply(pOwner, eyeAngles, ShouldFlipViewModel(), newPos, newAng);
 #endif
 
 	BaseClass::CalcViewModelView(pOwner, newPos, newAng);

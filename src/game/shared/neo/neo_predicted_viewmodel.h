@@ -8,6 +8,7 @@
 #include "neo_ads.h"
 
 #ifdef CLIENT_DLL
+#include "neo/neo_viewmodel_anim_blend.h"
 //#include "clienteffectprecachesystem.h"
 //#include <engine/IClientLeafSystem.h>
 #endif
@@ -80,6 +81,8 @@ private:
 #ifdef CLIENT_DLL
 	NeoAdsRestPose m_adsRest;		// idle first frame
 	NeoAdsRestPose m_adsSettled;	// current fire animation's last frame
+	NeoViewmodelAnimBlend m_animBlend;
+	void DampedBlendingRules(CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime, int boneMask);
 #endif
 	float m_flStartAimingChange;
 	bool m_bViewAim;

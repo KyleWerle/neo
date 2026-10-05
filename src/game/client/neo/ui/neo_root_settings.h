@@ -66,6 +66,7 @@ struct NeoSettings
 		bool bAds;
 		bool bAdsCrosshair;
 		int iLeanAutomatic;
+		int iGunMotion;
 		int iEquipUtilityPriority;
 		bool bWeaponFastSwitch;
 		bool bShowPlayerSprays;
@@ -264,6 +265,7 @@ struct NeoSettings
 		CONVARREF_DEF(cl_neo_ads);
 		CONVARREF_DEF(cl_neo_ads_crosshair);
 		CONVARREF_DEF(cl_neo_lean_automatic);
+		CONVARREF_DEF(cl_neo_gun_motion);
 		CONVARREF_DEF(cl_neo_squad_hud_original);
 		CONVARREF_DEF(cl_neo_hud_health_mode);
 		CONVARREF_DEF(cl_neo_hud_worldpos_verbose);

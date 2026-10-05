@@ -425,6 +425,10 @@ public:
 	virtual void DoMuzzleFlash();	// Force a muzzle flash event. Note: this only QUEUES an event, so
 									// ProcessMuzzleFlashEvent will get called later.
 	bool ShouldMuzzleFlash() const;	// Is the muzzle flash event on?
+#ifdef NEO
+	// Bumped each shot and networked to every client.
+	int GetMuzzleFlashParity() const { return m_nMuzzleFlashParity; }
+#endif
 
 	// This is called to do the actual muzzle flash effect.
 	virtual void ProcessMuzzleFlashEvent();

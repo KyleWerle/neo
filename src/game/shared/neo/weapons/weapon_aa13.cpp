@@ -3,6 +3,7 @@
 
 #ifdef CLIENT_DLL
 #include "c_neo_player.h"
+#include "neo/neo_spread_pivot.h"
 #else
 #include "neo_player.h"
 #endif
@@ -113,6 +114,12 @@ void CWeaponAA13::PrimaryAttack(void)
 
 	// Fire the bullets, and force the first shot to be perfectly accurate
 	pPlayer->FireBullets(info);
+#ifdef CLIENT_DLL
+	if (const CUserCmd *pCmd = pPlayer->GetCurrentUserCommand())
+	{
+		NeoSpreadPivotPellets(this, *pCmd, info.m_vecDirShooting, info.m_vecSpread, info.m_iShots);
+	}
+#endif
 
 	if (!m_iClip1 && pPlayer->GetAmmoCount(m_iPrimaryAmmoType) <= 0)
 	{

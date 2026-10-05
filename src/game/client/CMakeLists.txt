@@ -1580,6 +1580,11 @@ set(UNITY_SOURCE_NEO_SRC_CLIENT
     neo/neo_ads_lens.cpp
     neo/neo_ads_optic.cpp
     neo/neo_ads_optic_disc.cpp
+    neo/neo_spectator_hits.cpp
+    neo/neo_spread_pivot.cpp
+    neo/neo_view_shots.cpp
+    neo/neo_viewmodel_anim_blend.cpp
+    neo/neo_viewmodel_recoil.cpp
 )
 
 set_source_files_properties(
@@ -1601,6 +1606,11 @@ target_sources_grouped(
     neo/neo_ads_lens.h
     neo/neo_ads_optic.h
     neo/neo_ads_optic_disc.h
+    neo/neo_spectator_hits.h
+    neo/neo_spread_pivot.h
+    neo/neo_view_shots.h
+    neo/neo_viewmodel_anim_blend.h
+    neo/neo_viewmodel_recoil.h
     ${UNITY_SOURCE_NEO_SRC_CLIENT}
 )
 

@@ -1,5 +1,8 @@
 #include "cbase.h"
 #include "weapon_supa7.h"
+#ifdef CLIENT_DLL
+#include "neo/neo_spread_pivot.h"
+#endif
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -367,6 +370,12 @@ void CWeaponSupa7::PrimaryAttack(void)
 
 	// Fire the bullets, and force the first shot to be perfectly accurate
 	pPlayer->FireBullets(info);
+#ifdef CLIENT_DLL
+	if (const CUserCmd *pCmd = pPlayer->GetCurrentUserCommand())
+	{
+		NeoSpreadPivotPellets(this, *pCmd, info.m_vecDirShooting, info.m_vecSpread, info.m_iShots);
+	}
+#endif
 
 	if (!m_iClip1 && m_iPrimaryAmmoCount <= 0)
 	{
