@@ -51,8 +51,7 @@ ConVar cl_neo_ads_yaw("cl_neo_ads_yaw", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning
 ConVar cl_neo_ads_roll("cl_neo_ads_roll", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS roll offset.");
 ConVar cl_neo_ads_fov("cl_neo_ads_fov", "45", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS viewmodel FOV.");
 
-// Which weapon the tuning cvars were loaded from. Compared by class name, since callers
-// may pass a copy of the weapon info.
+// Which weapon the tuning cvars were loaded from, by class name.
 static char s_szTunedWeapon[MAX_WEAPON_STRING] = "";
 
 static CNEOBaseCombatWeapon *LocalActiveWeapon()
