@@ -1453,7 +1453,7 @@ void CNEOBaseCombatWeapon::AddViewmodelBob(CBaseViewModel *viewmodel, Vector &or
 	const QAngle hipAngles = angles;
 	BaseClass::AddViewmodelBob(viewmodel, origin, angles);
 
-	const auto *pNeoViewModel = dynamic_cast<CNEOPredictedViewModel *>(viewmodel);
+	const auto *pNeoViewModel = assert_cast<CNEOPredictedViewModel *>(viewmodel);
 	const float scale = NeoAdsBobScale(pNeoViewModel ? pNeoViewModel->GetAdsBlend() : 0.0f);
 	origin = hipOrigin + (origin - hipOrigin) * scale;
 	angles = hipAngles + (angles - hipAngles) * scale;
