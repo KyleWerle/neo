@@ -163,7 +163,7 @@ struct NeoSettings
 		float flGamma;
 		int iFov;
 		int iViewmodelFov;
-		bool bSoftwareCursor;
+		int iSoftwareCursor;
 
 		// Video modes
 		int iVMListSize;
