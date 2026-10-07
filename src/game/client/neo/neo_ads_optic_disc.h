@@ -21,5 +21,5 @@ struct NeoAdsGlassClear
 bool NeoAdsBeginGlassClear(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, bool bCloaked, bool bThermal,
 	float adsBlend, NeoAdsGlassClear &clear);
 
-// This frame's glass outline into depth only, a hair in front of the glass. Call before each draw of the gun.
+// This frame's glass outline into depth only, just in front of the glass. Call before each draw of the gun.
 void NeoAdsDrawGlassClearDepth(const CNEOWeaponInfo &data);

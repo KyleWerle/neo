@@ -20,6 +20,9 @@
 // 1 (round at 2, squarer above). Worked out once per exponent.
 static constexpr int LENS_SEGMENTS = 32;
 static constexpr int LENS_RINGS = 6;	// enough for the rim fade
+// How far the glass's depth and art sit in front of it, toward the eye. Far from the map's origin the gun's
+// own depth is only good to about 0.06 units, and a smaller lift lets parts of it behind the glass show through.
+static constexpr float LENS_LIFT = 0.1f;
 static const Vector2D *LensOutline(float shape)
 {
 	static float s_shape = -1.0f;
@@ -80,10 +83,10 @@ static void DrawLensShape(IMaterial *pMaterial, const NeoLensPane &pane, const L
 		const float u = area.centreU + area.scaleU * x;
 		const float v = area.centreV + area.scaleV * y;
 		const Vector world = pane.At(u, v);
-		// Lifted a hair toward the eye so it sits on the lens rather than in it.
+		// Lifted toward the eye along the line of sight: in front of the lens, and unmoved on screen.
 		Vector lift = eye - world;
 		VectorNormalize(lift);
-		const Vector position = world + lift * 0.01f;
+		const Vector position = world + lift * LENS_LIFT;
 		const float fade = NeoSmoothStep((fraction - fadeStart) / Max(1.0f - fadeStart, 0.001f));
 		meshBuilder.Color4ub(255, 255, 255, static_cast<unsigned char>(255.0f * centreAlpha * (1.0f - fade)));
 		meshBuilder.TexCoord2f(0, u, v);
@@ -206,7 +209,7 @@ static IMaterial *GlassDepthMaterial()
 	return s_material;
 }
 
-// An area of the glass into depth only, a hair in front of it, so the gun behind it fails the depth test there.
+// An area of the glass into depth only, just in front of it, so the gun behind it fails the depth test there.
 static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 {
 	CMatRenderContextPtr pRenderContext(materials);
@@ -219,7 +222,7 @@ static void DrawDepthOnly(const NeoLensPane &pane, const LensArea &area)
 	pRenderContext->OverrideColorWriteEnable(false, true);
 }
 
-// The glass's exact outline goes into depth a hair in front of it before the gun is drawn, so neither the glass
+// The glass's exact outline goes into depth just in front of it before the gun is drawn, so neither the glass
 // nor the gun behind it draws inside the outline and the world already on screen shows through. The cloak and
 // thermals draw the whole gun with one override material, and a scope's housing shows behind its glass, so
 // this is the only way to leave them out. Depth only, so it goes down before each draw of the gun (a two-pass
