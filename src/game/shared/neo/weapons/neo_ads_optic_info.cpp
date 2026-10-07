@@ -3,7 +3,7 @@
 
 CNEOAdsOpticInfo::CNEOAdsOpticInfo()
 {
-	// Every point set, even past the count: debug builds assert on copying a Vector2D left as NaN.
+	// Every point set, even past the count, so none is left as NaN.
 	for (Vector2D &point : m_vecAdsOpticWindowGlass)
 	{
 		point.Init();

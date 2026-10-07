@@ -1,9 +1,10 @@
 #pragma once
 
-// Sight glass the gun is seen through, from the "AdsOptic" block of a weapon script. Nothing is rendered for it:
+// Sight glass the gun is seen through, from the "AdsOptic" block of a weapon script. No view is rendered for it:
 // the world is already on screen when the gun is drawn, so the glass only has to be left out where the gun
 // would cover it, which is under the cloak or thermals (the override material draws the glass solid) and, for a
-// scope, its housing on the sights. Weapons without the block, or with ADS off, are untouched. Client only.
+// scope, its housing on the sights, with the glass's art drawn back on top. Weapons without the block, or with
+// ADS off, are untouched. Client only.
 
 class CNEOWeaponInfo;
 class C_BaseAnimating;

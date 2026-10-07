@@ -49,6 +49,10 @@ bool NeoAdsLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, con
 		VectorRotate(v, lensToWorld, out.v);
 	};
 	toWorld(data.m_vecAdsOpticLensOrigin, data.m_vecAdsOpticLensU, data.m_vecAdsOpticLensV, pane);
+	if (pFarPane)
+	{
+		*pFarPane = pane;
+	}
 	if (data.m_bHasAdsOpticLensMap2)
 	{
 		NeoLensPane second;

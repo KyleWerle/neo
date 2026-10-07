@@ -151,10 +151,11 @@ static IMaterial *ReticleMaterial(const CNEOWeaponInfo &data)
 		{
 			s_pReticle = nullptr;
 		}
-		if (s_pReticle && !s_pReticle->IsPrecached())
-		{
-			PrecacheMaterial(s_pReticle->GetName());
-		}
+	}
+	// Checked every time: a level change uncaches all materials.
+	if (s_pReticle && !s_pReticle->IsPrecached())
+	{
+		PrecacheMaterial(s_pReticle->GetName());
 	}
 	return s_pReticle;
 }
@@ -203,7 +204,6 @@ static IMaterial *GlassDepthMaterial()
 	if (!s_material.IsValid())
 	{
 		KeyValues *pVMT = new KeyValues("UnlitGeneric");
-		pVMT->SetString("$basetexture", "white");
 		pVMT->SetInt("$nocull", 1);
 		s_material.Init("__neo_ads_glass_depth", TEXTURE_GROUP_OTHER, pVMT);
 	}
