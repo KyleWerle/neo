@@ -20,8 +20,9 @@
 // 1 (round at 2, squarer above). Worked out once per exponent.
 static constexpr int LENS_SEGMENTS = 32;
 static constexpr int LENS_RINGS = 6;	// enough for the rim fade
-// How far the glass's depth and art sit in front of it, toward the eye. Far from the map's origin the gun's
-// own depth is only good to about 0.06 units, and a smaller lift lets parts of it behind the glass show through.
+// How far the glass's depth and art sit in front of it, toward the eye. Out to the map's edge (16384 units) the
+// gun's own depth is only good to about 0.06 units, and a smaller lift lets parts of it behind the glass show
+// through. The gun inside the outline and less than this in front of the glass is hidden too.
 static constexpr float LENS_LIFT = 0.1f;
 static const Vector2D *LensOutline(float shape)
 {

@@ -1,6 +1,15 @@
 #include <KeyValues.h>
 #include "neo_ads_optic_info.h"
 
+CNEOAdsOpticInfo::CNEOAdsOpticInfo()
+{
+	// Every point set, even past the count: debug builds assert on copying a Vector2D left as NaN.
+	for (Vector2D &point : m_vecAdsOpticWindowGlass)
+	{
+		point.Init();
+	}
+}
+
 void CNEOAdsOpticInfo::ParseAdsOptic(KeyValues *pKeyValuesData)
 {
 	KeyValues* pOptic = pKeyValuesData->FindKey("AdsOptic");
@@ -45,11 +54,6 @@ void CNEOAdsOpticInfo::ParseWindowGlass(const char *pszPoints)
 {
 	m_vecAdsOpticWindowCentre.Init(m_vecAdsOpticLensCircle.x, m_vecAdsOpticLensCircle.y);
 	m_iAdsOpticWindowGlassPoints = 0;
-	// All set, even past the count: debug builds assert on copying a Vector2D left as NaN.
-	for (Vector2D &point : m_vecAdsOpticWindowGlass)
-	{
-		point.Init();
-	}
 
 	// The points, sorted by u then v, for the hull (Andrew's monotone chain).
 	Vector2D points[2 * ADS_OPTIC_WINDOW_GLASS_MAX];

@@ -10,6 +10,7 @@ class KeyValues;
 class CNEOAdsOpticInfo
 {
 public:
+	CNEOAdsOpticInfo();
 	void ParseAdsOptic(KeyValues *pKeyValuesData);
 
 	bool	m_bHasAdsOptic = false;
