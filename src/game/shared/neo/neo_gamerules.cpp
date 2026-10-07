@@ -2850,6 +2850,19 @@ void CNEORules::StartNextRound()
 	}
 
 	m_flNeoRoundStartTime = gpGlobals->curtime;
+
+	IGameEvent* event = gameeventmanager->CreateEvent("round_start");
+	if (event)
+	{
+		event->SetInt("fraglimit", 0);
+		event->SetInt("priority", 6); // HLTV event priority, not transmitted
+
+		event->SetString("objective", "DEATHMATCH");
+
+		gameeventmanager->FireEvent(event);
+	}
+	FireLegacyEvent_NeoRoundStart();
+
 	m_flNeoNextRoundStartTime = 0;
 	m_flGhostLastHeld = 0;
 
@@ -2995,18 +3008,6 @@ void CNEORules::StartNextRound()
 
 	SetGameRelatedVars();
 	MatchSessionBackup();
-
-	IGameEvent *event = gameeventmanager->CreateEvent("round_start");
-	if (event)
-	{
-		event->SetInt("fraglimit", 0);
-		event->SetInt("priority", 6); // HLTV event priority, not transmitted
-
-		event->SetString("objective", "DEATHMATCH");
-
-		gameeventmanager->FireEvent(event);
-	}
-	FireLegacyEvent_NeoRoundStart();
 
 	DevMsg("New round start here!\n");
 }
@@ -3286,6 +3287,37 @@ void CNEORules::ResetGhostCapPoints()
 	}
 }
 
+Vector CNEORules::GetNearestGhostCapPoint(const int iTeam, const Vector &vecFrom) const
+{
+	Vector vecBest = CNEO_Player::VECTOR_INVALID_WAYPOINT;
+	float flNearestDistSq = FLT_MAX;
+
+	for (int i = 0; i < m_pGhostCaps.Count(); i++)
+	{
+		auto pGhostCap = dynamic_cast<CNEOGhostCapturePoint*>(UTIL_EntityByIndex(m_pGhostCaps[i]));
+		if (!pGhostCap || !pGhostCap->GetActive())
+		{
+			continue;
+		}
+
+		// A neutral zone accepts the ghost from either team
+		const int iCapTeam = pGhostCap->owningTeamAlternate();
+		if (iCapTeam != iTeam && iCapTeam != TEAM_ANY)
+		{
+			continue;
+		}
+
+		const float flDistSq = vecFrom.DistToSqr(pGhostCap->GetAbsOrigin());
+		if (flDistSq < flNearestDistSq)
+		{
+			flNearestDistSq = flDistSq;
+			vecBest = pGhostCap->GetAbsOrigin();
+		}
+	}
+
+	return vecBest;
+}
+
 void CNEORules::SetGameRelatedVars()
 {
 	ResetTDM();
@@ -3392,17 +3424,19 @@ void CNEORules::ResetJGR()
 
 void CNEORules::RestartGame()
 {
-	// bounds check
-	if (mp_timelimit.GetInt() < 0)
-	{
-		mp_timelimit.SetValue(0);
-	}
 	m_flGameStartTime = gpGlobals->curtime;
-	if (!IsFinite(m_flGameStartTime.Get()))
+
+	IGameEvent* event = gameeventmanager->CreateEvent("round_start");
+	if (event)
 	{
-		Warning("Trying to set a NaN game start time\n");
-		m_flGameStartTime.GetForModify() = 0.0f;
+		event->SetInt("fraglimit", 0);
+		event->SetInt("priority", 6); // HLTV event priority, not transmitted
+
+		event->SetString("objective", "DEATHMATCH");
+
+		gameeventmanager->FireEvent(event);
 	}
+	FireLegacyEvent_NeoRoundStart();
 
 	CleanUpMap();
 
@@ -3460,18 +3494,6 @@ void CNEORules::RestartGame()
 	}
 
 	SetGameRelatedVars();
-
-	IGameEvent * event = gameeventmanager->CreateEvent("round_start");
-	if (event)
-	{
-		event->SetInt("fraglimit", 0);
-		event->SetInt("priority", 6); // HLTV event priority, not transmitted
-
-		event->SetString("objective", "DEATHMATCH");
-
-		gameeventmanager->FireEvent(event);
-	}
-	FireLegacyEvent_NeoRoundStart();
 }
 #endif
 
