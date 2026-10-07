@@ -57,7 +57,7 @@ static char s_szTunedWeapon[MAX_WEAPON_STRING] = "";
 static CNEOBaseCombatWeapon *LocalActiveWeapon()
 {
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
-	return pPlayer ? dynamic_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
+	return pPlayer ? assert_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
 }
 
 static void LoadTuningFrom(const CNEOWeaponInfo &data)
@@ -273,11 +273,11 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	MatrixInvert(settled, settledInv);
 	ConcatTransforms(live, settledInv, kick);
 
-	Vector liveOrigin, settledOrigin, unused;
+	Vector liveOrigin, settledOrigin;
 	MatrixGetColumn(live, 3, liveOrigin);
 	MatrixGetColumn(settled, 3, settledOrigin);
 	QAngle kickAngles;
-	MatrixAngles(kick, kickAngles, unused);
+	MatrixAngles(kick, kickAngles);
 
 	// The kick with each axis scaled: pushback (x), sideways (y, yaw, roll), vertical (z, pitch).
 	const Vector travel = liveOrigin - settledOrigin;
