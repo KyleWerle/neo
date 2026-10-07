@@ -43,7 +43,7 @@ bool NeoAdsLensPane(C_BaseAnimating *pViewModel, const CNEOWeaponInfo &data, con
 	// From the drawn pose, not GetBoneTransform: its cache holds only hitbox bones, so a lens bone that is not one
 	// would come back as the viewmodel's origin.
 	MatrixCopy(pViewModel->GetBone(bone), lensToWorld);
-	const auto toWorld = [&](const Vector &origin, const Vector &u, const Vector &v, NeoLensPane &out) {
+	const auto toWorld = [&lensToWorld](const Vector &origin, const Vector &u, const Vector &v, NeoLensPane &out) {
 		VectorTransform(origin, lensToWorld, out.origin);
 		VectorRotate(u, lensToWorld, out.u);
 		VectorRotate(v, lensToWorld, out.v);
