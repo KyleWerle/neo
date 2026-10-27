@@ -2,6 +2,11 @@
 #include "neo_ads.h"
 #include "neo_player_shared.h"
 #include "neo_weapon_parse.h"
+#include "neo_weapon_loadout.h"
+
+#ifdef GAME_DLL
+#include "filesystem.h"
+#endif
 
 #ifdef CLIENT_DLL
 #include "c_neo_player.h"
@@ -10,6 +15,7 @@
 #include "studio.h"
 #include "bone_setup.h"
 #include "vguicenterprint.h"
+#include "neo/neo_ads_optic.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -55,14 +61,12 @@ ConVar cl_neo_ads_yaw("cl_neo_ads_yaw", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning
 ConVar cl_neo_ads_roll("cl_neo_ads_roll", "0", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS roll offset.");
 ConVar cl_neo_ads_fov("cl_neo_ads_fov", "45", FCVAR_CHEAT | FCVAR_HIDDEN, "Tuning: ADS viewmodel FOV.");
 
-// Which weapon the tuning cvars were loaded from. Compared by class name, since callers
-// may pass a copy of the weapon info.
 static char s_szTunedWeapon[MAX_WEAPON_STRING] = "";
 
 static CNEOBaseCombatWeapon *LocalActiveWeapon()
 {
 	C_NEO_Player *pPlayer = C_NEO_Player::GetLocalNEOPlayer();
-	return pPlayer ? dynamic_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
+	return pPlayer ? assert_cast<CNEOBaseCombatWeapon *>(pPlayer->GetActiveWeapon()) : nullptr;
 }
 
 static void LoadTuningFrom(const CNEOWeaponInfo &data)
@@ -163,6 +167,30 @@ CON_COMMAND(cl_neo_ads_toggle, "Switch between aiming down the sights and the tr
 }
 #endif // CLIENT_DLL
 
+#ifdef GAME_DLL
+void NeoAdsPrecacheReticles()
+{
+	// Weapon scripts are otherwise read when a weapon first spawns, too late for the level's precache.
+	for (const auto &loadout : CNEOWeaponLoadout::s_LoadoutWeapons)
+	{
+		for (const CLoadoutWeapon &weapon : loadout)
+		{
+			WEAPON_FILE_INFO_HANDLE handle;
+			if (weapon.m_iWeaponPrice == XP_EMPTY || !ReadWeaponDataFromFileForSlot(filesystem,
+				weapon.info.m_szWeaponEntityName, &handle, g_pGameRules->GetEncryptionKey()))
+			{
+				continue;
+			}
+			const auto *pData = assert_cast<const CNEOWeaponInfo *>(GetFileWeaponInfoFromHandle(handle));
+			if (pData->m_szAdsOpticReticle[0])
+			{
+				PrecacheMaterial(pData->m_szAdsOpticReticle);
+			}
+		}
+	}
+}
+#endif // GAME_DLL
+
 bool NeoAdsActive(const CNEOWeaponInfo &data)
 {
 #ifdef CLIENT_DLL
@@ -179,7 +207,7 @@ NeoAimPose NeoGetAimPose(const CNEOWeaponInfo &data)
 	{
 		if (V_strcmp(data.szClassName, s_szTunedWeapon) != 0)
 		{
-			LoadTuningFrom(data); // Switched weapons: start from this weapon's current pose.
+			LoadTuningFrom(data);
 		}
 		return {
 			Vector(cl_neo_ads_forward.GetFloat(), cl_neo_ads_right.GetFloat(), cl_neo_ads_up.GetFloat()),
@@ -209,7 +237,7 @@ float NeoAimTransitionCurve(const CNEOWeaponInfo &data, float fraction)
 {
 	if (!NeoAdsActive(data))
 	{
-		return fraction; // Traditional NT aim moves linearly.
+		return fraction;
 	}
 	// Smootherstep: the gun eases out of the hip and settles gently onto the sights.
 	const float t = clamp(fraction, 0.0f, 1.0f);
@@ -242,7 +270,6 @@ bool NeoAdsIsRecoilActivity(int activity)
 }
 
 #ifdef CLIENT_DLL
-// Model-space transform of a bone, built by walking its parent chain.
 static void BoneToModel(CStudioHdr *hdr, int bone, const Vector pos[], const Quaternion q[], matrix3x4_t &out)
 {
 	matrix3x4_t local;
@@ -287,28 +314,25 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 	const float sideScale = onSights(cl_neo_ads_recoil_side.GetFloat(), data.m_flAdsRecoilSide);
 	const float backScale = onSights(cl_neo_ads_recoil_back.GetFloat(), data.m_flAdsRecoilBack);
 
-	// Gun (refBone) transforms in viewmodel space (x forward, y left, z up): live, and the fire
-	// animation's settled last frame. Only the kick relative to the settled frame is damped; the
-	// settled pose itself is left as animated. Some fire animations settle well off the idle pose and the
-	// engine already compensates for that later, so correcting toward idle would double it.
+	// Only the kick away from the fire animation's settled last frame is damped. Some settle well off the idle
+	// pose and the engine already corrects for that, so damping toward idle would double it.
 	matrix3x4_t live, settled, settledInv, kick;
 	BoneToModel(hdr, refBone, pos, q, live);
 	BoneToModel(hdr, refBone, settledPos, settledQ, settled);
 	MatrixInvert(settled, settledInv);
 	ConcatTransforms(live, settledInv, kick);
 
-	Vector liveOrigin, settledOrigin, unused;
+	Vector liveOrigin, settledOrigin;
 	MatrixGetColumn(live, 3, liveOrigin);
 	MatrixGetColumn(settled, 3, settledOrigin);
 	QAngle kickAngles;
-	MatrixAngles(kick, kickAngles, unused);
+	MatrixAngles(kick, kickAngles);
 
 	// The kick with each axis scaled: pushback (x), sideways (y, yaw, roll), vertical (z, pitch).
 	const Vector travel = liveOrigin - settledOrigin;
 	Vector dampedTravel(travel.x * backScale, travel.y * sideScale, travel.z * vertScale);
 	QAngle dampedAngles(kickAngles[PITCH] * vertScale, kickAngles[YAW] * sideScale, kickAngles[ROLL] * sideScale);
 
-	// Leash: on the sights the gun never strays far from its settled pose, whatever the animation does.
 	const float maxDist = ((data.m_flAdsRecoilMaxDist > 0.0f) ? data.m_flAdsRecoilMaxDist : cl_neo_ads_recoil_max_dist.GetFloat()) / blend;
 	const float dist = dampedTravel.Length();
 	if (dist > maxDist)
@@ -321,7 +345,6 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 		dampedAngles[axis] = clamp(dampedAngles[axis], -maxAngle, maxAngle);
 	}
 
-	// Where the gun should be: the settled pose plus the damped kick.
 	matrix3x4_t kickRot, target;
 	AngleMatrix(dampedAngles, kickRot);
 	ConcatTransforms(kickRot, settled, target);
@@ -347,20 +370,21 @@ void NeoAdsDampRecoil(CStudioHdr *hdr, Vector pos[], Quaternion q[],
 
 bool NeoAdsHideCrosshair(const CNEOWeaponInfo &data, bool bAiming, bool bCloaked)
 {
-	return NeoAdsActive(data) && bAiming && !cl_neo_ads_crosshair.GetBool() && !(bCloaked && !data.m_bAdsOpticWindow);
+	if (!NeoAdsActive(data) || !bAiming || cl_neo_ads_crosshair.GetBool())
+	{
+		return false;
+	}
+	return !bCloaked || (data.m_bAdsOpticWindow && NeoAdsHasGlassArt(data));
 }
 
 NeoAdsHiddenMaterials::NeoAdsHiddenMaterials(const CNEOWeaponInfo *pData)
 {
-	if (!pData || !pData->m_bAdsOpticOnePane || !NeoAdsActive(*pData))
+	// Only when the art that replaces the glass can be drawn: the glass is invisible without it.
+	if (!pData || !pData->m_bAdsOpticOnePane || !NeoAdsActive(*pData) || !NeoAdsHasGlassArt(*pData))
 	{
 		return;
 	}
-	// Only when the art that replaces the glass can be drawn: the glass is invisible without it.
-	IMaterial *pReticle = pData->m_bHasAdsOpticLensMap && pData->m_szAdsOpticReticle[0]
-		? materials->FindMaterial(pData->m_szAdsOpticReticle, TEXTURE_GROUP_VGUI, false) : nullptr;
-	IMaterial *pLens = (pReticle && !pReticle->IsErrorMaterial())
-		? materials->FindMaterial(pData->m_szAdsOpticLens, TEXTURE_GROUP_MODEL, false) : nullptr;
+	IMaterial *pLens = materials->FindMaterial(pData->m_szAdsOpticLens, TEXTURE_GROUP_MODEL, false);
 	if (pLens && !pLens->IsErrorMaterial() && !pLens->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW))
 	{
 		pLens->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);

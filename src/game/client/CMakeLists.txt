@@ -1603,7 +1603,6 @@ set(UNITY_SOURCE_NEO_SRC_CLIENT
     neo/c_neo_killer_damage_infos.cpp
     neo/neo_ads_lens.cpp
     neo/neo_ads_optic.cpp
-    neo/neo_ads_optic_disc.cpp
     neo/neo_spectator_hits.cpp
     neo/neo_spread_pivot.cpp
     neo/neo_view_shots.cpp
@@ -1629,7 +1628,6 @@ target_sources_grouped(
     neo/c_neo_killer_damage_infos.h
     neo/neo_ads_lens.h
     neo/neo_ads_optic.h
-    neo/neo_ads_optic_disc.h
     neo/neo_spectator_hits.h
     neo/neo_spread_pivot.h
     neo/neo_view_shots.h

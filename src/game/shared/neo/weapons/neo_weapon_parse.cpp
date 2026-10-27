@@ -73,8 +73,7 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	}
 
 	// ZoomOffset = Traditional NT aim offset
-	// AimOffset = ADS offset, used instead when cl_neo_ads is enabled (see neo_ads.h). Many scripts carry an
-	// untuned AimOffset, so a weapon only takes part when its block says "enabled" "1".
+	// AimOffset = ADS offset. Many scripts carry an untuned one, so it counts only with "enabled" "1".
 	if (KeyValues* pZoomOffset = pKeyValuesData->FindKey("ZoomOffset"))
 	{
 		m_flVMAimFov = pZoomOffset->GetFloat("fov", 55);
@@ -103,7 +102,6 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 		m_angVMAdsAngOffset[ROLL] = pAdsOffset->GetFloat("roll", 0);
 	}
 
-	// Optional per-weapon multipliers for the fire animation's kick while on the sights.
 	KeyValues* pAdsRecoil = pKeyValuesData->FindKey("AdsRecoil");
 	m_flAdsRecoilVertical = pAdsRecoil ? pAdsRecoil->GetFloat("vertical", 1) : 1.f;
 	m_flAdsRecoilSide = pAdsRecoil ? pAdsRecoil->GetFloat("side", 1) : 1.f;
@@ -111,7 +109,6 @@ void CNEOWeaponInfo::Parse( KeyValues *pKeyValuesData, const char *szWeaponName 
 	m_flAdsRecoilMaxDist = pAdsRecoil ? pAdsRecoil->GetFloat("max_dist", 0) : 0.f;
 	m_flAdsRecoilMaxAngle = pAdsRecoil ? pAdsRecoil->GetFloat("max_angle", 0) : 0.f;
 
-	// Optional glass on the sights (the "AdsOptic" block, neo_ads_optic_info.h).
 	ParseAdsOptic(pKeyValuesData);
 }
 

@@ -23,7 +23,6 @@
 #include "dlight.h"
 #include "in_main.h"
 #include "neo/neo_ads_optic.h"
-#include "neo/neo_ads_optic_disc.h"
 #else
 #include "neo_player.h"
 #include "bot/neo_bot.h"
@@ -236,8 +235,8 @@ void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], 
 {
 	BaseClass::StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
 
-	// On the sights, the idle sway and the fire animation's kick are damped against the idle rest
-	// pose, so the sight picture holds. Other sequences (reload, draw) play untouched.
+	// On the sights the idle sway and the fire kick are damped so the sight picture holds. Reloads and draws play
+	// untouched.
 	if (!hdr || m_flAdsBlend <= 0.0f)
 	{
 		return;
@@ -254,9 +253,8 @@ void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], 
 
 	if (!bIdle)
 	{
-		// The gun is whatever bone carries the first attachment (the muzzle on NT viewmodels).
-		// Bones outside boneMask are not set up this pass and hold garbage, and the muzzle bone often
-		// exists only for its attachment, so walk up to the nearest bone that was set up (the gun body).
+		// The gun is the bone carrying the first attachment (the muzzle). It often isn't in boneMask and holds
+		// garbage this pass, so walk up to the nearest bone that was set up.
 		int gunBone = (hdr->GetNumAttachments() > 0) ? hdr->pAttachment(0).localbone : hdr->numbones() - 1;
 		while (gunBone >= 0 && !(hdr->boneFlags(gunBone) & boneMask))
 		{
@@ -265,7 +263,6 @@ void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], 
 		const auto *pWeapon = assert_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
 		if (gunBone >= 0 && pWeapon)
 		{
-			// The fire animation's last frame is where it settles; the kick is measured from there.
 			m_adsSettled.Update(hdr, GetSequence(), 1.0f, poseparam);
 			NeoAdsDampRecoil(hdr, pos, q, m_adsSettled.pos, m_adsSettled.q,
 				gunBone, pWeapon->GetNEOWpnData(), m_flAdsBlend);
@@ -273,7 +270,7 @@ void CNEOPredictedViewModel::DampedBlendingRules(CStudioHdr *hdr, Vector pos[], 
 		return;
 	}
 
-	// Rest pose: the idle animation's first frame, which is the pose the sights are tuned in.
+	// The idle's first frame is the pose the sights are tuned in.
 	m_adsRest.Update(hdr, GetSequence(), 0.0f, poseparam);
 	const Vector *restPos = m_adsRest.pos;
 	const Quaternion *restQ = m_adsRest.q;
@@ -303,21 +300,15 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 {
 	const auto *pWeapon = assert_cast<CNEOBaseCombatWeapon *>(GetOwningWeapon());
 	const CNEOWeaponInfo *pWeaponData = pWeapon ? &pWeapon->GetNEOWpnData() : nullptr;
-	// Hide the glass whose art we draw (one pane).
 	const NeoAdsHiddenMaterials hiddenMaterials(pWeaponData);
 
 	auto pPlayer = assert_cast<C_NEO_Player*>(GetOwner());
 	const bool bDrawn = pWeaponData && pPlayer && (flags & STUDIO_RENDER);
-	// A model with translucent materials (any sight glass) is drawn twice a frame, its opaque parts and then
-	// its translucent ones; the glass's art goes on once, with the last.
-	const bool bOverlays = bDrawn && (!IsTwoPass() || (flags & STUDIO_TRANSPARENCY));
 	const bool bCloaked = pPlayer && pPlayer->IsCloaked();
 	const bool bThermal = NeoAdsInThermals(pPlayer);
 
-	// See-through glass (drawn over by the cloak or thermals, or a scope on the sights): its outline into depth
-	// before the gun, so the world already on screen shows through it (see NeoAdsGlassClear).
 	NeoAdsGlassClear clear;
-	const bool bClear = bDrawn && NeoAdsBeginGlassClear(this, *pWeaponData, bCloaked, bThermal, m_flAdsBlend, clear);
+	const bool bClear = bDrawn && NeoAdsGetGlassClear(this, *pWeaponData, bCloaked, bThermal, m_flAdsBlend, clear);
 	CMatRenderContextPtr pRenderContext(materials);
 	int ret = 0;
 	if (bClear && clear.bFarFirst)
@@ -328,7 +319,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 	}
 	if (bClear)
 	{
-		NeoAdsDrawGlassClearDepth(*pWeaponData);
+		NeoAdsDrawGlassClearDepth(*pWeaponData, clear);
 	}
 	if (bClear && clear.bFarFirst)
 	{
@@ -340,9 +331,7 @@ int CNEOPredictedViewModel::DrawModel(int flags)
 		pRenderContext->PopCustomClipPlane();
 	}
 
-	// On top of the gun, pinned to it: the glass's art where the gun's own glass doesn't show it (hidden, or left
-	// out by the clear glass).
-	if (ret && bOverlays)
+	if (ret && bDrawn)
 	{
 		NeoAdsDrawGlassArt(this, *pWeaponData, bCloaked, bThermal, m_flAdsBlend);
 	}
@@ -610,7 +599,7 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 		return;
 	}
 
-	CNEOWeaponInfo data = weapon->GetNEOWpnData();
+	const CNEOWeaponInfo &data = weapon->GetNEOWpnData();
 
 	Vector vForward, vRight, vUp, newPos, vOffset;
 	QAngle newAng, angOffset;
@@ -722,8 +711,7 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 #ifdef CLIENT_DLL
 		if (cl_neo_lean_viewmodel_only.GetBool() && m_flAdsBlend > 0.0f)
 		{
-			// On the sights, the lean rolls the gun around the sight line (the eye's forward axis) rather
-			// than around its own origin, so the sights stay on the centre of the screen and the gun cants.
+			// On the sights the lean rolls the gun around the sight line, so the sights stay centred and the gun cants.
 			const float roll = cl_righthand.GetBool() ? pOwner->EyeAngles().z : -pOwner->EyeAngles().z;
 			AngleVectors(QAngle(eyeAngles.x, eyeAngles.y, eyeAngles.z + roll * m_flAdsBlend), nullptr, &vRight, &vUp);
 		}
@@ -733,16 +721,32 @@ void CNEOPredictedViewModel::CalcViewModelView(CBasePlayer *pOwner,
 	}
 
 	newAng += angOffset;
+	QAngle sightAng = eyeAngles;
 #ifdef CLIENT_DLL
 	if (cl_neo_lean_viewmodel_only.GetBool())
 	{
 		QAngle angles = pOwner->EyeAngles();
 		newAng.z += cl_righthand.GetBool() ? angles.z : -angles.z;
+		sightAng.z += cl_righthand.GetBool() ? angles.z : -angles.z;
 	}
 	// Gun motion: turned toward where its shots went and knocked by each one.
 	NeoSpreadPivotApply(weapon, pOwner, ShouldFlipViewModel(), newAng);
 	NeoViewmodelRecoilApply(pOwner, eyeAngles, ShouldFlipViewModel(), newPos, newAng);
 #endif
+	if (m_flAdsBlend > 0.0f)
+	{
+		// On the sights the offset turns the gun inside the view, so a leaning (rolled) view keeps the sights centred.
+		matrix3x4_t sightMatrix, offsetMatrix, gunMatrix;
+		AngleMatrix(sightAng, sightMatrix);
+		AngleMatrix(angOffset, offsetMatrix);
+		ConcatTransforms(sightMatrix, offsetMatrix, gunMatrix);
+		QAngle gunAng;
+		MatrixAngles(gunMatrix, gunAng);
+		for (int i = 0; i < 3; ++i)
+		{
+			newAng[i] += AngleDiff(gunAng[i], newAng[i]) * m_flAdsBlend;
+		}
+	}
 
 	BaseClass::CalcViewModelView(pOwner, newPos, newAng);
 }
