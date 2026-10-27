@@ -273,9 +273,10 @@ void CNEOHud_Ammo::DrawAmmo() const
 	wchar_t unicodeBullets[maxBullets + 1];
 	g_pVGuiLocalize->ConvertANSIToUnicode(bullets, unicodeBullets, sizeof(unicodeBullets));
 		
+	// Set for both passes: with an empty mag the filled pass is skipped and the spent rounds would take the last font set
+	surface()->DrawSetTextFont(m_hBulletFont);
 	if (magAmountToDrawFilled > 0)
 	{
-		surface()->DrawSetTextFont(m_hBulletFont);
 		surface()->DrawSetTextPos(digit_xpos + xpos, digit_ypos + ypos);
 		surface()->DrawPrintText(unicodeBullets, magAmountToDrawFilled);
 	}
