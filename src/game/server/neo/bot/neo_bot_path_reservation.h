@@ -23,11 +23,24 @@ struct AreaReservation_t
     AreaReservation_t& operator=(const AreaReservation_t& src) { claims = src.claims; return *this; }
 };
 
+// What bots learned about a nav area this match, kept as path cost penalties
+struct AreaPenalty_t
+{
+    // where bots got stuck this round: a path cost, and to cover and retreat searches a cost, then a filter
+    float flStuck = 0.0f;
+    // where bots died: only a path cost, since an area where bots died can still be good cover
+    float flDeath = 0.0f;
+
+    float GetPathCost() const { return flStuck + flDeath; }
+    bool IsStuckProne() const;
+};
+
 struct HazardInfo
 {
 	float smokeExpireTime;      // when the smoke hazard risk expires
 	float hazardExpireTime;     // when a general deadly hazard risk expires
 	float smokePropagateTime;   // expiry this area has already propagated to its visible set
+	float npcTurretExpireTime;  // when a neo_npc_targetsystem hazard expires
 };
 
 struct BotReservedAreas_t
@@ -54,7 +67,7 @@ public:
 
     CNEOBotPathReservationSystem()
         : m_BotReservedAreas(DefLessFunc(int))
-        , m_AreaAvoidPenalties(DefLessFunc(unsigned int))
+        , m_AreaPenalties(DefLessFunc(unsigned int))
     {
         for (int i = 0; i < TEAM__TOTAL; ++i)
         {
@@ -71,20 +84,26 @@ public:
     int GetPredictedFriendlyPathCount( int areaID, int teamID, const CNEOBot *excluding = NULL ) const;
 
     void IncrementAreaAvoidPenalty(unsigned int navAreaID, float penaltyAmount);
-    float GetAreaAvoidPenalty(unsigned int navAreaID) const;
+    void IncrementAreaDeathPenalty(unsigned int navAreaID, float penaltyAmount);
+    AreaPenalty_t GetAreaPenalty(unsigned int navAreaID) const;
 
     void AddDeadlyHazard(int navAreaID, float expireTime, int teamID, bool propagatePVS = false);
     void AddFragHazard(int navAreaID, float expireTime, int teamID);
     void AddSmokeHazard(int navAreaID, float expireTime, int teamID, bool propagatePVS = true);
+    void AddNpcTurretHazard(int navAreaID, float expireTime, int teamID, bool propagatePVS = true);
+    bool IsAreaNpcTurretHazard(int navAreaID, const CNEOBot *me) const;
     float GetAreaHazardousTime(int navAreaID, const CNEOBot *me) const;
     bool IsAreaHazardous(int navAreaID, const CNEOBot *me) const;
+    bool IsAreaDeadlyHazard(int navAreaID, const CNEOBot *me) const;
 
 private:
     int CountLiveClaims(const AreaReservation_t &res, const CNEOBot *excluding) const;
 
     CUtlMap<int, AreaReservation_t> m_Reservations[TEAM__TOTAL];   // keyed by nav area ID
     CUtlMap<int, BotReservedAreas_t> m_BotReservedAreas;           // keyed by bot entindex
-    CUtlMap<unsigned int, float> m_AreaAvoidPenalties;
+    AreaPenalty_t *FindOrAddAreaPenalty(unsigned int navAreaID);
+
+    CUtlMap<unsigned int, AreaPenalty_t> m_AreaPenalties;          // keyed by nav area ID
     CUtlMap<int, HazardInfo> m_HazardAreas[TEAM__TOTAL];
 };
 

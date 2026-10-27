@@ -1459,6 +1459,7 @@ void CHLClient::PostInit()
 		g_pCVar->FindVar("snd_musicvolume")->InstallChangeCallback(NeoMP3::MusicVolCallback);
 		g_pCVar->FindVar("sv_use_steam_networking")->SetValue(false);
 		RestrictNeoClientCheats();
+		g_pCVar->FindVar("fps_max")->AddFlags(FCVAR_ARCHIVE);
 
 		FixupNeoCrosshair();
 
@@ -1571,6 +1572,16 @@ void CHLClient::PostInit()
 					char szExportSeq[NEO_XHAIR_SEQMAX];
 					ExportCrosshair(&xhairInfo, szExportSeq);
 					cl_neo_crosshair.SetValue(szExportSeq);
+				}
+			}
+
+			if (iCfgVerMajor < 35)
+			{
+				ConVarRef cl_software_cursor("cl_software_cursor");
+				Assert(cl_software_cursor.IsValid());
+				if (cl_software_cursor.IsValid())
+				{
+					cl_software_cursor.SetValue(cl_software_cursor.GetDefault());
 				}
 			}
 
